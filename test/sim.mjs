@@ -1,6 +1,6 @@
 // Headless sim harness — produces evidence/metrics.json for gauntlet critics.
 // Runs the real game logic (no DOM) with scripted bots. Usage: node test/sim.mjs
-import { makeGame, startRun, update, stressScene, W, H, PLAYER } from '../src/core/game.js';
+import { makeGame, startRun, update, stressScene, spawnEnemy, W, H, PLAYER } from '../src/core/game.js';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -70,7 +70,15 @@ function runBot(name, botOpts, seed = SEED) {
   const g = makeGame(seed); startRun(g);
   const bot = makeBot(botOpts);
   const t0 = performance.now();
-  while (g.state === 'play' && g.frame < MAX_FRAMES) { bot(g); update(g); }
+  // dead air: empty screen outside gates. Track total AND longest streak — a
+  // single 2s wait is felt even when the total looks small (playtest finding).
+  let deadAir = 0, streak = 0, maxStreak = 0;
+  while (g.state === 'play' && g.frame < MAX_FRAMES) {
+    bot(g); update(g);
+    if (g.frame > 180 && !g.gate && !g.bossDown && g.enemies.count === 0) {
+      deadAir++; streak++; if (streak > maxStreak) maxStreak = streak;
+    } else streak = 0;
+  }
   const wall = performance.now() - t0;
   const s = g.stats;
   const speedRate = g.kills ? g.speedKills / g.kills : 0;
@@ -80,9 +88,31 @@ function runBot(name, botOpts, seed = SEED) {
     score: g.score, kills: g.kills, speedKills: g.speedKills, speedRate: +speedRate.toFixed(2),
     livesLeft: Math.max(0, g.player.lives), deaths: s.deaths, timeouts: s.timeouts, timeoutLog: s.timeoutLog,
     maxBullets: s.maxEBullets, avgBullets: +avgBullets.toFixed(1),
+    deadAirFrames: deadAir, deadAirSec: +(deadAir / 60).toFixed(1),
+    deadAirMaxStreak: maxStreak, deadAirMaxStreakSec: +(maxStreak / 60).toFixed(1),
     bulletCurve: s.bulletCurve, scoreCurve: s.scoreCurve,
     killWindows: summarizeKills(s.killLog), simWallMs: +wall.toFixed(0),
   };
+}
+
+// --- S1 point-blank economy ---------------------------------------------------
+// Pin the player at a fixed range from an invulnerable-to-timeout elite and
+// measure damage per second. Rubric S1: DPS at 40px >= 1.8x DPS at 300px.
+function pointBlankDps(dist) {
+  const g = makeGame(3); startRun(g);
+  g.timeline = []; g.tlIndex = 0; // no stage — controlled scene
+  const e = spawnEnemy(g, 3, W / 2, 200);
+  e.hp = 1e9;
+  g.player.invuln = 1e9; g.input.fire = true;
+  const pin = () => {
+    g.player.x = W / 2; g.player.y = Math.min(H - 20, 200 + dist);
+    g.input.dx = 0; g.input.dy = 0;
+    e.x = W / 2; e.y = 200; // pin target too — elite sway must not skew the probe
+  };
+  for (let f = 0; f < 60; f++) { pin(); update(g); }      // warmup (intro armor)
+  const hp0 = e.hp;
+  for (let f = 0; f < 600; f++) { pin(); update(g); }     // 10s measured
+  return (hp0 - e.hp) / 10;
 }
 
 function summarizeKills(log) {
@@ -152,8 +182,22 @@ for (const r of runs) {
   console.log(`${r.name.padEnd(16)} ${r.outcome.padEnd(9)} ${String(r.minutes).padStart(5)}m score=${String(r.score).padStart(8)} kills=${r.kills} speed=${(r.speedRate * 100) | 0}% deaths=${r.deaths.length} maxBul=${r.maxBullets} timeouts=${r.timeouts}`);
 }
 
+const dpsClose = pointBlankDps(40), dpsFar = pointBlankDps(300);
 const aggro = runs[1], passive = runs[2];
 const checks = {
+  s1_pointblank: {
+    desc: 'point-blank DPS >= 1.8x DPS at range (playtest: bottom-camping killed fine)',
+    dpsAt40: +dpsClose.toFixed(1), dpsAt300: +dpsFar.toFixed(1),
+    ratio: dpsFar ? +(dpsClose / dpsFar).toFixed(2) : Infinity,
+    pass: dpsClose >= dpsFar * 1.8,
+  },
+  s5_deadair: {
+    desc: 'speed-kills buy density, not waiting: longest empty-screen streak <= 1.5s and total <= 6s (expert+aggressive)',
+    expertMaxStreakSec: runs[0].deadAirMaxStreakSec, aggressiveMaxStreakSec: runs[1].deadAirMaxStreakSec,
+    expertTotalSec: runs[0].deadAirSec, aggressiveTotalSec: runs[1].deadAirSec,
+    pass: runs[0].deadAirMaxStreak <= 90 && runs[1].deadAirMaxStreak <= 90
+      && runs[0].deadAirFrames <= 360 && runs[1].deadAirFrames <= 360,
+  },
   s6_alignment: {
     desc: 'aggressive outscores passive ≥3x AND sees fewer bullets',
     scoreRatio: passive.score ? +(aggro.score / passive.score).toFixed(2) : Infinity,

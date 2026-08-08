@@ -2,10 +2,10 @@
   "seed": 12648430,
   "generated": "sim.mjs",
   "stress": {
-    "p50": 0.009,
-    "p99": 0.128,
-    "max": 0.434,
-    "heapDeltaKB": 3316,
+    "p50": 0.011,
+    "p99": 0.126,
+    "max": 0.475,
+    "heapDeltaKB": 555,
     "budget": 16.6,
     "pass": true
   },
@@ -30,6 +30,10 @@
       "timeoutLog": [],
       "maxBullets": 158,
       "avgBullets": 27.1,
+      "deadAirFrames": 159,
+      "deadAirSec": 2.6,
+      "deadAirMaxStreak": 99,
+      "deadAirMaxStreakSec": 1.6,
       "bulletCurve": [
         0,
         0,
@@ -322,7 +326,7 @@
           "speed": 0
         }
       },
-      "simWallMs": 469
+      "simWallMs": 478
     },
     {
       "name": "aggressive-human",
@@ -339,6 +343,10 @@
       "timeoutLog": [],
       "maxBullets": 81,
       "avgBullets": 20.5,
+      "deadAirFrames": 201,
+      "deadAirSec": 3.4,
+      "deadAirMaxStreak": 99,
+      "deadAirMaxStreakSec": 1.6,
       "bulletCurve": [
         0,
         0,
@@ -645,6 +653,10 @@
       ],
       "maxBullets": 153,
       "avgBullets": 39.5,
+      "deadAirFrames": 159,
+      "deadAirSec": 2.6,
+      "deadAirMaxStreak": 99,
+      "deadAirMaxStreakSec": 1.6,
       "bulletCurve": [
         0,
         0,
@@ -999,7 +1011,7 @@
           "speed": 0
         }
       },
-      "simWallMs": 79
+      "simWallMs": 80
     },
     {
       "name": "blind",
@@ -1043,6 +1055,10 @@
       ],
       "maxBullets": 78,
       "avgBullets": 18.8,
+      "deadAirFrames": 221,
+      "deadAirSec": 3.7,
+      "deadAirMaxStreak": 99,
+      "deadAirMaxStreakSec": 1.6,
       "bulletCurve": [
         0,
         0,
@@ -1235,6 +1251,21 @@
     }
   ],
   "checks": {
+    "s1_pointblank": {
+      "desc": "point-blank DPS >= 1.8x DPS at range (playtest: bottom-camping killed fine)",
+      "dpsAt40": 48,
+      "dpsAt300": 48,
+      "ratio": 1,
+      "pass": false
+    },
+    "s5_deadair": {
+      "desc": "speed-kills buy density, not waiting: longest empty-screen streak <= 1.5s and total <= 6s (expert+aggressive)",
+      "expertMaxStreakSec": 1.6,
+      "aggressiveMaxStreakSec": 1.6,
+      "expertTotalSec": 2.6,
+      "aggressiveTotalSec": 3.4,
+      "pass": false
+    },
     "s6_alignment": {
       "desc": "aggressive outscores passive ≥3x AND sees fewer bullets",
       "scoreRatio": 3.3,
