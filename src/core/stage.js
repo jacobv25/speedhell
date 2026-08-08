@@ -11,13 +11,13 @@ export const ENEMY_DEFS = [
   /*1 mid    */ { hp: 14,  value: 800,   window: 120, r: 14 },
   /*2 turret */ { hp: 10,  value: 500,   window: 100, r: 12 },
   /*3 elite  */ { hp: 70,  value: 3000,  window: 260, r: 20 },
-  /*4 midboss*/ { hp: 380, value: 10000, window: 900, r: 26 },
-  /*5 boss   */ { hp: 450, value: 15000, window: 1100, r: 30 },
+  /*4 midboss*/ { hp: 360, value: 8000,  window: 700, r: 26 },
+  /*5 boss   */ { hp: 200, value: 9000,  window: 600, r: 30 }, // hp = P1 hp (spawn)
 ];
 
-const MIDBOSS_TIMEOUT = 1500;          // 25s — no milking (S6)
-const BOSS_PHASE_HP = [450, 500, 550];
-const BOSS_PHASE_TIMEOUT = 2100;       // 35s per phase
+const MIDBOSS_TIMEOUT = 1400;          // ~23s — no milking (S6)
+const BOSS_PHASE_HP = [200, 200, 320]; // HP is a pattern-duration knob [BOGHOG T1]; index 0 unused (spawn hp)
+const BOSS_PHASE_TIMEOUT = 1450;       // ~24s per phase — passive dodging times out
 
 // Enemies may not fire from the player's band or below (WS04 bottom no-shoot).
 function mayFire(g, e) {
@@ -34,37 +34,41 @@ export function updateEnemy(g, e) {
       e.y += e.vy;
       break;
     }
-    case 1: { // mid — enter, hold, 3 aimed bursts, exit; angrier if left alive
+    case 1: { // mid — enter, hold, aimed bursts; left alive it digs in and hoses (S4 dynamic)
       if (e.y < e.holdT) e.y += 2.2; else {
         e.fireT++;
         if (e.fireT % 70 === 20 && mayFire(g, e)) aimedFan(g, e.x, e.y + 8, 5, 0.55, 4.6);
-        if (e.fireT === 230 && mayFire(g, e)) spray(g, e.x, e.y + 8, 10, 1.1, 2.6, 4.2); // leave-alive danger
-        if (e.fireT > 240) { e.vy -= 0.08; e.y += e.vy; e.x += e.side * 0.6; }
+        if (e.fireT === 230 && mayFire(g, e)) spray(g, e.x, e.y + 8, 10, 1.1, 2.6, 4.2);
+        // leave-alive escalation: past the polite phase it parks and hoses hard
+        if (e.fireT > 300 && e.fireT % 55 === 15 && mayFire(g, e)) spray(g, e.x, e.y + 8, 9, 1.2, 2.6, 4.4);
+        if (e.fireT > 300 && e.fireT % 110 === 60 && mayFire(g, e)) aimedFan(g, e.x, e.y + 8, 7, 0.8, 5.0);
+        if (e.fireT > 700) { e.vy -= 0.08; e.y += e.vy; e.x += e.side * 0.6; } // exits much later
       }
       break;
     }
     case 2: { // turret — scrolls; kill fast or be blanketed [T2]
-      e.y += 0.7;
       e.fireT++;
-      const angry = e.vulnAt >= 0 && g.frame - e.vulnAt > e.window * 2;
-      const every = angry ? 55 : 95;
+      const angry = e.vulnAt >= 0 && g.frame - e.vulnAt > e.window * 1.5;
+      e.y += angry ? 0.45 : 0.7; // angry turrets dig in — they leave slower
+      const every = angry ? 40 : 95;
       if (e.fireT % every === 30 && mayFire(g, e))
-        aimedFan(g, e.x, e.y + 6, angry ? 5 : 3, angry ? 0.7 : 0.4, angry ? 4.4 : 3.4);
+        aimedFan(g, e.x, e.y + 6, angry ? 6 : 3, angry ? 0.9 : 0.4, angry ? 4.6 : 3.4);
       break;
     }
-    case 3: { // elite — area denial cycles, escalating per rep (WS03)
+    case 3: { // elite — area denial cycles, escalating per rep (WS03); overstays if ignored
       if (e.y < 130) { e.y += 1.8; break; }
       e.x += Math.sin(e.age * 0.012) * 1.1;
       e.fireT++;
-      const rep = e.phase, k = Math.min(1 + rep * 0.1, 1.4);
+      const rep = e.phase, k = Math.min(1 + rep * 0.12, 1.7);
       const cyc = e.fireT % 210;
       if (mayFire(g, e)) {
         if (cyc === 30) arcWall(g, e.x, e.y + 10, 13, 1.5, 2.6 * k, 3 + ((g.rng.next() * 7) | 0), 1);
         if (cyc === 100) aimedFan(g, e.x, e.y + 10, 7, 0.8, 4.8 * k);
         if (cyc === 170) ring(g, e.x, e.y, 16, 2.2 * k, g.rng.range(0, 0.4));
+        if (rep >= 1 && cyc === 135) spray(g, e.x, e.y + 10, 7, 1.0, 2.8, 4.4); // rep-2+ extra hose
         if (cyc === 209) e.phase++;
       }
-      if (e.age > 720) { e.vy -= 0.06; e.y += e.vy; } // exits eventually
+      if (e.age > 1150) { e.vy -= 0.06; e.y += e.vy; } // exits eventually, but ignoring it is expensive
       break;
     }
     case 4: { // midboss
@@ -80,6 +84,8 @@ export function updateEnemy(g, e) {
         } else {     // phase B bleeds in: rings + bounded spray
           if (e.fireT % 90 === 10) ring(g, e.x, e.y, 20, 2.4, (e.fireT * 0.13) % 1);
           if (e.fireT % 60 === 40) spray(g, e.x, e.y + 12, 6, 0.9, 3.0, 4.6);
+          // desperation layer — only campers who let it live this long ever see it
+          if (e.fireT > 900 && e.fireT % 70 === 5) { bendyStream(g, e.x - 20, e.y + 8, Math.PI / 2 - 0.4, 7, 1.7, 4.2); bendyStream(g, e.x + 20, e.y + 8, Math.PI / 2 + 0.4, 7, 1.7, 4.2); }
         }
       }
       // timeout: flees, no score, gate opens — the stage does not wait (S6, T2)
@@ -98,26 +104,28 @@ export function updateBoss(g, e) {
   e.fireT++;
   const t = e.fireT % 240;
 
-  if (phase === 0) {         // P1: aimed needle pressure + laned walls
-    e.x = W / 2 + Math.sin(e.age * 0.009) * 90;
+  if (phase === 0) {         // P1: aimed needle pressure + laned walls (gap readable, lanes viable)
+    e.x = W / 2 + Math.sin(e.age * 0.009) * 70;
     if (mayFire(g, e)) {
-      if (t % 60 === 20) aimedFan(g, e.x, e.y + 14, 5 + (rep > 1 ? 2 : 0), 0.6, 5.2 * k);
-      if (t === 110) arcWall(g, e.x, e.y + 10, 15, 1.7, 2.7 * k, 4 + ((g.rng.next() * 7) | 0), 1);
-      if (t === 200) arcWall(g, e.x, e.y + 10, 15, 1.7, 2.7 * k, 4 + ((g.rng.next() * 7) | 0), 1);
+      if (t % 60 === 20) aimedFan(g, e.x, e.y + 14, 5 + Math.min(rep, 4), 0.6, 5.2 * k);
+      if (t === 110) arcWall(g, e.x, e.y + 10, 13 + rep, 1.9, 2.4 * k, 4 + ((g.rng.next() * 5) | 0), 2);
+      if (t === 200) arcWall(g, e.x, e.y + 10, 13 + rep, 1.9, 2.4 * k, 4 + ((g.rng.next() * 5) | 0), 2);
     }
-  } else if (phase === 1) {  // P2: twin spirals + bounded spray, strafes at player
-    e.x += Math.max(-1.6, Math.min(1.6, (g.player.x - e.x) * 0.02));
+  } else if (phase === 1) {  // P2: twin spirals + bounded spray on a wide slow sweep —
+    // the whole screen is its lane; you chase it or you don't hurt it (anti-camp).
+    e.x = W / 2 + Math.sin(e.age * 0.006) * 150;
     if (mayFire(g, e)) {
-      if (t % 30 === 10) twinSpiral(g, e.x, e.y + 8, (e.fireT * 0.11) % 6.28, 2, 2.6 * k, 1, 0.012);
-      if (t % 120 === 60) spray(g, e.x, e.y + 14, 8, 1.0, 3.2, 4.8);
+      if (t % 30 === 10) twinSpiral(g, e.x, e.y + 8, (e.fireT * 0.11) % 6.28, 2 + (rep > 2 ? 1 : 0), 2.6 * k, 1, 0.012);
+      if (t % 120 === 60) spray(g, e.x, e.y + 14, 8 + Math.min(rep, 4), 1.0, 3.2, 4.8);
     }
-  } else {                   // P3: rhythm-broken finale — rings, bendy, fast aimed
-    e.x = W / 2 + Math.sin(e.age * 0.016) * 60;
+  } else {                   // P3: rhythm-broken finale — rings, bendy, fast aimed,
+    // riding the full-width sweep: stay on it or watch it time out (anti-camp).
+    e.x = W / 2 + Math.sin(e.age * 0.005) * 150;
     if (mayFire(g, e)) {
-      if (t === 20) ring(g, e.x, e.y, 22 + rep * 2, 2.5 * k, g.rng.range(0, 0.3));
-      if (t === 80) { bendyStream(g, e.x - 26, e.y, Math.PI / 2 - 0.7, 8, 1.6, 4.6); bendyStream(g, e.x + 26, e.y, Math.PI / 2 + 0.7, 8, 1.6, 4.6); }
-      if (t === 125 || t === 165) aimedFan(g, e.x, e.y + 14, 7, 0.5, 5.8 * k);
-      if (t === 210) spray(g, e.x, e.y + 10, 9, 1.3, 2.8, 5.0);
+      if (t === 20) ring(g, e.x, e.y, 22 + rep * 3, 2.5 * k, g.rng.range(0, 0.3));
+      if (t === 80) { bendyStream(g, e.x - 26, e.y, Math.PI / 2 - 0.7, 8 + rep, 1.6, 4.6); bendyStream(g, e.x + 26, e.y, Math.PI / 2 + 0.7, 8 + rep, 1.6, 4.6); }
+      if (t === 125 || t === 165) aimedFan(g, e.x, e.y + 14, 7 + Math.min(rep, 3), 0.5, 5.8 * k);
+      if (t === 210) spray(g, e.x, e.y + 10, 9 + Math.min(rep, 4), 1.3, 2.8, 5.0);
     }
   }
 
@@ -189,9 +197,10 @@ export function buildTimeline() {
   at(3260, (g) => { spawnEnemy(g, 3, W / 2 + 80, -24); spawnEnemy(g, 2, 80, -16); spawnEnemy(g, 2, W - 80, -16); });
 
   // S7 release — cancel wall + item shower + ~3s breather (WS05 tension-release)
+  // Items here are routing signage, not a payday [BOGHOG T2] — low value, free wall pays little.
   at(3700, (g) => {
-    bulletCancelWall(g, W / 2, H / 2);
-    for (let i = 0; i < 14; i++) spawnItem(g, 60 + i * 26, -10 - (i % 3) * 24, 500);
+    bulletCancelWall(g, W / 2, H / 2, 30);
+    for (let i = 0; i < 14; i++) spawnItem(g, 60 + i * 26, -10 - (i % 3) * 24, 150);
   });
 
   // S8 boss — gate until the run resolves

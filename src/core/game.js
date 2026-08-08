@@ -11,7 +11,7 @@ export const STEP = 1 / 60;
 // "halving feels bad") [BOGHOG_CRAFT]. Transition is instant: twitchy, speed-hell.
 export const PLAYER = {
   speed: 4.2, focusSpeed: 2.6, hitR: 3,
-  shotSpeed: 14, shotLimit: 10, shotEvery: 5, shotDmg: 1,
+  shotSpeed: 14, shotLimit: 10, shotEvery: 5, shotDmg: 2,
 };
 
 export function makeGame(seed = 1) {
@@ -137,9 +137,9 @@ function cancelAllBullets(g, perBullet = 100) {
   return n;
 }
 
-export function bulletCancelWall(g, x, y) { // release moment (S5)
-  const n = cancelAllBullets(g, 100);
-  if (n > 0) addPopup(g, x, y, 'CANCEL +' + (n * 100), 1);
+export function bulletCancelWall(g, x, y, perBullet = 100) { // release moment (S5)
+  const n = cancelAllBullets(g, perBullet);
+  if (n > 0) addPopup(g, x, y, 'CANCEL +' + (n * perBullet), 1);
 }
 
 function playerDie(g, cause) {
@@ -157,8 +157,9 @@ function fireBomb(g) {
   const p = g.player;
   if (p.bombs <= 0 || p.bombCd > 0) return;
   p.bombs--; p.bombCd = 90; p.bombActive = 60; p.invuln = Math.max(p.invuln, 180);
-  const n = cancelAllBullets(g, 100);
-  addPopup(g, p.x, p.y - 40, n > 0 ? 'BOMB +' + (n * 100) : 'BOMB', 1);
+  // bomb-cancel points are a garnish, subordinate to speed-kill core (S6)
+  const n = cancelAllBullets(g, 30);
+  addPopup(g, p.x, p.y - 40, n > 0 ? 'BOMB +' + (n * 30) : 'BOMB', 1);
   g.flash = 12;
 }
 
@@ -298,7 +299,7 @@ export function update(g) {
   // --- stage clear (boss down → tally after a beat) ---
   if (g.bossDown && !g.clearAt) g.clearAt = g.frame + 150;
   if (g.clearAt && g.frame >= g.clearAt) {
-    g.clearBonus = p.lives * 10000 + p.bombs * 3000; // stock bonus, not grind (S6)
+    g.clearBonus = p.lives * 1000 + p.bombs * 500; // stock bonus, garnish-sized (S6)
     g.score += g.clearBonus;
     g.state = 'clear'; g.endFrame = g.frame;
   }
