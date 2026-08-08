@@ -1,6 +1,7 @@
 // Headless sim harness — produces evidence/metrics.json for gauntlet critics.
 // Runs the real game logic (no DOM) with scripted bots. Usage: node test/sim.mjs
 import { makeGame, startRun, update, stressScene, spawnEnemy, W, H, PLAYER } from '../src/core/game.js';
+import { ENEMY_DEFS } from '../src/core/stage.js';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -72,12 +73,17 @@ function runBot(name, botOpts, seed = SEED) {
   const t0 = performance.now();
   // dead air: empty screen outside gates. Track total AND longest streak — a
   // single 2s wait is felt even when the total looks small (playtest finding).
-  let deadAir = 0, streak = 0, maxStreak = 0;
+  let deadAir = 0, streak = 0, maxStreak = 0, edgeFrames = 0;
   while (g.state === 'play' && g.frame < MAX_FRAMES) {
     bot(g); update(g);
     if (g.frame > 180 && !g.gate && !g.bossDown && g.enemies.count === 0) {
       deadAir++; streak++; if (streak > maxStreak) maxStreak = streak;
     } else streak = 0;
+    // WS05 edge-trap detector (playtest screenshot: popcorn clipped off-edge)
+    for (let k = 0; k < g.enemies.count; k++) {
+      const e = g.enemies.items[k];
+      if (e.y > 0 && e.y < H && (e.x < 14 || e.x > W - 14)) edgeFrames++;
+    }
   }
   const wall = performance.now() - t0;
   const s = g.stats;
@@ -90,6 +96,7 @@ function runBot(name, botOpts, seed = SEED) {
     maxBullets: s.maxEBullets, avgBullets: +avgBullets.toFixed(1),
     deadAirFrames: deadAir, deadAirSec: +(deadAir / 60).toFixed(1),
     deadAirMaxStreak: maxStreak, deadAirMaxStreakSec: +(maxStreak / 60).toFixed(1),
+    edgeFrames,
     bulletCurve: s.bulletCurve, scoreCurve: s.scoreCurve,
     killWindows: summarizeKills(s.killLog), simWallMs: +wall.toFixed(0),
   };
@@ -184,12 +191,31 @@ for (const r of runs) {
 
 const dpsClose = pointBlankDps(40), dpsFar = pointBlankDps(300);
 const aggro = runs[1], passive = runs[2];
+// TTK from the bottom band — the "does closing in FEEL different" numbers
+const eliteRangeTTK = ENEMY_DEFS[3].hp / dpsFar, midRangeTTK = ENEMY_DEFS[1].hp / dpsFar;
 const checks = {
   s1_pointblank: {
     desc: 'point-blank DPS >= 1.8x DPS at range (playtest: bottom-camping killed fine)',
     dpsAt40: +dpsClose.toFixed(1), dpsAt300: +dpsFar.toFixed(1),
     ratio: dpsFar ? +(dpsClose / dpsFar).toFixed(2) : Infinity,
     pass: dpsClose >= dpsFar * 1.8,
+  },
+  s1_ttk_felt: {
+    desc: 'the point-blank gap must be FELT: elite range-TTK >= 2.2s (<=6s), mid >= 0.7s; zako still melts (playtest r2: "game feels easier, not better")',
+    eliteRangeTTK: +eliteRangeTTK.toFixed(2), eliteCloseTTK: +(ENEMY_DEFS[3].hp / dpsClose).toFixed(2),
+    midRangeTTK: +midRangeTTK.toFixed(2), zakoVolleys: Math.ceil(ENEMY_DEFS[0].hp / (PLAYER.shotDmg * 2)),
+    pass: eliteRangeTTK >= 2.2 && eliteRangeTTK <= 6 && midRangeTTK >= 0.7
+      && Math.ceil(ENEMY_DEFS[0].hp / (PLAYER.shotDmg * 2)) <= 2,
+  },
+  s7_pressure: {
+    desc: 'aggression still eats bullets: aggressive-human avgBullets >= 24 (r2 dropped 21->18 and the game went soft)',
+    aggressiveAvg: aggro.avgBullets, expertAvg: runs[0].avgBullets,
+    pass: aggro.avgBullets >= 24,
+  },
+  s5_edges: {
+    desc: 'no edge traps: enemy-frames spent clipped at screen edge <= 60 per run (playtest screenshot)',
+    expert: runs[0].edgeFrames, aggressive: aggro.edgeFrames, passive: passive.edgeFrames,
+    pass: runs[0].edgeFrames <= 60 && aggro.edgeFrames <= 60 && passive.edgeFrames <= 60,
   },
   s5_deadair: {
     desc: 'speed-kills buy density, not waiting: longest empty-screen streak <= 1.5s and total <= 6s (expert+aggressive)',

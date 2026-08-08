@@ -175,7 +175,9 @@ export function buildTimeline() {
   const zakoGroup = (t, side, n, opts = {}) => {
     for (let i = 0; i < n; i++) at(t + i * 11, (g) => {
       const x = side < 0 ? 60 + i * 8 : W - 60 - i * 8;
-      const e = spawnEnemy(g, 0, x, -20, { vx: side * (0.7 + (opts.spd || 0)), vy: 2.4 + (opts.spd || 0), side });
+      // sweep INWARD from the spawn edge (playtest screenshot: they were
+      // drifting off the left edge — WS05 forbids edge traps)
+      const e = spawnEnemy(g, 0, x, -20, { vx: -side * (0.7 + (opts.spd || 0)), vy: 2.4 + (opts.spd || 0), side });
       if (opts.diver && e) e.phase = 1;
     });
   };
