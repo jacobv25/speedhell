@@ -114,6 +114,11 @@ function killEnemy(g, e, idx) {
     for (let i = 0; i < 8; i++) spawnItem(g, e.x + g.rng.range(-40, 40), e.y + g.rng.range(-10, 30), 800);
     g.gate = null;
   }
+  // elite/mid down: section relief — killing the space-controller clears its
+  // denial field (speed-kill = safety, pillar 2). This is the S4 dynamic
+  // lifecycle made physical: killers keep a clean screen, leavers drown.
+  // Garnish-priced like the S7 release wall so it can't out-earn the core (S6).
+  if (e.type === 3 || e.type === 1) bulletCancelWall(g, e.x, e.y, 30);
   g.enemies.killAt(idx);
 }
 
