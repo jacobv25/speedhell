@@ -5,18 +5,20 @@
 import { spawnEnemy, spawnItem, bulletCancelWall, W, H } from './game.js';
 import { aimedFan, ring, arcWall, spray, bendyStream, twinSpiral } from './patterns.js';
 
+// HP retuned r2 for the capped shot pipeline (range DPS roughly halved): big
+// targets scaled ~0.55x so phase durations hold; "HP as low as role allows" (S4).
 //                 hp  value window r
 export const ENEMY_DEFS = [
   /*0 zako   */ { hp: 2,   value: 200,   window: 55,  r: 10 },
-  /*1 mid    */ { hp: 14,  value: 800,   window: 120, r: 14 },
+  /*1 mid    */ { hp: 12,  value: 800,   window: 120, r: 14 },
   /*2 turret */ { hp: 10,  value: 500,   window: 100, r: 12 },
-  /*3 elite  */ { hp: 70,  value: 3000,  window: 260, r: 20 },
-  /*4 midboss*/ { hp: 360, value: 8000,  window: 700, r: 26 },
-  /*5 boss   */ { hp: 200, value: 9000,  window: 600, r: 30 }, // hp = P1 hp (spawn)
+  /*3 elite  */ { hp: 32,  value: 3000,  window: 260, r: 20 },
+  /*4 midboss*/ { hp: 160, value: 8000,  window: 700, r: 26 },
+  /*5 boss   */ { hp: 110, value: 9000,  window: 600, r: 30 }, // hp = P1 hp (spawn)
 ];
 
 const MIDBOSS_TIMEOUT = 1400;          // ~23s — no milking (S6)
-const BOSS_PHASE_HP = [200, 200, 320]; // HP is a pattern-duration knob [BOGHOG T1]; index 0 unused (spawn hp)
+const BOSS_PHASE_HP = [140, 150, 200]; // HP is a pattern-duration knob [BOGHOG T1]; index 0 unused (spawn hp)
 const BOSS_PHASE_TIMEOUT = 1450;       // ~24s per phase — passive dodging times out
 
 // Enemies may not fire from the player's band or below (WS04 bottom no-shoot).
@@ -73,19 +75,21 @@ export function updateEnemy(g, e) {
     }
     case 4: { // midboss
       if (e.y < 110) { e.y += 1.6; return; }
-      e.x = W / 2 + Math.sin(e.age * 0.008) * 70;
+      // tanh edge-dwell sweep (house style, see boss): parks at the rails so a
+      // tracker gets stable time-on-target; a center-camper gets brief crossings
+      e.x = W / 2 + Math.tanh(3.5 * Math.sin(e.age * 0.008)) / Math.tanh(3.5) * 105;
       e.fireT++;
       const half = e.hp < ENEMY_DEFS[4].hp * 0.45;
       if (mayFire(g, e)) {
         if (!half) { // phase A: aimed pressure + bendy obstacles
-          if (e.fireT % 80 === 20) aimedFan(g, e.x - 18, e.y + 12, 5, 0.5, 5.0);
-          if (e.fireT % 80 === 50) aimedFan(g, e.x + 18, e.y + 12, 5, 0.5, 5.0);
+          if (e.fireT % 80 === 20) aimedFan(g, e.x - 18, e.y + 12, 5, 0.5, 4.6);
+          if (e.fireT % 80 === 50) aimedFan(g, e.x + 18, e.y + 12, 5, 0.5, 4.6);
           if (e.fireT % 130 === 90) { bendyStream(g, e.x, e.y + 10, Math.PI / 2 - 0.5, 7, 1.8, 4.2); bendyStream(g, e.x, e.y + 10, Math.PI / 2 + 0.5, 7, 1.8, 4.2); }
         } else {     // phase B bleeds in: rings + bounded spray
           if (e.fireT % 90 === 10) ring(g, e.x, e.y, 20, 2.4, (e.fireT * 0.13) % 1);
           if (e.fireT % 60 === 40) spray(g, e.x, e.y + 12, 6, 0.9, 3.0, 4.6);
           // desperation layer — only campers who let it live this long ever see it
-          if (e.fireT > 900 && e.fireT % 70 === 5) { bendyStream(g, e.x - 20, e.y + 8, Math.PI / 2 - 0.4, 7, 1.7, 4.2); bendyStream(g, e.x + 20, e.y + 8, Math.PI / 2 + 0.4, 7, 1.7, 4.2); }
+          if (e.fireT > 1100 && e.fireT % 70 === 5) { bendyStream(g, e.x - 20, e.y + 8, Math.PI / 2 - 0.4, 7, 1.7, 4.2); bendyStream(g, e.x + 20, e.y + 8, Math.PI / 2 + 0.4, 7, 1.7, 4.2); }
         }
       }
       // timeout: flees, no score, gate opens — the stage does not wait (S6, T2)
@@ -100,27 +104,37 @@ export function updateEnemy(g, e) {
 export function updateBoss(g, e) {
   const phase = e.phase, rep = e.fireT / 240 | 0;
   const k = Math.min(1 + rep * 0.08, 1.5); // escalation per cycle (S3)
-  if (e.age < 90) { e.y += 1.3; return; }  // gravitas entrance — the one allowed pause
+  if (e.age < 90) { e.y += 2.0; return; }  // gravitas entrance — the one allowed pause
+  // (descends to y≈140: fights inside the capped-pipeline's effective range, so
+  // closing on the boss is rewarded the same way it is against everything else)
   e.fireT++;
   const t = e.fireT % 240;
 
   if (phase === 0) {         // P1: aimed needle pressure + laned walls (gap readable, lanes viable)
-    e.x = W / 2 + Math.sin(e.age * 0.009) * 70;
+    // rail-hopping: at each dwell's end the boss hops to the rail on the FAR side
+    // of the player. A camper is never under it; a chaser always is. Time-on-target
+    // is bought by pursuit, not position — anti-camp from physics, not stats (S6).
+    const railX = W / 2 + e.side * 150;
+    if (Math.abs(e.x - railX) > 3) e.x += Math.sign(railX - e.x) * 3.2;
+    else if (--e.holdT <= 0) { e.side = g.player.x < W / 2 ? 1 : -1; e.holdT = 300; }
     if (mayFire(g, e)) {
-      if (t % 60 === 20) aimedFan(g, e.x, e.y + 14, 5 + Math.min(rep, 4), 0.6, 5.2 * k);
-      if (t === 110) arcWall(g, e.x, e.y + 10, 13 + rep, 1.9, 2.4 * k, 4 + ((g.rng.next() * 5) | 0), 2);
-      if (t === 200) arcWall(g, e.x, e.y + 10, 13 + rep, 1.9, 2.4 * k, 4 + ((g.rng.next() * 5) | 0), 2);
+      if (t % 60 === 20) aimedFan(g, e.x, e.y + 14, 5 + Math.min(rep, 4), 0.6, 4.8 * k);
+      // wall lane biased AWAY from the boss's rail: the wall shoves you off its
+      // column, and only deliberately fighting back in buys time-on-target —
+      // campers who just ride the lane end up misaligned (anti-camp, S6).
+      if (t === 110) arcWall(g, e.x, e.y + 10, 13 + rep, 1.9, 2.4 * k, (e.x < W / 2 ? 9 : 1) + ((g.rng.next() * 3) | 0), 2);
+      if (t === 200) arcWall(g, e.x, e.y + 10, 13 + rep, 1.9, 2.4 * k, (e.x < W / 2 ? 9 : 1) + ((g.rng.next() * 3) | 0), 2);
     }
   } else if (phase === 1) {  // P2: twin spirals + bounded spray on a wide slow sweep —
     // the whole screen is its lane; you chase it or you don't hurt it (anti-camp).
-    e.x = W / 2 + Math.sin(e.age * 0.006) * 150;
+    e.x = W / 2 + Math.tanh(3.5 * Math.sin(e.age * 0.006)) / Math.tanh(3.5) * 150;
     if (mayFire(g, e)) {
       if (t % 30 === 10) twinSpiral(g, e.x, e.y + 8, (e.fireT * 0.11) % 6.28, 2 + (rep > 2 ? 1 : 0), 2.6 * k, 1, 0.012);
       if (t % 120 === 60) spray(g, e.x, e.y + 14, 8 + Math.min(rep, 4), 1.0, 3.2, 4.8);
     }
   } else {                   // P3: rhythm-broken finale — rings, bendy, fast aimed,
     // riding the full-width sweep: stay on it or watch it time out (anti-camp).
-    e.x = W / 2 + Math.sin(e.age * 0.005) * 150;
+    e.x = W / 2 + Math.tanh(3.5 * Math.sin(e.age * 0.005)) / Math.tanh(3.5) * 150;
     if (mayFire(g, e)) {
       if (t === 20) ring(g, e.x, e.y, 22 + rep * 3, 2.5 * k, g.rng.range(0, 0.3));
       if (t === 80) { bendyStream(g, e.x - 26, e.y, Math.PI / 2 - 0.7, 8 + rep, 1.6, 4.6); bendyStream(g, e.x + 26, e.y, Math.PI / 2 + 0.7, 8 + rep, 1.6, 4.6); }

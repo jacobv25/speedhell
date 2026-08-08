@@ -9,9 +9,13 @@ export const STEP = 1 / 60;
 
 // focusSpeed close to full speed per boghog's Cave frame analysis (~1.6x ratio,
 // "halving feels bad") [BOGHOG_CRAFT]. Transition is instant: twitchy, speed-hell.
+// Shot economy is the point-blank incentive (S1, playtest r2): the on-screen cap
+// (6) binds hard at range — beyond ~135px the pipeline saturates and throughput is
+// cap/flight-time limited (~59 dmg/s at 300px) — while point-blank the cap never
+// binds and the fire rate delivers the full 120 dmg/s. Real physics, no multiplier.
 export const PLAYER = {
   speed: 4.2, focusSpeed: 2.6, hitR: 3,
-  shotSpeed: 14, shotLimit: 10, shotEvery: 5, shotDmg: 2,
+  shotSpeed: 15, shotLimit: 6, shotEvery: 3, shotDmg: 3,
 };
 
 export function makeGame(seed = 1) {
@@ -166,7 +170,15 @@ function fireBomb(g) {
 export function update(g) {
   if (g.state !== 'play') return;
   g.frame++;
-  if (!g.gate) g.stageT++; // gates: timeline holds for midboss/boss, resumes instantly
+  if (!g.gate) {
+    g.stageT++; // gates: timeline holds for midboss/boss, resumes instantly
+    // Caravan pull (S5, WS06 lineage): speed-killing a wave pulls the next one in
+    // sooner. Empty screen + no gate + next event still far ⇒ fast-forward the
+    // timeline 4x. Deterministic (pure stageT math); the 30-frame guard preserves
+    // each wave's telegraph space so arrivals never pop in unannounced.
+    if (g.enemies.count === 0 && !g.bossDown && g.tlIndex < g.timeline.length
+      && g.timeline[g.tlIndex].t - g.stageT > 30) g.stageT += 3;
+  }
   const p = g.player, inp = g.input;
 
   // --- player movement: instant response, normalized diagonals (S1) ---
