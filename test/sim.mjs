@@ -104,7 +104,10 @@ function runBot(name, botOpts, seed = SEED) {
 
 // --- S1 point-blank economy ---------------------------------------------------
 // Pin the player at a fixed range from an invulnerable-to-timeout elite and
-// measure damage per second. Rubric S1: DPS at 40px >= 1.8x DPS at 300px.
+// measure damage per second. Rubric S1: DPS close >= 1.8x DPS at range.
+// Probe distances are SCREEN-RELATIVE so the check survives field rescales.
+const PROBE_CLOSE = Math.round(W * 0.083); // ≈40px on the original 480 field
+const PROBE_FAR = Math.round(W * 0.625);   // ≈300px on the original 480 field
 function pointBlankDps(dist) {
   const g = makeGame(3); startRun(g);
   g.timeline = []; g.tlIndex = 0; // no stage — controlled scene
@@ -189,16 +192,24 @@ for (const r of runs) {
   console.log(`${r.name.padEnd(16)} ${r.outcome.padEnd(9)} ${String(r.minutes).padStart(5)}m score=${String(r.score).padStart(8)} kills=${r.kills} speed=${(r.speedRate * 100) | 0}% deaths=${r.deaths.length} maxBul=${r.maxBullets} timeouts=${r.timeouts}`);
 }
 
-const dpsClose = pointBlankDps(40), dpsFar = pointBlankDps(300);
+const dpsClose = pointBlankDps(PROBE_CLOSE), dpsFar = pointBlankDps(PROBE_FAR);
 const aggro = runs[1], passive = runs[2];
 // TTK from the bottom band — the "does closing in FEEL different" numbers
 const eliteRangeTTK = ENEMY_DEFS[3].hp / dpsFar, midRangeTTK = ENEMY_DEFS[1].hp / dpsFar;
 const checks = {
   s1_pointblank: {
     desc: 'point-blank DPS >= 1.8x DPS at range (playtest: bottom-camping killed fine)',
-    dpsAt40: +dpsClose.toFixed(1), dpsAt300: +dpsFar.toFixed(1),
+    probePx: { close: PROBE_CLOSE, far: PROBE_FAR },
+    dpsClose: +dpsClose.toFixed(1), dpsFar: +dpsFar.toFixed(1),
     ratio: dpsFar ? +(dpsClose / dpsFar).toFixed(2) : Infinity,
     pass: dpsClose >= dpsFar * 1.8,
+  },
+  s1_scale: {
+    desc: 'screen-relative scale per boghog Cave frame-analysis (playtest 3: "field seems too large"): ship 0.65-0.85 field-widths/s, ship sprite >= 5.5% of field width',
+    widthsPerSec: +(PLAYER.speed * 60 / W).toFixed(2),
+    shipPctOfWidth: +(18 / W * 100).toFixed(1), // renderer draws the hull 18px wide
+    fieldW: W, fieldH: H,
+    pass: PLAYER.speed * 60 / W >= 0.65 && PLAYER.speed * 60 / W <= 0.85 && 18 / W >= 0.055,
   },
   s1_ttk_felt: {
     desc: 'the point-blank gap must be FELT: elite range-TTK >= 2.2s (<=6s), mid >= 0.7s; zako still melts (playtest r2: "game feels easier, not better")',
