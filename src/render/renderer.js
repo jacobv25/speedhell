@@ -164,19 +164,21 @@ function drawHud(ctx, g) {
 
   ctx.textAlign = 'center';
   if (g.state === 'title') {
-    banner(ctx, 'SPEEDHELL', 'PRESS ENTER — Z/SPACE shot · SHIFT focus · X bomb');
+    banner(ctx, 'SPEEDHELL', ['PRESS ENTER', 'Z/SPACE shot · SHIFT focus · X bomb']);
   } else if (g.state === 'gameover') {
-    banner(ctx, 'GAME OVER', 'SCORE ' + g.score + ' · SPEED KILLS ' + g.speedKills + '/' + g.kills + ' · R to retry');
+    banner(ctx, 'GAME OVER', ['SCORE ' + g.score + ' · SPEED ' + g.speedKills + '/' + g.kills, 'R to retry']);
   } else if (g.state === 'clear') {
-    banner(ctx, 'STAGE CLEAR', 'SCORE ' + g.score + ' (STOCK BONUS +' + g.clearBonus + ') · SPEED ' + g.speedKills + '/' + g.kills + ' · R to retry');
+    banner(ctx, 'STAGE CLEAR', ['SCORE ' + g.score + ' (STOCK +' + g.clearBonus + ')', 'SPEED ' + g.speedKills + '/' + g.kills + ' · R to retry']);
   }
 }
 
-function banner(ctx, big, small) {
+// Field-relative type: sized for the 320-wide logical field (post-r4 rescale);
+// the canvas stretch supplies the on-screen size.
+function banner(ctx, big, lines) {
   ctx.fillStyle = 'rgba(6,8,14,0.72)';
-  ctx.fillRect(0, H / 2 - 60, W, 120);
-  ctx.font = 'bold 34px monospace'; ctx.fillStyle = '#ff4fa3';
-  ctx.fillText(big, W / 2, H / 2 - 10);
-  ctx.font = '12px monospace'; ctx.fillStyle = '#cdd3e8';
-  ctx.fillText(small, W / 2, H / 2 + 20);
+  ctx.fillRect(0, H / 2 - 44, W, 92);
+  ctx.font = 'bold 21px monospace'; ctx.fillStyle = '#ff4fa3';
+  ctx.fillText(big, W / 2, H / 2 - 16);
+  ctx.font = '9px monospace'; ctx.fillStyle = '#cdd3e8';
+  lines.forEach((ln, i) => ctx.fillText(ln, W / 2, H / 2 + 4 + i * 14));
 }

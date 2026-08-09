@@ -70,9 +70,9 @@ function frame(now) {
   }
   draw(g, ctx, bgScroll);
   if (g.state === 'title') { // pad detection readout — press any button to wake it
-    ctx.font = '11px monospace'; ctx.textAlign = 'center';
+    ctx.font = '9px monospace'; ctx.textAlign = 'center';
     ctx.fillStyle = padName ? '#57e389' : '#8a8fa8';
-    ctx.fillText(padName ? ('PAD: ' + padName.slice(0, 52)) : 'no gamepad — press a button on the stick', W / 2, H / 2 + 44);
+    ctx.fillText(padName ? ('PAD: ' + padName.slice(0, 44)) : 'no gamepad — press a button on the stick', W / 2, H / 2 + 62);
   }
   requestAnimationFrame(frame);
 }
