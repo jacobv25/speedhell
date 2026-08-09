@@ -21,8 +21,9 @@ pass/fail per check; a surface passes when all MUST checks pass.*
 - MUST: zero inertia/acceleration on ship movement — instant response.
 - MUST: focused (slow) + unfocused speeds; transition behavior chosen deliberately
   (instant = twitchy Touhou-style — our pick for speed hell).
-- MUST: player shots fast and tall (≥18px, speed ≥ 12px/frame @60); never able to
-  outrun own bullets.
+- MUST: player shots fast and tall — SCREEN-RELATIVE since the r4 field rescale:
+  height ≥ 3% of field height, speed ≥ 1.1 field-heights/s (the old "≥18px,
+  ≥12px/frame" figures assumed the 480×640 field); never able to outrun own bullets.
 - MUST: on-screen player-shot limit produces measurable point-blank DPS gain
   (sim: DPS at 40px vs 300px range ≥ 1.8x).
 - SHOULD: follow-through visuals — option/trail lag behind ship motion.

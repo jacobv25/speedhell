@@ -65,7 +65,7 @@ function frame(now) {
   if (acc > 200) acc = 200; // avoid spiral after tab-out
   while (acc >= STEP_MS) {
     pollInput();
-    if (!paused) { update(g); bgScroll += 1.6; }
+    if (!paused) { update(g); bgScroll += 1.05; }
     acc -= STEP_MS;
   }
   draw(g, ctx, bgScroll);

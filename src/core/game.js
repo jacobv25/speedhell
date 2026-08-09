@@ -4,18 +4,23 @@ import { makeRng } from './rng.js';
 import { makePool } from './pool.js';
 import { buildTimeline, updateEnemy, updateBoss, advanceBossPhase, ENEMY_DEFS } from './stage.js';
 
-export const W = 480, H = 640;
+export const W = 320, H = 427;
 export const STEP = 1 / 60;
 
+// Field shrunk r4 (playtest 3: "field seems too large"): 480x640 -> 320x427 with
+// sprite pixel sizes UNCHANGED — the canvas stretch renders everything larger.
+// Ship is now 0.69 field-widths/s (genre band 0.65-0.85, boghog Cave analysis)
+// and 5.6% of field width. All world speeds scaled x2/3 with the field so
+// relative dynamics (bullet band, descent times, speed-kill windows) hold.
 // focusSpeed close to full speed per boghog's Cave frame analysis (~1.6x ratio,
 // "halving feels bad") [BOGHOG_CRAFT]. Transition is instant: twitchy, speed-hell.
 // Shot economy is the point-blank incentive (S1, playtest r2): the on-screen cap
-// (6) binds hard at range — beyond ~135px the pipeline saturates and throughput is
-// cap/flight-time limited (~59 dmg/s at 300px) — while point-blank the cap never
+// (6) binds hard at range — beyond ~90px the pipeline saturates and throughput is
+// cap/flight-time limited (~57 dmg/s at 200px) — while point-blank the cap never
 // binds and the fire rate delivers the full 120 dmg/s. Real physics, no multiplier.
 export const PLAYER = {
-  speed: 4.2, focusSpeed: 2.6, hitR: 3,
-  shotSpeed: 15, shotLimit: 6, shotEvery: 3, shotDmg: 3,
+  speed: 3.7, focusSpeed: 2.3, hitR: 3,
+  shotSpeed: 9, shotLimit: 6, shotEvery: 3, shotDmg: 3,
 };
 
 export function makeGame(seed = 1) {
@@ -23,7 +28,7 @@ export function makeGame(seed = 1) {
     seed, rng: makeRng(seed), frame: 0,
     state: 'title', // title | play | dead-wait | clear | gameover
     player: {
-      x: W / 2, y: H - 80, prevX: W / 2, prevY: H - 80,
+      x: W / 2, y: H - 53, prevX: W / 2, prevY: H - 53,
       alive: true, invuln: 0, focus: false, fireCd: 0,
       lives: 3, bombs: 2, bombActive: 0, bombCd: 0,
     },
@@ -86,7 +91,7 @@ export function spawnEnemy(g, type, x, y, opts = {}) {
 
 export function spawnItem(g, x, y, val = 500) {
   const it = g.items.spawn(); if (!it) return;
-  it.x = x; it.y = y; it.vy = -1.5; it.val = val;
+  it.x = x; it.y = y; it.vy = -1.0; it.val = val;
 }
 
 function killEnemy(g, e, idx) {
@@ -97,7 +102,7 @@ function killEnemy(g, e, idx) {
     v *= 2; g.chain++; g.speedKills++;
     addPopup(g, e.x, e.y, 'SPEED', 1);
     if (g.chain % 5 === 0) { // rush shower: garnish, subordinate to core (S6)
-      for (let k = 0; k < 6; k++) spawnItem(g, e.x + g.rng.range(-30, 30), e.y + g.rng.range(-20, 20), g.chain * 20);
+      for (let k = 0; k < 6; k++) spawnItem(g, e.x + g.rng.range(-20, 20), e.y + g.rng.range(-13, 13), g.chain * 20);
       addPopup(g, e.x, e.y - 24, 'RUSH x' + g.chain, 1);
     }
   } else {
@@ -111,7 +116,7 @@ function killEnemy(g, e, idx) {
   if (big) g.shake = 14;
   if (e.type === 4) { // midboss down: relief wall + shower, gate opens — no breather (T2)
     bulletCancelWall(g, e.x, e.y);
-    for (let i = 0; i < 8; i++) spawnItem(g, e.x + g.rng.range(-40, 40), e.y + g.rng.range(-10, 30), 800);
+    for (let i = 0; i < 8; i++) spawnItem(g, e.x + g.rng.range(-27, 27), e.y + g.rng.range(-7, 20), 800);
     g.gate = null;
   }
   // elite/mid down: section relief — killing the space-controller clears its
@@ -159,7 +164,7 @@ function playerDie(g, cause) {
   cancelAllBullets(g, 0); // safety clear, no points
   p.lives--;
   if (p.lives < 0) { g.state = 'gameover'; g.endFrame = g.frame; return; }
-  p.x = W / 2; p.y = H - 80; p.invuln = 150; p.bombs = 2; p.bombActive = 0;
+  p.x = W / 2; p.y = H - 53; p.invuln = 150; p.bombs = 2; p.bombActive = 0;
 }
 
 function fireBomb(g) {
@@ -224,7 +229,7 @@ export function update(g) {
     const e = g.enemies.items[i];
     e.age++;
     // vulnerability: on-screen + 30f intro armor (S4); speed-kill clock starts here
-    if (e.vulnAt < 0 && e.y > 24 && e.age > 30 && g.frame >= e.armorUntil) e.vulnAt = g.frame;
+    if (e.vulnAt < 0 && e.y > 16 && e.age > 30 && g.frame >= e.armorUntil) e.vulnAt = g.frame;
     if (e.type === 5) updateBoss(g, e); else updateEnemy(g, e);
     // outro: off-screen enemies despawn silently, fire nothing (S4)
     if (e.dead || e.y > H + 40 || e.y < -80 || e.x < -60 || e.x > W + 60) {
@@ -290,11 +295,11 @@ export function update(g) {
   // --- items (magnet + fall) ---
   for (let i = g.items.count - 1; i >= 0; i--) {
     const it = g.items.items[i];
-    it.vy = Math.min(it.vy + 0.08, 2.4);
+    it.vy = Math.min(it.vy + 0.053, 1.6);
     const dxx = p.x - it.x, dyy = p.y - it.y, d2 = dxx * dxx + dyy * dyy;
-    if (d2 < 80 * 80) { const d = Math.sqrt(d2) || 1; it.x += (dxx / d) * 6; it.y += (dyy / d) * 6; }
+    if (d2 < 53 * 53) { const d = Math.sqrt(d2) || 1; it.x += (dxx / d) * 4; it.y += (dyy / d) * 4; }
     else it.y += it.vy;
-    if (d2 < 18 * 18) { g.score += it.val; g.items.killAt(i); continue; }
+    if (d2 < 12 * 12) { g.score += it.val; g.items.killAt(i); continue; }
     if (it.y > H + 12) g.items.killAt(i);
   }
 
@@ -332,7 +337,7 @@ export function update(g) {
 // Debug/stress API for the sim harness (rubric S8 gate).
 export function stressScene(g) {
   g.state = 'play'; g.timeline = []; g.tlIndex = 0;
-  for (let i = 0; i < 48; i++) spawnEnemy(g, i % 4, 30 + (i % 12) * 36, 60 + ((i / 12) | 0) * 40);
+  for (let i = 0; i < 48; i++) spawnEnemy(g, i % 4, 20 + (i % 12) * 24, 40 + ((i / 12) | 0) * 27);
   for (let i = 0; i < 1000; i++) {
     const b = g.eBullets.spawn(); if (!b) break;
     const a = g.rng.range(0, Math.PI * 2);
