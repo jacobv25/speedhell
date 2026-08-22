@@ -141,6 +141,18 @@ try {
   console.log(`replay: ${rep.outcome} f=${rep.frames} score=${rep.score} kills=${rep.kills}  vs certified: ${cert.outcome} f=${cert.frames} score=${cert.score} kills=${cert.kills}  → ${match ? 'MATCH' : 'DIVERGED'}`);
   if (!match) throw new Error('replay diverged from evidence/metrics.json expert run — shots rejected');
 
+  // boss-x continuity check (r5): the largest legit per-frame boss speed is the
+  // P1 rail hop at 4.2 px/f — any single-frame jump beyond that is a teleport.
+  const continuity = (out.bossTraces || []).map((tr) => {
+    let maxStep = 0, at = -1;
+    for (let i = 1; i < tr.x.length; i++) {
+      const d = Math.abs(tr.x[i] - tr.x[i - 1]);
+      if (d > maxStep) { maxStep = d; at = i - tr.flipIndex; }
+    }
+    return { tag: tr.tag, maxStepPx: +maxStep.toFixed(1), atFrameVsFlip: at, pass: maxStep <= 4.6, x: tr.x, flipIndex: tr.flipIndex };
+  });
+  for (const c of continuity) console.log(`boss continuity ${c.tag}: maxStep=${c.maxStepPx}px at flip${c.atFrameVsFlip >= 0 ? '+' : ''}${c.atFrameVsFlip}f → ${c.pass ? 'CONTINUOUS' : 'TELEPORT'}`);
+
   rmSync(OUT, { recursive: true, force: true });
   mkdirSync(OUT, { recursive: true });
   const manifest = [];
@@ -153,7 +165,8 @@ try {
   }
   writeFileSync(join(OUT, 'manifest.json'), JSON.stringify({
     seed: out.seed, field: out.field, scale: out.scale, generated: 'shots.mjs',
-    certifiedRun: { matched: true, ...rep }, sectionEntryFrames: out.entered, shots: manifest,
+    certifiedRun: { matched: true, ...rep }, sectionEntryFrames: out.entered,
+    bossContinuity: continuity, shots: manifest,
   }, null, 2));
   console.log(`section entry frames: ${JSON.stringify(out.entered)}`);
   console.log(`wrote ${manifest.length} shots + manifest.json to evidence/shots/ in ${((performance.now() - t0) / 1000).toFixed(1)}s`);

@@ -56,6 +56,12 @@ async function mainRun(shots) {
   };
   let prevBossPhase = -1, bossTransitionAt = 0, transitionShot = null;
   let midbossHalfAt = 0;
+  // boss-x continuity instrument (r5, critic B): rolling window of boss x, and
+  // ±60f traces around each phase flip so the referee can prove the handoff
+  // is continuous (max legit speed: 4.2 px/f rail hop) rather than a teleport.
+  const xHist = [];
+  const bossTraces = [];
+  let activeTrace = null;
 
   while (g.state === 'play' && g.frame < 30000) {
     bot(g); update(g);
@@ -73,10 +79,16 @@ async function mainRun(shots) {
     once('s4-midboss-p2', midbossHalfAt && g.frame === midbossHalfAt + 50);
     once('s5-rush', entered.s5 && g.frame === entered.s5 + 200);
     once('s6-elite', entered.s6 && g.frame === entered.s6 + 260);
+    once('s6-elite2-turrets', g.stageT >= 3400); // rep2 + twin turrets — the stage's one 3-emitter moment
     once('s7-release', entered.s7 && g.frame === entered.s7 + 8);
 
     // --- boss phases + the phase-transition x-discontinuity question ---
     if (boss) {
+      xHist.push(boss.x); if (xHist.length > 61) xHist.shift();
+      if (activeTrace) {
+        activeTrace.x.push(+boss.x.toFixed(1));
+        if (g.frame >= activeTrace.flipFrame + 60) { bossTraces.push(activeTrace); activeTrace = null; }
+      }
       once('s8-boss-p1', boss.phase === 0 && boss.fireT === 140);
       once('s8-boss-p2', boss.phase === 1 && boss.fireT === 140);
       once('s8-boss-p3', boss.phase === 2 && boss.fireT === 140);
@@ -85,6 +97,7 @@ async function mainRun(shots) {
         const tag = 'boss-t' + (prevBossPhase + 1) + (boss.phase + 1);
         capture(g, tag + '-a', shots, { note: 'frame of phase advance', bossX: boss.x | 0, bossY: boss.y | 0 });
         transitionShot = tag;
+        activeTrace = { tag, flipFrame: g.frame, flipIndex: xHist.length - 1, x: xHist.map((v) => +v.toFixed(1)) };
       }
       if (transitionShot && g.frame === bossTransitionAt + 30) {
         capture(g, transitionShot + '-b', shots, { note: '+30f into next phase telegraph', bossX: boss.x | 0, bossY: boss.y | 0 });
@@ -100,8 +113,9 @@ async function mainRun(shots) {
     once('popup-rush', pops.some((p) => p.text.startsWith('RUSH') && p.life === 40));
   }
   if (g.state === 'clear') capture(g, 'banner-clear', shots);
+  if (activeTrace) bossTraces.push(activeTrace);
   return {
-    entered,
+    entered, bossTraces,
     expert: { outcome: g.state, frames: g.frame, score: g.score, kills: g.kills, lives: Math.max(0, g.player.lives) },
   };
 }
