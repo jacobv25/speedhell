@@ -42,6 +42,7 @@ export function makeGame(seed = 1) {
     enemies: makePool(64, () => ({
       type: 0, x: 0, y: 0, vx: 0, vy: 0, hp: 0, r: 10, age: 0,
       vulnAt: 0, armorUntil: 0, holdT: 0, phase: 0, fireT: 0, side: 1, value: 0, window: 0, dead: 0,
+      sweepOff: 0, // boss-phase sweep phase offset (r5: continuous phase handoff)
     })),
     items: makePool(200, () => ({ x: 0, y: 0, vy: 0, val: 0 })),
     particles: makePool(400, () => ({ x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 0, hue: 0 })),
@@ -66,6 +67,22 @@ export function startRun(g) {
 
 function addPopup(g, x, y, text, big = 0) {
   const p = g.popups.spawn(); if (!p) return;
+  // De-conflict at spawn (r5 S6-legibility): no two live popups may share a
+  // baseline. Keep on-field, below the HUD block, and nudge down 14px past any
+  // live popup occupying the same slot (bounded by the 32-popup pool).
+  x = Math.max(40, Math.min(W - 40, x));
+  if (y < 58) y = 58;
+  // bound: clearing one popup's ±13 band can take two 14px steps, so a ladder
+  // of n live popups needs up to 2n pushes plus one final clear check
+  for (let guard = 0; guard <= g.popups.count * 2; guard++) {
+    let hit = false;
+    for (let i = 0; i < g.popups.count; i++) {
+      const o = g.popups.items[i];
+      if (o !== p && Math.abs(o.y - y) < 13 && Math.abs(o.x - x) < 60) { hit = true; break; }
+    }
+    if (!hit) break;
+    y += 14;
+  }
   p.x = x; p.y = y; p.life = 50; p.text = text; p.big = big;
 }
 
@@ -84,7 +101,7 @@ export function spawnEnemy(g, type, x, y, opts = {}) {
   e.type = type; e.x = x; e.y = y; e.vx = opts.vx || 0; e.vy = opts.vy || 0;
   e.hp = d.hp; e.r = d.r; e.age = 0; e.phase = 0; e.fireT = 0; e.dead = 0;
   e.side = opts.side || 1; e.holdT = opts.holdT || 0;
-  e.value = d.value; e.window = d.window;
+  e.value = d.value; e.window = d.window; e.sweepOff = 0;
   e.vulnAt = -1; e.armorUntil = 0; // vuln set once on-screen (top dead zone + intro armor)
   return e;
 }
@@ -311,7 +328,15 @@ export function update(g) {
   }
   for (let i = g.popups.count - 1; i >= 0; i--) {
     const q = g.popups.items[i];
-    q.y -= 0.5;
+    // float up, but hold below the HUD block (y 58) and queue behind any popup
+    // just above — popups never mush into the score/chain text or each other (r5)
+    let rise = q.y > 58;
+    if (rise) for (let j = 0; j < g.popups.count; j++) {
+      if (j === i) continue;
+      const o = g.popups.items[j];
+      if (o.y < q.y && q.y - o.y < 13 && Math.abs(o.x - q.x) < 60) { rise = false; break; }
+    }
+    if (rise) q.y -= 0.5;
     if (--q.life <= 0) g.popups.killAt(i);
   }
   if (g.shake > 0) g.shake--;

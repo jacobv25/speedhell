@@ -6,22 +6,55 @@ import { W, H, PLAYER } from '../core/game.js';
 const ENEMY_TINT = ['#8a8fa8', '#9aa0b8', '#7d8298', '#a8adc4', '#b8bdd4', '#c8cde0'];
 let displayScore = 0; // ticks up toward real score [BOGHOG_CRAFT]
 
+// Section place-identity (r5 S5-SHOULD-1): each stage section gets its own
+// subtle background accent — hue-shifted slabs/stars near the base wash values,
+// plus one large landmark slab that scrolls through as the section plays.
+// Purely renderer-side (keyed off g.stageT); values stay washed-out so the
+// background never competes with the bullet layer (S2-MUST-1).
+// Entry stageT per section: intro / s1..s8.
+const SEC_T = [0, 120, 720, 1700, 2400, 2460, 2900, 3700, 3900];
+const SEC_SLAB = ['#12151f', '#101726', '#171820', '#181422', '#1d1418', '#1c1812', '#101c17', '#101a26', '#1d1220'];
+const SEC_STAR = ['#161a28', '#141d30', '#1e2026', '#1f1a2e', '#261b20', '#25211a', '#16241e', '#152230', '#261a2a'];
+const SEC_LAND = ['#161a26', '#141c2e', '#1e2028', '#211c30', '#291d22', '#28241c', '#182922', '#1a2632', '#2a1e2e'];
+const SEC_LANDGEO = [ // landmark [x, w, h] — distinct silhouette per section
+  [120, 80, 50], [30, 110, 46], [210, 70, 90], [60, 150, 40], [110, 100, 100],
+  [200, 90, 56], [20, 130, 60], [90, 140, 36], [70, 180, 70],
+];
+function sectionOf(t) {
+  let s = 0;
+  for (let i = SEC_T.length - 1; i >= 0; i--) if (t >= SEC_T[i]) { s = i; break; }
+  return s;
+}
+
 export function resetHud() { displayScore = 0; }
 
 export function draw(g, ctx, bgScroll) {
   ctx.save();
   if (g.shake > 0) ctx.translate((g.rng.next() - 0.5) * g.shake, (g.rng.next() - 0.5) * g.shake);
 
-  // background: deep indigo, faint slow stars — low value contrast (S2)
+  // background: deep indigo, faint slow stars — low value contrast (S2),
+  // hue-accented per section so each place reads distinct (r5 S5-SHOULD-1)
+  const sec = sectionOf(g.stageT);
   ctx.fillStyle = '#0a0c14';
   ctx.fillRect(-20, -20, W + 40, H + 40);
-  ctx.fillStyle = '#161a28';
+  // landmark slab: enters at the section boundary, scrolls with section progress
+  {
+    const [lx, lw, lh] = SEC_LANDGEO[sec];
+    const ly = (g.stageT - SEC_T[sec]) * 0.55 - lh - 20;
+    if (ly < H + 20) {
+      ctx.fillStyle = SEC_LAND[sec];
+      ctx.fillRect(lx, ly, lw, lh);
+      ctx.fillStyle = SEC_SLAB[sec];
+      ctx.fillRect(lx + 10, ly + 8, lw - 20, lh - 16); // inset gives it structure
+    }
+  }
+  ctx.fillStyle = SEC_STAR[sec];
   for (let i = 0; i < 40; i++) {
     const sx = (i * 137.5) % W;
     const sy = ((i * 89.3) + bgScroll * (0.4 + (i % 3) * 0.3)) % (H + 40) - 20;
     ctx.fillRect(sx, sy, i % 3 === 0 ? 2 : 1, 8 + (i % 3) * 6);
   }
-  ctx.fillStyle = '#12151f';
+  ctx.fillStyle = SEC_SLAB[sec];
   for (let i = 0; i < 6; i++) {
     const sy = ((i * 173) + bgScroll * 0.25) % (H + 120) - 60;
     ctx.fillRect(30 + (i * 97) % (W - 120), sy, 60, 34); // dim "terrain" slabs
@@ -55,11 +88,15 @@ export function draw(g, ctx, bgScroll) {
   }
   ctx.globalAlpha = 1;
 
-  // player shots — tall cyan-white bolts (S1)
-  ctx.fillStyle = '#bff4ff';
+  // player shots — tall white-core bolts with pale-violet edges (S1); moved out
+  // of the cyan/teal family entirely — that family belongs to enemy needles
+  // (r5 S2-MUST-3), and violet reads apart from gold items and pink rounds.
   for (let i = 0; i < g.pBullets.count; i++) {
     const b = g.pBullets.items[i];
+    ctx.fillStyle = '#c3a8ff';
     ctx.fillRect(b.x - 2, b.y - 10, 4, 20);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(b.x - 1, b.y - 9, 2, 18);
   }
 
   // enemy bullets — TOP layer; needles above rounds (faster ⇒ higher, S2)
@@ -67,11 +104,11 @@ export function draw(g, ctx, bgScroll) {
     for (let i = 0; i < g.eBullets.count; i++) {
       const b = g.eBullets.items[i];
       if (b.kind !== pass) continue;
-      if (pass === 0) { // pink round: dark rim, bright ring, white core
+      if (pass === 0) { // pink round: dark rim, bright ring (subtle pulse, r5 S2-SHOULD), white core
         ctx.fillStyle = '#20060f';
         ctx.beginPath(); ctx.arc(b.x, b.y, 5.6, 0, 7); ctx.fill();
         ctx.fillStyle = '#ff4fa3';
-        ctx.beginPath(); ctx.arc(b.x, b.y, 4.2, 0, 7); ctx.fill();
+        ctx.beginPath(); ctx.arc(b.x, b.y, 4.2 + Math.sin(g.frame * 0.24) * 0.35, 0, 7); ctx.fill();
         ctx.fillStyle = '#ffe6f2';
         ctx.beginPath(); ctx.arc(b.x, b.y, 1.8, 0, 7); ctx.fill();
       } else { // cyan needle: elongated along velocity (S2 telegraphing)
@@ -96,9 +133,18 @@ export function draw(g, ctx, bgScroll) {
   }
   ctx.globalAlpha = 1;
 
-  // bomb / cancel flashes
-  if (g.flash > 0) { ctx.globalAlpha = g.flash / 24; ctx.fillStyle = '#dff6ff'; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }
-  if (g.cancelFlash > 0) { ctx.globalAlpha = g.cancelFlash / 60; ctx.fillStyle = '#ffd24a'; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }
+  // bomb / cancel flashes — combined effective wash hard-capped at 0.55 so the
+  // field is never blotted out (r5 nit-a); the gold cancel wash is also eased
+  // (peak 0.33 → 0.26 — it read as a full-field brown-out on the dark bg)
+  {
+    const fa = g.flash > 0 ? g.flash / 24 : 0;
+    const ca = g.cancelFlash > 0 ? g.cancelFlash / 76 : 0;
+    const comb = 1 - (1 - fa) * (1 - ca);
+    const cap = comb > 0.55 ? 0.55 / comb : 1;
+    if (fa > 0) { ctx.globalAlpha = fa * cap; ctx.fillStyle = '#dff6ff'; ctx.fillRect(0, 0, W, H); }
+    if (ca > 0) { ctx.globalAlpha = ca * cap; ctx.fillStyle = '#ffd24a'; ctx.fillRect(0, 0, W, H); }
+    ctx.globalAlpha = 1;
+  }
 
   ctx.restore();
   drawHud(ctx, g);
@@ -134,13 +180,14 @@ function drawPlayer(ctx, g) {
   const p = g.player;
   if (p.invuln > 0 && (g.frame & 2)) return; // classic invuln blink
   ctx.save(); ctx.translate(p.x, p.y);
-  // option trail (follow-through, S1)
-  ctx.fillStyle = '#2a5f6f';
+  // option trail (follow-through, S1) — violet family: the whole player identity
+  // sits outside the enemy needle cyan (r5 S2-MUST-3, with the shot recolor)
+  ctx.fillStyle = '#4a3f78';
   ctx.fillRect(-13 - (p.x - p.prevX) * 2, 4 - (p.y - p.prevY) * 2, 5, 5);
   ctx.fillRect(9 - (p.x - p.prevX) * 2, 4 - (p.y - p.prevY) * 2, 5, 5);
-  ctx.fillStyle = '#e8f6ff';
+  ctx.fillStyle = '#f0ecff';
   poly(ctx, [[0, -12], [9, 10], [0, 5], [-9, 10]]);
-  ctx.fillStyle = '#37d6e0';
+  ctx.fillStyle = '#9a7dff';
   poly(ctx, [[0, -4], [4, 8], [-4, 8]]);
   if (p.focus) { // hitbox dot only while focused
     ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, PLAYER.hitR, 0, 7); ctx.fill();
@@ -151,6 +198,10 @@ function drawPlayer(ctx, g) {
 
 function drawHud(ctx, g) {
   displayScore += Math.ceil((g.score - displayScore) * 0.18);
+  // low-alpha backing strip: the score/chain block stays legible over popups,
+  // items, and background accents (r5 S6-legibility)
+  ctx.fillStyle = 'rgba(6,8,14,0.55)';
+  ctx.fillRect(0, 0, W, 46);
   ctx.textAlign = 'left';
   ctx.font = 'bold 14px monospace';
   ctx.fillStyle = '#e8ecf8';

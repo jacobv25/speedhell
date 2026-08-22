@@ -218,7 +218,7 @@ export function updateBoss(g, e) {
     }
   } else if (phase === 1) {  // P2: twin spirals + bounded spray on a wide slow sweep —
     // the whole screen is its lane; you chase it or you don't hurt it (anti-camp).
-    e.x = W / 2 + Math.tanh(3.5 * Math.sin(e.age * 0.006)) / Math.tanh(3.5) * 100;
+    e.x = W / 2 + Math.tanh(3.5 * Math.sin(e.age * 0.006 + e.sweepOff)) / Math.tanh(3.5) * 100;
     if (mayFire(g, e)) {
       if (t % 30 === 10) twinSpiral(g, e.x, e.y + 8, (e.fireT * 0.11) % 6.28, 2 + (rep > 2 ? 1 : 0) + (rep > 3 ? 1 : 0), 1.7 * k, 1, 0.012);
       if (rep >= 3 && t % 30 === 22) twinSpiral(g, e.x, e.y + 8, (e.fireT * 0.13 + 1.7) % 6.28, 2, 1.6 * k, -1, 0.012); // timeout-rider tax: counter-spiral
@@ -227,7 +227,7 @@ export function updateBoss(g, e) {
     }
   } else {                   // P3: rhythm-broken finale — rings, bendy, fast aimed,
     // riding the full-width sweep: stay on it or watch it time out (anti-camp).
-    e.x = W / 2 + Math.tanh(3.5 * Math.sin(e.age * 0.005)) / Math.tanh(3.5) * 100;
+    e.x = W / 2 + Math.tanh(3.5 * Math.sin(e.age * 0.005 + e.sweepOff)) / Math.tanh(3.5) * 100;
     if (mayFire(g, e)) {
       if (t === 20) ring(g, e.x, e.y, 22 + rep * 3, 1.7 * k, g.rng.range(0, 0.3));
       if (t === 80) { bendyStream(g, e.x - 26, e.y, Math.PI / 2 - 0.7, 8 + rep, 1.1, 3.1); bendyStream(g, e.x + 26, e.y, Math.PI / 2 + 0.7, 8 + rep, 1.1, 3.1); }
@@ -258,6 +258,18 @@ export function advanceBossPhase(g, e, killed) {
   e.phase++; e.fireT = 0;
   e.hp = BOSS_PHASE_HP[e.phase];
   e.vulnAt = -1; e.armorUntil = g.frame + 60; // brief armor while next phase telegraphs
+  // r5 S3-SHOULD-1: sync the incoming phase's free-running sweep to the boss's
+  // CURRENT x, so the handoff is continuous at the flip frame (referee: any
+  // single-frame |Δx| > 4.6px is a teleport). Solve
+  //   tanh(3.5·sin(θ)) / tanh(3.5) · 100 = x − W/2
+  // for θ and bias the sweep clock by (θ − ω·age). Structural for BOTH
+  // transitions, any seed: x is clamped into the sweep's ±100 range (P1 rails
+  // dwell ≤3px outside it) — the residual step lands at the sweep extremum,
+  // where sweep velocity is ~0, so the worst first-frame step stays ≤ ~3px.
+  const omega = e.phase === 1 ? 0.006 : 0.005; // must match the P2/P3 sweeps above
+  const u = Math.max(-1, Math.min(1, (e.x - W / 2) / 100)) * Math.tanh(3.5);
+  const theta = Math.asin(Math.max(-1, Math.min(1, Math.atanh(u) / 3.5)));
+  e.sweepOff = theta - e.age * omega;
 }
 
 // --- timeline ------------------------------------------------------------
