@@ -139,6 +139,16 @@ for (const r of runs) {
   console.log(`${r.name.padEnd(16)} ${r.outcome.padEnd(9)} ${String(r.minutes).padStart(5)}m score=${String(r.score).padStart(8)} kills=${r.kills} speed=${(r.speedRate * 100) | 0}% deaths=${r.deaths.length} maxBul=${r.maxBullets} timeouts=${r.timeouts}`);
 }
 
+// s7_robust: the same expert bot on alternate seeds — the balance corridor must
+// hold across RNG streams, not on the certified seed alone (r6 lesson).
+const ROBUST_SEEDS = [0xBADA55, 0x5EED42, 0x1234567, 0xFACADE];
+const ROBUST_RUNS = ROBUST_SEEDS.map((s) => {
+  const r = runBot('expert', { aggressive: true, lookahead: 14, reactDelay: 0 }, s);
+  r.seedHex = s.toString(16);
+  return r;
+});
+console.log('s7_robust seeds:', ROBUST_RUNS.map((r) => `${r.seedHex}:${r.outcome}/${r.timeouts}to/${r.livesLeft}L`).join(' '));
+
 const dpsClose = pointBlankDps(PROBE_CLOSE), dpsFar = pointBlankDps(PROBE_FAR);
 const aggro = runs[1], passive = runs[2];
 // TTK from the bottom band — the "does closing in FEEL different" numbers
@@ -192,6 +202,11 @@ const checks = {
     desc: 'passive play faces ≥1.6x bullets on screen',
     ratio: aggro.avgBullets ? +(passive.avgBullets / aggro.avgBullets).toFixed(2) : 0,
     pass: passive.avgBullets >= aggro.avgBullets * 1.6,
+  },
+  s7_robust: {
+    desc: 'expert clears BY KILLS (0 timeouts, ≥1 life) on 4 ALTERNATE seeds — green-on-the-certified-seed-only is not clearable (r6 critic 2: boss-p3 timed out on 4/8 seeds while the certified seed stayed green)',
+    runs: ROBUST_RUNS.map((r) => ({ seed: r.seedHex, outcome: r.outcome, timeouts: r.timeouts, timeoutLog: r.timeoutLog, lives: r.livesLeft, frames: r.frames })),
+    pass: ROBUST_RUNS.every((r) => r.outcome === 'clear' && r.timeouts === 0 && r.livesLeft >= 1),
   },
   s7_clearable: {
     desc: 'expert bot clears BY KILLS (zero timeouts) with ≥1 life; blind bot dies mid-stage',
