@@ -93,25 +93,43 @@ function campProbe(name, mover) {
   g.gate = 'boss';
   spawnEnemy(g, 5, W / 2, -27);
   g.player.invuln = 1e9;
-  let frames = 0;
+  let frames = 0, bossHpAt90 = null;
   while (!g.bossDown && g.state === 'play' && frames < 5400) {
-    mover(g, frames); g.input.fire = true; g.input.bomb = false; g.input.dy = 0;
+    g.input.dy = 0;
+    mover(g, frames); g.input.fire = true; g.input.bomb = false;
     update(g); frames++;
+    for (let i = 0; i < g.enemies.count; i++) {
+      const e = g.enemies.items[i];
+      if (e.type === 5 && e.age === 90) bossHpAt90 = e.hp;
+    }
   }
   const bossKills = g.stats.killLog.filter((k) => k.t === 5).length;
-  return { name, frames, bossKills, timeouts: g.stats.timeouts, score: g.score };
+  return { name, frames, bossKills, timeouts: g.stats.timeouts, score: g.score, bossHpAt90 };
 }
 const seekX = (tx) => (g) => {
   const dx = tx - g.player.x;
   g.input.dx = Math.abs(dx) > 3 ? Math.sign(dx) : 0;
 };
+const seekXY = (tx, ty) => (g) => {
+  seekX(tx)(g);
+  const dy = ty - g.player.y;
+  g.input.dy = Math.abs(dy) > 3 ? Math.sign(dy) : 0;
+};
 function runCampProbes() {
+  let dir = 1;
   return [
     campProbe('pin-center', seekX(W / 2)),
     campProbe('pin-rail-left', seekX(60)),
     campProbe('pin-rail-right', seekX(W - 60)),
     campProbe('shuffle-60-260-150f', (g, f) => seekX((Math.floor(f / 150) % 2) ? W - 60 : 60)(g)),
     campProbe('shuffle-110-210-300f', (g, f) => seekX((Math.floor(f / 300) % 2) ? 210 : 110)(g)),
+    // r6.3 critic B breaks, kept as law:
+    campProbe('shuffle-3spot-150f', (g, f) => seekX([60, W / 2, W - 60][Math.floor(f / 150) % 3])(g)),
+    campProbe('drift-1.2', (g, f) => { // ~1.2px/f sawtooth — the ungoverned continuous-motion band
+      if (g.player.x > W - 20) dir = -1; else if (g.player.x < 20) dir = 1;
+      g.input.dx = (f % 3 === 0) ? dir : 0;
+    }),
+    campProbe('hover-under-spawn', seekXY(W / 2, 133)), // 56-frame P1 SPEED kill via the entrance-armor clobber
   ];
 }
 
@@ -239,9 +257,15 @@ const checks = {
     pass: passive.avgBullets >= aggro.avgBullets * 1.6,
   },
   s6_nocamp: {
-    desc: 'no boss phase KILLED by stationary or two-spot-shuttle play (invulnerable probes = death-tank upper bound; mortal versions must die — r6.2)',
+    desc: 'no boss phase KILLED by stationary, shuttling, drifting, or spawn-hover play (invulnerable probes = death-tank upper bound; mortal versions must die — r6.2/r6.3)',
     probes: CAMP_PROBES,
     pass: CAMP_PROBES.every((p) => p.bossKills === 0),
+  },
+  s4_entrance_armor: {
+    desc: 'boss takes ZERO damage during the entrance descent (r6.3 critic B: armorUntil clobbered in spawnEnemy — mortal 56f SPEED kill of P1 before the boss fires)',
+    bossHpAt90: CAMP_PROBES.map((p) => ({ name: p.name, hp: p.bossHpAt90 })),
+    fullHp: ENEMY_DEFS[5].hp,
+    pass: CAMP_PROBES.every((p) => p.bossHpAt90 === null || p.bossHpAt90 >= ENEMY_DEFS[5].hp),
   },
   s7_robust: {
     desc: 'expert clears BY KILLS (0 timeouts, ≥1 life) on 4 ALTERNATE seeds — green-on-the-certified-seed-only is not clearable (r6 critic 2: boss-p3 timed out on 4/8 seeds while the certified seed stayed green)',
