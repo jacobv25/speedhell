@@ -174,6 +174,8 @@ try {
 } finally {
   chrome.kill();
   srv.close();
-  rmSync(profile, { recursive: true, force: true });
+  // chrome may still be flushing profile files as it dies — cleanup is
+  // best-effort (evidence is already written by this point)
+  try { rmSync(profile, { recursive: true, force: true }); } catch {}
 }
 process.exit(exitCode);
