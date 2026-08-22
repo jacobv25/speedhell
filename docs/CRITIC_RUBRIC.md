@@ -59,6 +59,25 @@ pass/fail per check; a surface passes when all MUST checks pass.*
 - MUST: no pattern requires reading > 2 focal points simultaneously without warning.
 - SHOULD: patterns flow — each attack's exit position feeds the next attack's entry.
 
+### S3b — Boss theatre (added r6, from docs/HOMAGE_STUDY.md L3/L6/L7)
+
+- MUST: arrival ritual — a WARNING telegraph ≥ 1s before the boss gate, and the
+  entrance plays over an emptied field (no live enemies/bullets at boss spawn).
+- MUST: each phase is a FORM change, not a stat change — silhouette, movement
+  style, and bullet dialect all visibly change per phase (shots p1/p2/p3).
+- MUST: phase handoffs are telegraphed (burn/flash beat) AND spatially
+  continuous (referee bossContinuity check ≤ 4.6 px/f).
+- MUST: ≥ 1 destructible sub-part per phase; the part is itself a speed-kill
+  target, and destroying it visibly changes the boss silhouette.
+- MUST: the final phase is a desperation medley — it recombines the earlier
+  phases' bullet dialects (and only those) under all S2 readability rules.
+- MUST: boss-only bullet dialect — at least one pattern family per phase that
+  never appears in stage sections ("stage or boss?" readable from bullets alone).
+- SHOULD: the arena restains per phase (background accent shift, renderer-only,
+  within S2-MUST-1's washed band).
+- SHOULD: at least one attack per fight whose safe/optimal position is CLOSE to
+  the boss, re-earned against boss movement (point-blank invitation).
+
 ## S4 — Enemy & wave design [WS04]
 
 - MUST: role coverage — popcorn, mid, elite, turret all present with distinct
