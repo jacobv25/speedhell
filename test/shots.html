@@ -1,0 +1,153 @@
+<!doctype html>
+<!-- Screenshot harness page — referee infrastructure (builders never edit).
+     Driven by test/shots.mjs over CDP. Replays the CERTIFIED expert run
+     (seed 0xC0FFEE, same bot as test/sim.mjs) and captures the canvas at
+     rubric evidence moments. Determinism guard: draw() normally consumes
+     g.rng when shake > 0, so every draw here runs with the rng stubbed —
+     the logic stream stays bit-identical to the sim (verified by the driver
+     against evidence/metrics.json). -->
+<html lang="en">
+<head><meta charset="utf-8"><title>SPEEDHELL shots</title></head>
+<body style="margin:0;background:#05060a">
+<canvas id="game"></canvas>
+<script type="module">
+import { makeGame, startRun, update, stressScene, spawnEnemy, W, H } from '../src/core/game.js';
+import { draw, resetHud } from '../src/render/renderer.js';
+import { makeBot } from './bot.mjs';
+
+const SEED = 0xC0FFEE; // referee seed — shots must come from the certified run
+const canvas = document.getElementById('game');
+canvas.width = W; canvas.height = H;
+const ctx = canvas.getContext('2d');
+const up = document.createElement('canvas'); // 2x nearest-neighbor for critics
+up.width = W * 2; up.height = H * 2;
+const uctx = up.getContext('2d'); uctx.imageSmoothingEnabled = false;
+
+// Deterministic draw: stub the rng (only shake jitter uses it) and converge
+// the HUD's ticking displayScore with settle draws before the real capture.
+const stubRng = { next: () => 0.5, range: (a, b) => (a + b) / 2 };
+function capture(g, id, list, extra = {}) {
+  const real = g.rng; g.rng = stubRng;
+  for (let i = 0; i < 60; i++) draw(g, ctx, g.frame * 1.05); // settle HUD score tick
+  g.rng = real;
+  uctx.drawImage(canvas, 0, 0, W * 2, H * 2);
+  list.push({
+    id, frame: g.frame, stageT: g.stageT, state: g.state, score: g.score,
+    eBullets: g.eBullets.count, enemies: g.enemies.count, kills: g.kills,
+    ...extra, png: up.toDataURL('image/png'),
+  });
+}
+
+const yield_ = () => new Promise((r) => setTimeout(r, 0));
+
+// Section entry stageT values mirror docs' section map of stage.js buildTimeline().
+const SECTIONS = [
+  ['s1', 120], ['s2', 720], ['s3', 1700], ['s4', 2400],
+  ['s5', 2460], ['s6', 2900], ['s7', 3700], ['s8', 3900],
+];
+
+async function mainRun(shots) {
+  const g = makeGame(SEED); startRun(g); resetHud();
+  const bot = makeBot({ aggressive: true, lookahead: 14, reactDelay: 0 }); // = sim 'expert'
+  const entered = {};    // section -> frame the timeline crossed its entry stageT
+  const fired = new Set();
+  const once = (id, cond, extra) => {
+    if (!fired.has(id) && cond) { fired.add(id); capture(g, id, shots, extra); }
+  };
+  let prevBossPhase = -1, bossTransitionAt = 0, transitionShot = null;
+  let midbossHalfAt = 0;
+
+  while (g.state === 'play' && g.frame < 30000) {
+    bot(g); update(g);
+    if (g.frame % 500 === 0) await yield_();
+
+    for (const [sec, t] of SECTIONS) if (!(sec in entered) && g.stageT >= t) entered[sec] = g.frame;
+    const boss = (() => { for (let i = 0; i < g.enemies.count; i++) if (g.enemies.items[i].type === 5) return g.enemies.items[i]; return null; })();
+    const midboss = (() => { for (let i = 0; i < g.enemies.count; i++) if (g.enemies.items[i].type === 4) return g.enemies.items[i]; return null; })();
+
+    // --- section action shots (rubric evidence kit) ---
+    once('s1-wave3', g.stageT >= 480 && g.eBullets.count + g.enemies.count > 4);
+    once('s2-turret-alley', entered.s2 && g.frame === entered.s2 + 150);
+    once('s3-mid-gauntlet', entered.s3 && g.frame === entered.s3 + 230);
+    if (midboss && midboss.hp < 130 * 0.45 && !midbossHalfAt) midbossHalfAt = g.frame;
+    once('s4-midboss-p2', midbossHalfAt && g.frame === midbossHalfAt + 50);
+    once('s5-rush', entered.s5 && g.frame === entered.s5 + 200);
+    once('s6-elite', entered.s6 && g.frame === entered.s6 + 260);
+    once('s7-release', entered.s7 && g.frame === entered.s7 + 8);
+
+    // --- boss phases + the phase-transition x-discontinuity question ---
+    if (boss) {
+      once('s8-boss-p1', boss.phase === 0 && boss.fireT === 140);
+      once('s8-boss-p2', boss.phase === 1 && boss.fireT === 140);
+      once('s8-boss-p3', boss.phase === 2 && boss.fireT === 140);
+      if (prevBossPhase >= 0 && boss.phase !== prevBossPhase) {
+        bossTransitionAt = g.frame;
+        const tag = 'boss-t' + (prevBossPhase + 1) + (boss.phase + 1);
+        capture(g, tag + '-a', shots, { note: 'frame of phase advance', bossX: boss.x | 0, bossY: boss.y | 0 });
+        transitionShot = tag;
+      }
+      if (transitionShot && g.frame === bossTransitionAt + 30) {
+        capture(g, transitionShot + '-b', shots, { note: '+30f into next phase telegraph', bossX: boss.x | 0, bossY: boss.y | 0 });
+        transitionShot = null;
+      }
+      prevBossPhase = boss.phase;
+    }
+
+    // --- score legibility popups (S6) ---
+    const pops = [];
+    for (let i = 0; i < g.popups.count; i++) pops.push(g.popups.items[i]);
+    once('popup-speed', pops.some((p) => p.text === 'SPEED' && p.life === 40));
+    once('popup-rush', pops.some((p) => p.text.startsWith('RUSH') && p.life === 40));
+  }
+  if (g.state === 'clear') capture(g, 'banner-clear', shots);
+  return {
+    entered,
+    expert: { outcome: g.state, frames: g.frame, score: g.score, kills: g.kills, lives: Math.max(0, g.player.lives) },
+  };
+}
+
+async function extraRuns(shots) {
+  // title banner
+  { const g = makeGame(SEED); resetHud(); capture(g, 'banner-title', shots); }
+  // game-over banner (sim 'blind' bot config — it dies mid-stage by design)
+  {
+    const g = makeGame(SEED); startRun(g); resetHud();
+    const bot = makeBot({ aggressive: false, lookahead: 4, reactDelay: 14 });
+    while (g.state === 'play' && g.frame < 30000) { bot(g); update(g); if (g.frame % 500 === 0) await yield_(); }
+    capture(g, 'banner-gameover', shots);
+  }
+  // focus mode — hitbox dot visibility (S1 SHOULD)
+  {
+    const g = makeGame(5); startRun(g); g.timeline = []; g.tlIndex = 0; resetHud();
+    for (let f = 0; f < 30; f++) { g.input.focus = true; update(g); }
+    capture(g, 'focus-hitbox', shots);
+  }
+  // bomb cancel moment (rubric evidence kit)
+  {
+    const g = makeGame(9); startRun(g); g.timeline = []; g.tlIndex = 0; resetHud();
+    spawnEnemy(g, 1, W / 2, -12, { holdT: 120 });
+    for (let f = 0; f < 260; f++) update(g); // mid digs in and fires
+    g.input.bomb = true; update(g); g.input.bomb = false;
+    for (let f = 0; f < 6; f++) update(g);
+    capture(g, 'bomb-cancel', shots);
+  }
+  // S8 stress scene — worst-case readability (S2 at max density)
+  {
+    const g = makeGame(7); g.state = 'play'; startRun(g); g.timeline = []; g.tlIndex = 0;
+    stressScene(g); resetHud();
+    for (let f = 0; f < 45; f++) update(g);
+    capture(g, 'stress-maxload', shots);
+  }
+}
+
+window.__shots = {
+  async run() {
+    const shots = [];
+    const main = await mainRun(shots);
+    await extraRuns(shots);
+    return { seed: SEED, field: { W, H }, scale: 2, ...main, shots };
+  },
+};
+</script>
+</body>
+</html>

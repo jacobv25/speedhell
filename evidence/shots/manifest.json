@@ -1,0 +1,283 @@
+{
+  "seed": 12648430,
+  "field": {
+    "W": 320,
+    "H": 427
+  },
+  "scale": 2,
+  "generated": "shots.mjs",
+  "certifiedRun": {
+    "matched": true,
+    "outcome": "clear",
+    "frames": 5974,
+    "score": 152530,
+    "kills": 91,
+    "lives": 2
+  },
+  "sectionEntryFrames": {
+    "s1": 51,
+    "s2": 621,
+    "s3": 1601,
+    "s4": 2301,
+    "s5": 2772,
+    "s6": 3212,
+    "s7": 4012,
+    "s8": 4095
+  },
+  "shots": [
+    {
+      "file": "shot-popup-speed.png",
+      "id": "popup-speed",
+      "frame": 149,
+      "stageT": 218,
+      "state": "play",
+      "score": 1600,
+      "eBullets": 6,
+      "enemies": 2,
+      "kills": 4
+    },
+    {
+      "file": "shot-popup-rush.png",
+      "id": "popup-rush",
+      "frame": 161,
+      "stageT": 230,
+      "state": "play",
+      "score": 2400,
+      "eBullets": 6,
+      "enemies": 0,
+      "kills": 6
+    },
+    {
+      "file": "shot-s1-wave3.png",
+      "id": "s1-wave3",
+      "frame": 381,
+      "stageT": 480,
+      "state": "play",
+      "score": 5400,
+      "eBullets": 3,
+      "enemies": 12,
+      "kills": 12
+    },
+    {
+      "file": "shot-s2-turret-alley.png",
+      "id": "s2-turret-alley",
+      "frame": 771,
+      "stageT": 870,
+      "state": "play",
+      "score": 10200,
+      "eBullets": 3,
+      "enemies": 4,
+      "kills": 24
+    },
+    {
+      "file": "shot-s3-mid-gauntlet.png",
+      "id": "s3-mid-gauntlet",
+      "frame": 1831,
+      "stageT": 1930,
+      "state": "play",
+      "score": 22010,
+      "eBullets": 0,
+      "enemies": 5,
+      "kills": 43
+    },
+    {
+      "file": "shot-s4-midboss-p2.png",
+      "id": "s4-midboss-p2",
+      "frame": 2685,
+      "stageT": 2400,
+      "state": "play",
+      "score": 27320,
+      "eBullets": 50,
+      "enemies": 1,
+      "kills": 49
+    },
+    {
+      "file": "shot-s5-rush.png",
+      "id": "s5-rush",
+      "frame": 2972,
+      "stageT": 2660,
+      "state": "play",
+      "score": 57620,
+      "eBullets": 12,
+      "enemies": 4,
+      "kills": 66
+    },
+    {
+      "file": "shot-s6-elite.png",
+      "id": "s6-elite",
+      "frame": 3472,
+      "stageT": 3160,
+      "state": "play",
+      "score": 66680,
+      "eBullets": 12,
+      "enemies": 1,
+      "kills": 84
+    },
+    {
+      "file": "shot-s7-release.png",
+      "id": "s7-release",
+      "frame": 4020,
+      "stageT": 3708,
+      "state": "play",
+      "score": 80830,
+      "eBullets": 0,
+      "enemies": 1,
+      "kills": 87
+    },
+    {
+      "file": "shot-s8-boss-p1.png",
+      "id": "s8-boss-p1",
+      "frame": 4323,
+      "stageT": 3900,
+      "state": "play",
+      "score": 82830,
+      "eBullets": 16,
+      "enemies": 1,
+      "kills": 88
+    },
+    {
+      "file": "shot-boss-t12-a.png",
+      "id": "boss-t12-a",
+      "frame": 4578,
+      "stageT": 3900,
+      "state": "play",
+      "score": 103030,
+      "eBullets": 0,
+      "enemies": 1,
+      "kills": 89,
+      "note": "frame of phase advance",
+      "bossX": 260,
+      "bossY": 91
+    },
+    {
+      "file": "shot-boss-t12-b.png",
+      "id": "boss-t12-b",
+      "frame": 4608,
+      "stageT": 3900,
+      "state": "play",
+      "score": 103030,
+      "eBullets": 0,
+      "enemies": 1,
+      "kills": 89,
+      "note": "+30f into next phase telegraph",
+      "bossX": 179,
+      "bossY": 91
+    },
+    {
+      "file": "shot-s8-boss-p2.png",
+      "id": "s8-boss-p2",
+      "frame": 4718,
+      "stageT": 3900,
+      "state": "play",
+      "score": 103030,
+      "eBullets": 20,
+      "enemies": 1,
+      "kills": 89
+    },
+    {
+      "file": "shot-boss-t23-a.png",
+      "id": "boss-t23-a",
+      "frame": 4951,
+      "stageT": 3900,
+      "state": "play",
+      "score": 123830,
+      "eBullets": 0,
+      "enemies": 1,
+      "kills": 90,
+      "note": "frame of phase advance",
+      "bossX": 60,
+      "bossY": 91
+    },
+    {
+      "file": "shot-boss-t23-b.png",
+      "id": "boss-t23-b",
+      "frame": 4981,
+      "stageT": 3900,
+      "state": "play",
+      "score": 123830,
+      "eBullets": 0,
+      "enemies": 1,
+      "kills": 90,
+      "note": "+30f into next phase telegraph",
+      "bossX": 60,
+      "bossY": 91
+    },
+    {
+      "file": "shot-s8-boss-p3.png",
+      "id": "s8-boss-p3",
+      "frame": 5091,
+      "stageT": 3900,
+      "state": "play",
+      "score": 123830,
+      "eBullets": 28,
+      "enemies": 1,
+      "kills": 90
+    },
+    {
+      "file": "shot-banner-clear.png",
+      "id": "banner-clear",
+      "frame": 5974,
+      "stageT": 4050,
+      "state": "clear",
+      "score": 152530,
+      "eBullets": 0,
+      "enemies": 0,
+      "kills": 91
+    },
+    {
+      "file": "shot-banner-title.png",
+      "id": "banner-title",
+      "frame": 0,
+      "stageT": 0,
+      "state": "title",
+      "score": 0,
+      "eBullets": 0,
+      "enemies": 0,
+      "kills": 0
+    },
+    {
+      "file": "shot-banner-gameover.png",
+      "id": "banner-gameover",
+      "frame": 2590,
+      "stageT": 2400,
+      "state": "gameover",
+      "score": 28910,
+      "eBullets": 0,
+      "enemies": 1,
+      "kills": 50
+    },
+    {
+      "file": "shot-focus-hitbox.png",
+      "id": "focus-hitbox",
+      "frame": 30,
+      "stageT": 30,
+      "state": "play",
+      "score": 0,
+      "eBullets": 0,
+      "enemies": 0,
+      "kills": 0
+    },
+    {
+      "file": "shot-bomb-cancel.png",
+      "id": "bomb-cancel",
+      "frame": 267,
+      "stageT": 267,
+      "state": "play",
+      "score": 120,
+      "eBullets": 0,
+      "enemies": 1,
+      "kills": 0
+    },
+    {
+      "file": "shot-stress-maxload.png",
+      "id": "stress-maxload",
+      "frame": 45,
+      "stageT": 45,
+      "state": "play",
+      "score": 0,
+      "eBullets": 870,
+      "enemies": 48,
+      "kills": 0
+    }
+  ]
+}

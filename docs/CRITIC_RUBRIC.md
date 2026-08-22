@@ -7,8 +7,12 @@ pass/fail per check; a surface passes when all MUST checks pass.*
 
 ## Evidence kit (what critics receive)
 
-- `evidence/shot-*.png` — deterministic screenshots at fixed sim frames (wave 3,
-  turret section, midboss p2, rush section, boss p1/p2/p3, bomb cancel moment).
+- `evidence/shots/shot-*.png` + `manifest.json` — deterministic screenshots from
+  `node test/shots.mjs` (headless Chrome replaying the CERTIFIED expert-bot run —
+  the driver fails if the replay diverges from metrics.json): wave 3, turret
+  section, midboss p2, rush section, boss p1/p2/p3 + phase-transition pairs,
+  bomb cancel moment, banners/popups, focus hitbox, stress max-load. 2x
+  nearest-neighbor upscale of the 320×427 field.
 - `evidence/metrics.json` — from the headless sim: bullets-on-screen curve, frame-time
   histogram at max load, kill-timing distribution, per-wave speed-kill feasibility
   (scripted bot), score curves for passive vs aggressive bot, boss phase durations,
