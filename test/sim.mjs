@@ -82,6 +82,39 @@ function summarizeKills(log) {
   return byType;
 }
 
+// --- S6 anti-camp probes (r6.3) ----------------------------------------------
+// The boss may never be KILLED by stationary or two-spot-shuttle play. Probes
+// are invulnerable (the upper bound of death-tank strategies — mortal versions
+// die, verified r6.2) and fire constantly from the bottom band. r6.2 critic:
+// a pinned center camper and a blind 60<->260 shuffler both collected full pay.
+function campProbe(name, mover) {
+  const g = makeGame(SEED); startRun(g);
+  g.timeline = []; g.tlIndex = 0;
+  g.gate = 'boss';
+  spawnEnemy(g, 5, W / 2, -27);
+  g.player.invuln = 1e9;
+  let frames = 0;
+  while (!g.bossDown && g.state === 'play' && frames < 5400) {
+    mover(g, frames); g.input.fire = true; g.input.bomb = false; g.input.dy = 0;
+    update(g); frames++;
+  }
+  const bossKills = g.stats.killLog.filter((k) => k.t === 5).length;
+  return { name, frames, bossKills, timeouts: g.stats.timeouts, score: g.score };
+}
+const seekX = (tx) => (g) => {
+  const dx = tx - g.player.x;
+  g.input.dx = Math.abs(dx) > 3 ? Math.sign(dx) : 0;
+};
+function runCampProbes() {
+  return [
+    campProbe('pin-center', seekX(W / 2)),
+    campProbe('pin-rail-left', seekX(60)),
+    campProbe('pin-rail-right', seekX(W - 60)),
+    campProbe('shuffle-60-260-150f', (g, f) => seekX((Math.floor(f / 150) % 2) ? W - 60 : 60)(g)),
+    campProbe('shuffle-110-210-300f', (g, f) => seekX((Math.floor(f / 300) % 2) ? 210 : 110)(g)),
+  ];
+}
+
 // --- S8 performance gate -----------------------------------------------------
 function stressTest() {
   const g = makeGame(7); g.state = 'play'; g.timeline = []; startRun(g);
@@ -141,13 +174,15 @@ for (const r of runs) {
 
 // s7_robust: the same expert bot on alternate seeds — the balance corridor must
 // hold across RNG streams, not on the certified seed alone (r6 lesson).
-const ROBUST_SEEDS = [0xBADA55, 0x5EED42, 0x1234567, 0xFACADE];
+const ROBUST_SEEDS = [0xBADA55, 0x5EED42, 0x1234567, 0xFACADE, 0xAB12CD, 0xFEEDF00D]; // last two: r6.2 critic's P3-timeout seeds, kept as regressions
 const ROBUST_RUNS = ROBUST_SEEDS.map((s) => {
   const r = runBot('expert', { aggressive: true, lookahead: 14, reactDelay: 0 }, s);
   r.seedHex = s.toString(16);
   return r;
 });
 console.log('s7_robust seeds:', ROBUST_RUNS.map((r) => `${r.seedHex}:${r.outcome}/${r.timeouts}to/${r.livesLeft}L`).join(' '));
+const CAMP_PROBES = runCampProbes();
+console.log('s6_nocamp:', CAMP_PROBES.map((p) => `${p.name}:${p.bossKills}k/${p.timeouts}to`).join(' '));
 
 const dpsClose = pointBlankDps(PROBE_CLOSE), dpsFar = pointBlankDps(PROBE_FAR);
 const aggro = runs[1], passive = runs[2];
@@ -202,6 +237,11 @@ const checks = {
     desc: 'passive play faces ≥1.6x bullets on screen',
     ratio: aggro.avgBullets ? +(passive.avgBullets / aggro.avgBullets).toFixed(2) : 0,
     pass: passive.avgBullets >= aggro.avgBullets * 1.6,
+  },
+  s6_nocamp: {
+    desc: 'no boss phase KILLED by stationary or two-spot-shuttle play (invulnerable probes = death-tank upper bound; mortal versions must die — r6.2)',
+    probes: CAMP_PROBES,
+    pass: CAMP_PROBES.every((p) => p.bossKills === 0),
   },
   s7_robust: {
     desc: 'expert clears BY KILLS (0 timeouts, ≥1 life) on 4 ALTERNATE seeds — green-on-the-certified-seed-only is not clearable (r6 critic 2: boss-p3 timed out on 4/8 seeds while the certified seed stayed green)',
