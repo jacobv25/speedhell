@@ -55,7 +55,7 @@ async function mainRun(shots) {
     if (!fired.has(id) && cond) { fired.add(id); capture(g, id, shots, extra); }
   };
   let prevBossPhase = -1, bossTransitionAt = 0, transitionShot = null;
-  let midbossHalfAt = 0;
+  let midbossHalfAt = 0, prevPartCount = 0;
   // boss-x continuity instrument (r5, critic B): rolling window of boss x, and
   // ±60f traces around each phase flip so the referee can prove the handoff
   // is continuous (max legit speed: 4.2 px/f rail hop) rather than a teleport.
@@ -82,8 +82,20 @@ async function mainRun(shots) {
     once('s6-elite2-turrets', g.stageT >= 3400); // rep2 + twin turrets — the stage's one 3-emitter moment
     once('s7-release', entered.s7 && g.frame === entered.s7 + 8);
 
+    // --- r6 boss-theatre evidence (rules no-op until the features exist) ---
+    once('boss-warning', (g.warn || 0) > 0);
+    const partCount = (() => { let n = 0; for (let i = 0; i < g.enemies.count; i++) if (g.enemies.items[i].type === 6) n++; return n; })();
+
     // --- boss phases + the phase-transition x-discontinuity question ---
     if (boss) {
+      once('boss-spawn', boss.age <= 1, {
+        note: 'field-emptiness at boss spawn (S3b arrival ritual)',
+        enemiesAtSpawn: g.enemies.count - 1, eBulletsAtSpawn: g.eBullets.count,
+      });
+      if (partCount < prevPartCount && !fired.has('boss-partbreak')) {
+        fired.add('boss-partbreak');
+        capture(g, 'boss-partbreak', shots, { note: 'first sub-part destroyed', phase: boss.phase });
+      }
       xHist.push(boss.x); if (xHist.length > 61) xHist.shift();
       if (activeTrace) {
         activeTrace.x.push(+boss.x.toFixed(1));
@@ -105,6 +117,7 @@ async function mainRun(shots) {
       }
       prevBossPhase = boss.phase;
     }
+    prevPartCount = partCount;
 
     // --- score legibility popups (S6) ---
     const pops = [];

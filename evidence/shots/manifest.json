@@ -398,6 +398,20 @@
       "kills": 87
     },
     {
+      "file": "shot-boss-spawn.png",
+      "id": "boss-spawn",
+      "frame": 4095,
+      "stageT": 3900,
+      "state": "play",
+      "score": 81330,
+      "eBullets": 0,
+      "enemies": 1,
+      "kills": 88,
+      "note": "field-emptiness at boss spawn (S3b arrival ritual)",
+      "enemiesAtSpawn": 0,
+      "eBulletsAtSpawn": 0
+    },
+    {
       "file": "shot-s8-boss-p1.png",
       "id": "s8-boss-p1",
       "frame": 4323,

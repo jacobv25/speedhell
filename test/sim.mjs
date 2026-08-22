@@ -75,7 +75,7 @@ function pointBlankDps(dist) {
 function summarizeKills(log) {
   const byType = {};
   for (const k of log) {
-    const t = ['zako', 'mid', 'turret', 'elite', 'midboss', 'boss'][k.t];
+    const t = ['zako', 'mid', 'turret', 'elite', 'midboss', 'boss', 'part'][k.t] || 'type' + k.t;
     byType[t] = byType[t] || { n: 0, speed: 0 };
     byType[t].n++; byType[t].speed += k.s;
   }
