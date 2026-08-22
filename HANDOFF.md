@@ -1,62 +1,75 @@
-# SPEEDHELL — Session Handoff (2026-08-09)
+# SPEEDHELL — Session Handoff (2026-08-22)
 
-## Done this session (project created → 1CC'd)
+## ⚖️ DECISION NEEDED FROM JACOB (the brake)
 
-- Built the full game: Psikyo-style vertical danmaku, one stage (8 sections →
-  midboss → 3-phase boss), browser/Canvas2D, deterministic 60Hz DOM-free core.
-- Method: **gauntlet-loop** — builder agents vs fresh blind critics vs the
-  referee (`test/sim.mjs` + `docs/CRITIC_RUBRIC.md`). Rules distilled from
-  `~/Dev/mark-msx-research` + `~/Dev/boghog-research`.
-- **4 rounds, all twice-upheld:** r1 balance (unkillable-boss fix), r2
-  point-blank economy + caravan pull, r3 difficulty restore (TTK spread felt),
-  r4 field rescale to Cave proportions (320×427). Three rounds were driven by
-  Jacob's playtest findings. Jacob 1CC'd it (180K, 76/99 speed-kills).
-- Arcade stick (8BitDo) support: A/X fire, B/Y bomb, shoulders focus,
-  select restart. Design doc + scale explainer in `~/Dev/claude-visualizations/`.
+**Round 6 (boss theatre) used its 3 builder iterations and did not fully close.
+A 4th iteration needs your explicit go — that's the gauntlet's own rule.**
+
+- **Theatre surface: CLEARED, verified 3× by fresh blind critics** — WARNING
+  ritual, 3 true boss forms (winged carrier → armor-shed hull → bare core),
+  burn telegraphs, destructible sub-parts per phase, boss-only bullet dialects
+  (accelerating lances / twin spirals), desperation medley finale, per-phase
+  arena restains. It looks and reads like the homage.
+- **Balance surface: NOT closed.** Critic B (r6.3) found three low-skill
+  full-pay breaks, all now encoded as RED referee checks:
+  1. **Entrance-armor clobber BUG** — `src/core/game.js:119-120` sets boss
+     armor then immediately zeroes it. A motionless hover kills P1 in 56f for
+     SPEED pay before the boss fires. **Mortal-real. 2-line fix.**
+  2. **3-spot shuffler** — the two-band latch memory is one band short;
+     `pickSafeX` delivers the boss to the shuffler's third spot.
+  3. **1.2px/f drifter** — the parked/drifter detectors leave the whole
+     0.7–2px/f continuous-motion band ungoverned.
+  Plus honest-cost tail: on fresh seeds the expert's P2/P3 kills brush/cross
+  the 1200f decay knee (1 timeout + 2 decayed on 4 seeds).
+
+**Options:** (a) authorize r6.4 — findings are concrete, fix #1 is trivial,
+#2/#3 point at replacing movement-classification with a per-phase serve budget;
+(b) commit theatre + bug-fix #1 only, accept documented invuln-only residuals,
+revisit the governor as its own round; (c) park r6 uncommitted and play the r5
+build first (`git stash` the tree; committed state is r5-complete + all docs).
+**Recommendation: (a)** — but playtest the current tree first (it's genuinely
+theatrical now) before deciding; your hands outrank the bots.
 
 ## State
 
-- Repo clean at `2c91549`; all 13 referee checks green after last code change
-  (banner fix touched renderer only — sim path unaffected, verified green at r4).
-- **Dev server left running on purpose:** `http://localhost:8471`
-  (python http.server, PID 25609 — kill: `kill 25609`). Needed because ES
-  modules don't load over file://.
-- No remote. **Open question for Jacob (workspace convention):** push to
-  public GitHub (jacobv25) and/or add to portfolio-site? Game is working —
-  ask before doing either.
+- **Working tree: UNCOMMITTED r6 builder work** (src/ only: game.js, stage.js,
+  patterns.js, renderer.js). All original 9 checks + s7_robust(6 seeds) green;
+  s6_nocamp + s4_entrance_armor RED (the 3 breaks above, by design).
+- Committed history this session (all green at their commit points):
+  bot extraction → **screenshot harness** (zero-dep CDP, `node test/shots.mjs`)
+  → boss-continuity instrument → **r5 CLOSED 2-critics-upheld** (popups, player
+  color out of cyan, boss-handoff sync, section place-identity) → **homage study**
+  (`docs/HOMAGE_STUDY.md` + `docs/homage/` — BR:DA/Psikyo/DDP film analyses) →
+  S3b rubric → referee prep → s7_robust → s6_nocamp → r6.4 gate.
+- Referee now: `node test/sim.mjs` (12 checks, takes a few minutes now — 6
+  robust expert runs + 8 camp probes) and `node test/shots.mjs` (26 shots,
+  replay-guarded, ~1s, spins its own server — the old handoff's python server
+  is no longer needed).
 
-## Left to do (priority order)
+## Left to do (after the r6 decision)
 
-1. **The visual round (r5):** build a screenshot harness (headless Chrome/
-   Playwright) so blind critics judge real pixels — S2 visibility, S3 pattern
-   readability, S5 section distinctness (playtest 1: "sections maybe not
-   distinct enough"), popup/HUD chunkiness post-rescale, boss x-discontinuity
-   between phases.
-2. Feel-check the r4 trade: hitboxes kept px size on the 2/3 field → collision-
-   relative difficulty rose ~1.5x (expert bot now loses 1 life). If it tips
-   cheap, levers are bullet radius or hitbox px — referee-supervised round only.
-3. Later: sound (Web Audio synthesis, no assets), harder second loop,
-   exact section-entry frame logging for the design doc's telemetry chart.
+1. R7 stagecraft package (HOMAGE_STUDY): set-piece hull hosting turret alley,
+   release-as-boss-approach, chain-route audit.
+2. R8 receipt package: itemized stage-clear tally (per-section speed-kills).
+3. Later: loop 2 as revenge-dot bullet-diff, countdown meter, boss briefing
+   card, sound (Web Audio), r5 backlog nits (gold popup outline, HUD-strip dim).
+
+## Gotchas (hard-won this session)
+
+- **The Mac sleeping kills agents mid-response** — every "stalled" agent this
+  session was the machine dozing; resume via SendMessage recovers them. Use
+  caffeinate for long autonomous runs.
+- s6_nocamp/s4_entrance_armor are law now: any boss change must pass 8 camp
+  probes + descent-HP check. s7_robust runs 6 seeds — green-on-one-seed can't
+  happen again. s7_pressure sits at ~24.7 vs 24.0 — tightest tripwire.
+- Builders never touch test/, docs/, evidence/. Referee changes land first,
+  in separate commits. 2 fresh blind critics close a round; adversarial
+  re-probes (critics writing their own exploit bots) are what caught
+  everything the metrics missed — keep that pattern.
+- Governor comments in stage.js drifted from code (ration numbers, armor
+  claim) — builder should true them up in r6.4.
 
 ## Next first step
 
-`cd ~/Dev/speedhell && node test/sim.mjs` (confirm green), then build the
-screenshot harness as referee infrastructure BEFORE launching r5 builders.
-
-## Gotchas (the hard-won stuff)
-
-- **The referee is sacred:** builders never touch `test/sim.mjs`, `docs/`,
-  `evidence/`. Referee changes are made directly (not by builders) and
-  committed separately before rounds.
-- **The tuning corridor is narrow:** s7_pressure 24.1 vs 24.0, s4 1.73 vs 1.6.
-  Never hand-tweak balance without a full `node test/sim.mjs` — RNG-stream
-  butterflies flipped checks repeatedly (r3/r4 reports document cases).
-- Boss P1 has been exploit-prone three times (milking trap, rail-stall,
-  camp-milk). Any P1 change needs the passive-bot "hp remaining at timeout"
-  check, not just pass flags.
-- All speeds/sizes are now screen-relative in the referee; rubric S1 was
-  updated to match. Old absolute px figures in early gauntlet reports refer to
-  the 480×640 era.
-- Workflow pattern that works: 1 builder (coupled systems = single owner) →
-  2 blind critics in parallel with different lenses, `git show <commit>:file`
-  for before/after comparisons.
+`cd ~/Dev/speedhell && node test/sim.mjs` (see the 2 red checks), open
+`index.html`, fight the boss yourself, then give the r6.4 go/no-go.
