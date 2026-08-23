@@ -130,7 +130,42 @@ function runCampProbes() {
       g.input.dx = (f % 3 === 0) ? dir : 0;
     }),
     campProbe('hover-under-spawn', seekXY(W / 2, 133)), // 56-frame P1 SPEED kill via the entrance-armor clobber
+    // r6.5 closing critic's break: intermittent motion threads the stillness
+    // detector (15f dwell resets monoT), the graze account (P1 dies too fast
+    // to bill), AND led-aim (slow-EMA lead has no answer for stop/sprint at
+    // the fan cadence). Took P1 at full SPEED pay on every seed tested.
+    campProbe('stutter-15-15', (() => {
+      let sdir = 1;
+      return (g, f) => {
+        if (g.player.x > W - 20) sdir = -1; else if (g.player.x < 20) sdir = 1;
+        g.input.dx = (Math.floor(f / 15) % 2 === 0) ? sdir : 0;
+      };
+    })()),
   ];
+}
+
+// Death-tank WATCH (advisory, not a gate): a MORTAL zero-dodge tracker that
+// follows boss.x and spends lives (death-cancel + 150f invuln) is pursuit-
+// shaped, genre-normal, and bounded by stock — but its take should be tracked
+// so a future retune can't silently make death-tanking the best route.
+// (r6.5 critic: cleared the arena with 2 deaths for 94,400.)
+function mortalTrackerProbe() {
+  const g = makeGame(SEED); startRun(g);
+  g.timeline = []; g.tlIndex = 0; g.gate = 'boss';
+  spawnEnemy(g, 5, W / 2, -27);
+  let frames = 0;
+  while (!g.bossDown && g.state === 'play' && frames < 5400) {
+    let boss = null;
+    for (let i = 0; i < g.enemies.count; i++) if (g.enemies.items[i].type === 5) boss = g.enemies.items[i];
+    g.input.dy = 0; g.input.fire = true; g.input.bomb = false;
+    if (boss) seekX(boss.x)(g); else g.input.dx = 0;
+    update(g); frames++;
+  }
+  return {
+    outcome: g.state === 'gameover' ? 'died' : (g.bossDown ? 'cleared' : 'capped'),
+    bossKills: g.stats.killLog.filter((k) => k.t === 5).length,
+    deaths: g.stats.deaths.length, score: g.score,
+  };
 }
 
 // --- S8 performance gate -----------------------------------------------------
@@ -201,6 +236,8 @@ const ROBUST_RUNS = ROBUST_SEEDS.map((s) => {
 console.log('s7_robust seeds:', ROBUST_RUNS.map((r) => `${r.seedHex}:${r.outcome}/${r.timeouts}to/${r.livesLeft}L`).join(' '));
 const CAMP_PROBES = runCampProbes();
 console.log('s6_nocamp:', CAMP_PROBES.map((p) => `${p.name}:${p.bossKills}k/${p.timeouts}to`).join(' '));
+const TRACKER_WATCH = mortalTrackerProbe();
+console.log('s6 deathtank watch:', JSON.stringify(TRACKER_WATCH));
 
 const dpsClose = pointBlankDps(PROBE_CLOSE), dpsFar = pointBlankDps(PROBE_FAR);
 const aggro = runs[1], passive = runs[2];
@@ -260,6 +297,10 @@ const checks = {
     desc: 'no boss phase KILLED by stationary, shuttling, drifting, or spawn-hover play (invulnerable probes = death-tank upper bound; mortal versions must die — r6.2/r6.3)',
     probes: CAMP_PROBES,
     pass: CAMP_PROBES.every((p) => p.bossKills === 0),
+  },
+  s6_deathtank_watch: {
+    desc: 'ADVISORY (always passes): mortal zero-dodge boss-tracker take — genre-normal death-tanking, tracked so it can never silently become the best route',
+    ...TRACKER_WATCH, advisory: true, pass: true,
   },
   s4_entrance_armor: {
     desc: 'boss takes ZERO damage during the entrance descent (r6.3 critic B: armorUntil clobbered in spawnEnemy — mortal 56f SPEED kill of P1 before the boss fires)',
