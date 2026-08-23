@@ -3,7 +3,7 @@
 // (pink rounds = static/random, cyan needles = aimed); bullets on top.
 import { W, H, PLAYER } from '../core/game.js';
 
-const ENEMY_TINT = ['#8a8fa8', '#9aa0b8', '#7d8298', '#a8adc4', '#b8bdd4', '#c8cde0'];
+const ENEMY_TINT = ['#8a8fa8', '#9aa0b8', '#7d8298', '#a8adc4', '#b8bdd4', '#c8cde0', '#c0c6da'];
 let displayScore = 0; // ticks up toward real score [BOGHOG_CRAFT]
 
 // Section place-identity (r5 S5-SHOULD-1): each stage section gets its own
@@ -26,6 +26,15 @@ function sectionOf(t) {
   return s;
 }
 
+// r6 S3b-SHOULD: arena restain per boss phase — deep blue → red-shifted →
+// white-hot dawn (homage BRDA#6), all values inside the washed band the r5
+// section tints established (S2-MUST-1: the background never competes with
+// the bullet layer).
+const BOSS_BG = ['#0a0e1a', '#130a0e', '#141317'];
+const BOSS_SLAB = ['#111b30', '#261416', '#28262c'];
+const BOSS_STAR = ['#15233c', '#2c181a', '#302e33'];
+const BOSS_LAND = ['#16243e', '#2e1a1e', '#333038'];
+
 export function resetHud() { displayScore = 0; }
 
 export function draw(g, ctx, bgScroll) {
@@ -33,28 +42,38 @@ export function draw(g, ctx, bgScroll) {
   if (g.shake > 0) ctx.translate((g.rng.next() - 0.5) * g.shake, (g.rng.next() - 0.5) * g.shake);
 
   // background: deep indigo, faint slow stars — low value contrast (S2),
-  // hue-accented per section so each place reads distinct (r5 S5-SHOULD-1)
+  // hue-accented per section so each place reads distinct (r5 S5-SHOULD-1).
+  // During the boss fight the arena RESTAINS per phase (r6 S3b-SHOULD).
   const sec = sectionOf(g.stageT);
-  ctx.fillStyle = '#0a0c14';
+  let bossPhase = -1;
+  for (let i = 0; i < g.enemies.count; i++) {
+    const e = g.enemies.items[i];
+    if (e.type === 5) { bossPhase = e.phase; break; }
+  }
+  const bgC = bossPhase >= 0 ? BOSS_BG[bossPhase] : '#0a0c14';
+  const slabC = bossPhase >= 0 ? BOSS_SLAB[bossPhase] : SEC_SLAB[sec];
+  const starC = bossPhase >= 0 ? BOSS_STAR[bossPhase] : SEC_STAR[sec];
+  const landC = bossPhase >= 0 ? BOSS_LAND[bossPhase] : SEC_LAND[sec];
+  ctx.fillStyle = bgC;
   ctx.fillRect(-20, -20, W + 40, H + 40);
   // landmark slab: enters at the section boundary, scrolls with section progress
   {
     const [lx, lw, lh] = SEC_LANDGEO[sec];
     const ly = (g.stageT - SEC_T[sec]) * 0.55 - lh - 20;
     if (ly < H + 20) {
-      ctx.fillStyle = SEC_LAND[sec];
+      ctx.fillStyle = landC;
       ctx.fillRect(lx, ly, lw, lh);
-      ctx.fillStyle = SEC_SLAB[sec];
+      ctx.fillStyle = slabC;
       ctx.fillRect(lx + 10, ly + 8, lw - 20, lh - 16); // inset gives it structure
     }
   }
-  ctx.fillStyle = SEC_STAR[sec];
+  ctx.fillStyle = starC;
   for (let i = 0; i < 40; i++) {
     const sx = (i * 137.5) % W;
     const sy = ((i * 89.3) + bgScroll * (0.4 + (i % 3) * 0.3)) % (H + 40) - 20;
     ctx.fillRect(sx, sy, i % 3 === 0 ? 2 : 1, 8 + (i % 3) * 6);
   }
-  ctx.fillStyle = SEC_SLAB[sec];
+  ctx.fillStyle = slabC;
   for (let i = 0; i < 6; i++) {
     const sy = ((i * 173) + bgScroll * 0.25) % (H + 120) - 60;
     ctx.fillRect(30 + (i * 97) % (W - 120), sy, 60, 34); // dim "terrain" slabs
@@ -82,7 +101,7 @@ export function draw(g, ctx, bgScroll) {
     const q = g.particles.items[i];
     const a = q.life / q.max;
     ctx.globalAlpha = a;
-    ctx.fillStyle = q.hue === 0 ? '#ffffff' : q.hue === 200 ? '#7fd8ff' : q.hue === 190 ? '#9fe8ff' : '#ffb347';
+    ctx.fillStyle = q.hue === 0 ? '#ffffff' : q.hue === 10 ? '#ff6247' : q.hue === 200 ? '#7fd8ff' : q.hue === 190 ? '#9fe8ff' : '#ffb347';
     const s = 2 + a * 3;
     ctx.fillRect(q.x - s / 2, q.y - s / 2, s, s);
   }
@@ -133,6 +152,28 @@ export function draw(g, ctx, bgScroll) {
   }
   ctx.globalAlpha = 1;
 
+  // r6 S3b arrival ritual: WARNING telegraph — big, field-centered, flashing;
+  // deliberately unlike popups (gold 15px) and banners (backing box + sub-lines).
+  // Animation keys off g.frame only (renderer determinism: no g.rng in draw).
+  if (g.warn > 0) {
+    const on = (g.frame >> 3) & 1;
+    const fade = Math.min(1, g.warn / 12);
+    ctx.globalAlpha = 0.8 * fade;
+    ctx.fillStyle = '#14040a';
+    ctx.fillRect(0, H / 2 - 32, W, 64);
+    ctx.globalAlpha = fade;
+    ctx.fillStyle = on ? '#ff4fa3' : '#ff8ec4';
+    for (let x = 0; x < W; x += 26) { // hazard ticks along the band edges
+      ctx.fillRect(x + (on ? 0 : 13), H / 2 - 32, 13, 3);
+      ctx.fillRect(x + (on ? 13 : 0), H / 2 + 29, 13, 3);
+    }
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 26px monospace';
+    ctx.fillStyle = on ? '#ff4fa3' : '#ffe6f2';
+    ctx.fillText('W A R N I N G', W / 2, H / 2 + 9);
+    ctx.globalAlpha = 1;
+  }
+
   // bomb / cancel flashes — combined effective wash hard-capped at 0.55 so the
   // field is never blotted out (r5 nit-a); the gold cancel wash is also eased
   // (peak 0.33 → 0.26 — it read as a full-field brown-out on the dark bg)
@@ -161,9 +202,52 @@ function drawEnemy(ctx, g, e) {
     case 3: poly(ctx, [[0, -20], [17, -10], [17, 10], [0, 20], [-17, 10], [-17, -10]]); break; // hex
     case 4: poly(ctx, [[0, -26], [24, -8], [16, 22], [-16, 22], [-24, -8]]); ctx.fillStyle = '#6a7090'; poly(ctx, [[0, -14], [12, 8], [-12, 8]]); break;
     case 5: {
-      poly(ctx, [[0, -30], [28, -12], [22, 26], [-22, 26], [-28, -12]]);
-      ctx.fillStyle = ['#ff4fa3', '#37d6e0', '#ffd24a'][e.phase] || '#fff';
-      poly(ctx, [[0, -16], [14, 10], [-14, 10]]); // core tint telegraphs phase
+      // r6 S3b: each phase is a FORM change — three distinct silhouettes.
+      // During the 60f handoff armor the incoming form BURNS IN: red-hot
+      // flicker (g.frame-keyed — no rng in draw) over the whole body.
+      const burning = e.vulnAt < 0 && e.phase > 0;
+      const body = burning ? ((g.frame & 2) ? '#e0604a' : '#7a2a22') : (flick ? '#3a3f55' : ENEMY_TINT[5]);
+      const core = burning ? '#ffb347' : (['#ff4fa3', '#37d6e0', '#ffd24a'][e.phase] || '#fff');
+      ctx.fillStyle = body;
+      if (e.phase === 0) {        // P1: winged carrier — broad hull + swept wing roots
+        poly(ctx, [[0, -30], [28, -12], [22, 26], [-22, 26], [-28, -12]]);
+        poly(ctx, [[-24, -8], [-42, 2], [-24, 12]]); // wing roots reach for the pods
+        poly(ctx, [[24, -8], [42, 2], [24, 12]]);
+        ctx.fillStyle = core;
+        poly(ctx, [[0, -16], [14, 10], [-14, 10]]);
+      } else if (e.phase === 1) { // P2: armor shed — wide flat hull, new geometry
+        poly(ctx, [[-36, -4], [-16, -18], [16, -18], [36, -4], [24, 18], [-24, 18]]);
+        ctx.fillStyle = core;
+        ctx.fillRect(-20, -4, 40, 8); // exposed cyan core band
+      } else {                    // P3: stripped bare core — small, angular, white-hot
+        poly(ctx, [[0, -24], [17, 0], [0, 20], [-17, 0]]);
+        ctx.fillStyle = burning ? '#ffb347' : '#8a8fa8';
+        ctx.fillRect(-26, -3, 9, 6); ctx.fillRect(17, -3, 9, 6); // bare struts
+        ctx.fillStyle = core;
+        poly(ctx, [[0, -13], [9, 0], [0, 11], [-9, 0]]);
+        ctx.fillStyle = '#fff6f0';
+        ctx.fillRect(-2, -3, 4, 6); // white-hot center
+      }
+      break;
+    }
+    case 6: {
+      // r6 boss sub-part: silhouette continues the boss's form — destroying it
+      // visibly amputates that piece (S3b part MUST). Shapes keyed to e.phase.
+      if (e.phase === 0) {        // wing pod: outward-swept blade
+        poly(ctx, [[0, -9], [e.side * 13, -2], [e.side * 9, 6], [0, 8]]);
+        ctx.fillStyle = '#ff4fa3';
+        ctx.fillRect(e.side * 3 - 2, -2, 4, 4);
+      } else if (e.phase === 1) { // armor node: slab with exposed vent
+        ctx.fillRect(-8, -8, 16, 16);
+        ctx.fillStyle = '#37d6e0';
+        ctx.fillRect(-4, -3, 8, 6);
+      } else {                    // core relay node: bright diamond
+        poly(ctx, [[0, -9], [8, 0], [0, 9], [-8, 0]]);
+        ctx.fillStyle = '#ffd24a';
+        poly(ctx, [[0, -5], [4, 0], [0, 5], [-4, 0]]);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(-1, -1, 2, 2);
+      }
       break;
     }
   }

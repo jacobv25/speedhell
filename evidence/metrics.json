@@ -3,9 +3,9 @@
   "generated": "sim.mjs",
   "stress": {
     "p50": 0.011,
-    "p99": 0.109,
-    "max": 0.773,
-    "heapDeltaKB": 3948,
+    "p99": 0.101,
+    "max": 0.727,
+    "heapDeltaKB": 3791,
     "budget": 16.6,
     "pass": true
   },
@@ -284,7 +284,7 @@
           "speed": 2
         }
       },
-      "simWallMs": 330
+      "simWallMs": 325
     },
     {
       "name": "aggressive-human",
@@ -556,7 +556,7 @@
           "speed": 0
         }
       },
-      "simWallMs": 44
+      "simWallMs": 45
     },
     {
       "name": "passive-human",
@@ -940,7 +940,7 @@
           "speed": 1
         }
       },
-      "simWallMs": 116
+      "simWallMs": 114
     },
     {
       "name": "blind",
@@ -1220,17 +1220,27 @@
           "timeouts": 3,
           "score": 3000,
           "bossHpAt90": 130
-        },
-        {
-          "name": "stutter-15-15",
-          "frames": 3993,
-          "bossKills": 1,
-          "timeouts": 2,
-          "score": 19800,
-          "bossHpAt90": 130
         }
       ],
-      "pass": false
+      "pass": true
+    },
+    "s6_stutter_residual": {
+      "desc": "DOCUMENTED RESIDUAL (r6 ship decision): a 15f-sprint/15f-stop stutter threads the stillness reset, the graze account, and slow-EMA led-aim at once. Closing it cost honest-play greens on every measured config (r6.6 frontier). Measured shape on the ship tree: the mortal stutterer clips P1 (~17k, ~10% of honest take) then DIES without clearing. LAW: mortal form must die, never clear the boss (≤1 phase), and earn <15% of the certified expert score. Invulnerable number is tracked data.",
+      "invulnerable": {
+        "name": "stutter-15-15-invuln",
+        "frames": 3993,
+        "bossKills": 1,
+        "timeouts": 2,
+        "score": 19800,
+        "bossHpAt90": 130
+      },
+      "mortal": {
+        "outcome": "died",
+        "bossKills": 1,
+        "deaths": 4,
+        "score": 17000
+      },
+      "pass": true
     },
     "s6_deathtank_watch": {
       "desc": "ADVISORY (always passes): mortal zero-dodge boss-tracker take — genre-normal death-tanking, tracked so it can never silently become the best route",
@@ -1274,10 +1284,6 @@
         },
         {
           "name": "hover-under-spawn",
-          "hp": 130
-        },
-        {
-          "name": "stutter-15-15",
           "hp": 130
         }
       ],

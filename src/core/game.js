@@ -2,7 +2,7 @@
 // Runs identically in browser and Node (sim harness imports this file).
 import { makeRng } from './rng.js';
 import { makePool } from './pool.js';
-import { buildTimeline, updateEnemy, updateBoss, advanceBossPhase, ENEMY_DEFS } from './stage.js';
+import { buildTimeline, updateEnemy, updateBoss, advanceBossPhase, ENEMY_DEFS, BOSS_PHASE_TIMEOUT } from './stage.js';
 
 export const W = 320, H = 427;
 export const STEP = 1 / 60;
@@ -35,6 +35,8 @@ export function makeGame(seed = 1) {
     input: { dx: 0, dy: 0, focus: false, fire: false, bomb: false },
     score: 0, chain: 0, speedKills: 0, kills: 0,
     stageT: 0, timeline: null, tlIndex: 0, gate: null, bossDown: false,
+    warn: 0, // r6 S3b arrival ritual: frames of WARNING remaining before the boss gate
+
     clearBonus: 0, clearAt: 0, endFrame: 0,
     // pools — capacities are hard caps (rubric S8)
     pBullets: makePool(64, () => ({ x: 0, y: 0, vy: 0, alive: 0 })),
@@ -43,6 +45,20 @@ export function makeGame(seed = 1) {
       type: 0, x: 0, y: 0, vx: 0, vy: 0, hp: 0, r: 10, age: 0,
       vulnAt: 0, armorUntil: 0, holdT: 0, phase: 0, fireT: 0, side: 1, value: 0, window: 0, dead: 0,
       sweepOff: 0, // boss-phase sweep phase offset (r5: continuous phase handoff)
+      campT: 0, // r6 boss serve budget: continuous frames spent serving the player's column
+      prevHp: 0, // r6: last frame's hp (boss damage-stream detection for the serve budget)
+      latchX: -1e9, // r6.3: x latched at an over-serve relocation (-1e9 = none); cleared
+      // ONLY by genuine pursuit (co-movement with the boss) — never by displacement
+      latchX2: -1e9, // r6.3: the PREVIOUS latched band (a 2-spot shuffler banks two bands)
+      latchN: 0, // r6.3: relocations this phase — ratchets the serve ration 55→25→12→6→2
+      trackT: 0, // r6.3: demonstrated-tracking credit while latched (staying under the relocated boss)
+      pxEma: 0, // r6.3: fast EMA of player x (~0.4s) — 'parked' posture detector
+      lastDir: 0, // r6.4: last nonzero x-direction of the player (crawl detector)
+      monoT: 0, // r6.4: moving-frames without a direction reversal (crawl detector)
+      stillRun: 0, // r6.5: consecutive still frames (a real dwell resets monoT)
+      latchT: 0, // r6.5: refunds granted this phase (each further refund costs +25 credit)
+      grazeT: 0, // r6.4: frames since a bullet grazed the player's core (in-fire window)
+      grindHp: 0, // r6.4: per-phase hp dealt from IN-FIRE play — the grind account
     })),
     items: makePool(200, () => ({ x: 0, y: 0, vy: 0, val: 0 })),
     particles: makePool(400, () => ({ x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 0, hue: 0 })),
@@ -101,8 +117,15 @@ export function spawnEnemy(g, type, x, y, opts = {}) {
   e.type = type; e.x = x; e.y = y; e.vx = opts.vx || 0; e.vy = opts.vy || 0;
   e.hp = d.hp; e.r = d.r; e.age = 0; e.phase = 0; e.fireT = 0; e.dead = 0;
   e.side = opts.side || 1; e.holdT = opts.holdT || 0;
-  e.value = d.value; e.window = d.window; e.sweepOff = 0;
+  e.value = d.value; e.window = d.window; e.sweepOff = 0; e.campT = 0; e.prevHp = d.hp;
+  e.latchX = -1e9; e.latchX2 = -1e9; e.latchN = 0; e.trackT = 0; e.pxEma = g.player.x;
+  e.grazeT = 0; e.grindHp = 0; e.lastDir = 0; e.monoT = 0; e.latchT = 0; e.stillRun = 0;
   e.vulnAt = -1; e.armorUntil = 0; // vuln set once on-screen (top dead zone + intro armor)
+  // r6.4: the boss's entrance armor lives HERE, not in the timeline event, so
+  // every spawn path (referee camp probes included) gets the untouchable 90f
+  // descent. (r6.3 shipped this line BEFORE the armorUntil reset above — the
+  // armor never existed and every strategy shaved free descent HP, critic B.)
+  if (type === 5) e.armorUntil = g.frame + 95;
   return e;
 }
 
@@ -128,7 +151,8 @@ function killEnemy(g, e, idx) {
   }
   g.score += v; g.kills++;
   g.stats.killLog.push({ t: e.type, f: aliveFrames, s: speed ? 1 : 0 });
-  const big = e.type >= 3; // elite/midboss/boss get the shake (S4)
+  const big = e.type === 3 || e.type === 4; // elite/midboss get the shake (S4);
+  // boss sub-parts (type 6) pop like popcorn — shake stays reserved (S4-SHOULD)
   burst(g, e.x, e.y, big ? 60 : 16, e.type === 1 ? 200 : 30, big ? 2 : 1);
   if (big) g.shake = 14;
   if (e.type === 4) { // midboss down: relief wall + shower, gate opens — no breather (T2)
@@ -146,13 +170,20 @@ function killEnemy(g, e, idx) {
 
 // Boss phases score like kills but the entity persists until the last phase.
 function scoreBossPhase(g, e) {
-  const speed = e.vulnAt >= 0 && g.frame - e.vulnAt <= e.window;
-  let v = ENEMY_DEFS[5].value;
+  const dur = e.vulnAt >= 0 ? g.frame - e.vulnAt : 1e9;
+  const speed = dur <= e.window;
+  // r6 late-kill decay (Psikyo pays boss GOLD by kill time): full value through
+  // 1200f of the phase (every honest expert kill across the certified + robust
+  // seeds lands under it), sliding to ~nothing at the 1450f timeout — a phase
+  // ground down at the buzzer pays like the timeout it almost was, so slow
+  // grinding is never a payday and camp-luck can't spike a passive score (S6).
+  const fade = Math.max(0, Math.min(1, (BOSS_PHASE_TIMEOUT - dur) / 250));
+  let v = Math.round(ENEMY_DEFS[5].value * fade / 10) * 10;
   if (speed) { v *= 2; g.chain++; g.speedKills++; addPopup(g, e.x, e.y, 'SPEED', 1); }
   g.score += v; g.kills++;
   g.stats.killLog.push({ t: 5, f: e.vulnAt >= 0 ? g.frame - e.vulnAt : -1, s: speed ? 1 : 0 });
   burst(g, e.x, e.y, 70, 30, 2.2); g.shake = 16;
-  advanceBossPhase(g, e, true);
+  advanceBossPhase(g, e, true, fade);
 }
 
 function cancelAllBullets(g, perBullet = 100) {
@@ -203,7 +234,9 @@ export function update(g) {
     // sooner. Empty screen + no gate + next event still far ⇒ fast-forward the
     // timeline 4x. Deterministic (pure stageT math); the 30-frame guard preserves
     // each wave's telegraph space so arrivals never pop in unannounced.
-    if (g.enemies.count === 0 && !g.bossDown && g.tlIndex < g.timeline.length
+    // r6: never fast-forward through the WARNING ritual — the emptied field IS
+    // the telegraph (S3b arrival ritual needs its full >=1s on the clock).
+    if (g.enemies.count === 0 && !g.warn && !g.bossDown && g.tlIndex < g.timeline.length
       && g.timeline[g.tlIndex].t - g.stageT > 30) g.stageT += 3;
   }
   const p = g.player, inp = g.input;
@@ -271,10 +304,12 @@ export function update(g) {
   }
   if (p.bombActive > 0) {
     p.bombActive--;
-    // bomb ticks all enemies lightly
+    // bomb ticks all enemies lightly (dead-flagged skip: a final-phase boss
+    // killed by shots this same frame must not be re-killed and re-paid — the
+    // double-path double-paid P3 on a robust seed, r6.2)
     for (let i = g.enemies.count - 1; i >= 0; i--) {
       const e = g.enemies.items[i];
-      if (e.vulnAt >= 0) {
+      if (e.vulnAt >= 0 && !e.dead) {
         e.hp -= 0.4;
         if (e.hp <= 0) { if (e.type === 5) scoreBossPhase(g, e); else killEnemy(g, e, i); }
       }
@@ -342,6 +377,12 @@ export function update(g) {
   if (g.shake > 0) g.shake--;
   if (g.flash > 0) g.flash--;
   if (g.cancelFlash > 0) g.cancelFlash--;
+  if (g.warn > 0) {
+    g.warn--;
+    // the WARNING ritual holds the timeline via a gate (so the emptied field is
+    // ritual, not dead air); release it the moment the warning expires
+    if (g.warn === 0 && g.gate === 'warning') g.gate = null;
+  }
 
   // --- stage clear (boss down → tally after a beat) ---
   if (g.bossDown && !g.clearAt) g.clearAt = g.frame + 150;

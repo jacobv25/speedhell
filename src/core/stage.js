@@ -3,7 +3,7 @@
 // top-lane flow / no simultaneous elites [WS05], bottom no-shoot band [WS04],
 // no breather after midboss (gate resumes immediately) [BOGHOG_CRAFT/T2].
 import { spawnEnemy, spawnItem, bulletCancelWall, W, H } from './game.js';
-import { aimedFan, ring, arcWall, spray, bendyStream, twinSpiral } from './patterns.js';
+import { aimedFan, ring, arcWall, spray, bendyStream, twinSpiral, lanceVolley, ledFan } from './patterns.js';
 
 // HP retuned r3 (playtest 2: "easier, not better"). The r2 halving made range
 // play melt everything, so the 2x point-blank pipeline gap was imperceptible.
@@ -24,12 +24,43 @@ export const ENEMY_DEFS = [
   /*2 turret */ { hp: 24,  value: 500,   window: 150, r: 12 },
   /*3 elite  */ { hp: 134, value: 3000,  window: 380, r: 20 },
   /*4 midboss*/ { hp: 130, value: 8000,  window: 700, r: 26 },
-  /*5 boss   */ { hp: 130, value: 9000,  window: 600, r: 30 }, // hp = P1 hp (spawn)
+  /*5 boss   */ { hp: 130, value: 12000, window: 600, r: 30 }, // hp = P1 hp (spawn); value
+  // r6: per-phase payout raised 9000→12000 — earned only by KILLING phases (late-kill
+  // decay in scoreBossPhase melts it to ~0 at the timeout), so it widens the honest-vs-
+  // passive score gap without touching the fight (S6 alignment)
+  // r6 S3b: boss sub-part — rides the boss, hosts one of the phase's emitters,
+  // and is a real speed-kill target (generous window; DDP "structure changes as
+  // you win"). Small r so the under-boss point-blank spot never becomes a
+  // contact trap. Dies with its phase (see updateEnemy case 6).
+  /*6 part   */ { hp: 24,  value: 1000,  window: 300, r: 7 },
 ];
 
+// Per-boss-phase sub-part geometry: [dx, dy] off the boss center. Offsets sit
+// OUTSIDE the boss's r=30 collision circle horizontally, so parts are hittable
+// from below (shots in the part's column reach it, not the hull).
+const PART_GEO = [[36, 4], [38, 0], [38, -4]];
+export function spawnParts(g, boss) {
+  // P1: twin wing pods (the winged form). P2: one armor node (shed-armor form,
+  // asymmetric on purpose). P3: twin bare-core relay nodes.
+  const sides = boss.phase === 1 ? [1] : [-1, 1];
+  for (const s of sides) {
+    const p = spawnEnemy(g, 6, boss.x + PART_GEO[boss.phase][0] * s, boss.y + PART_GEO[boss.phase][1], { side: s });
+    if (p) {
+      p.phase = boss.phase; p.armorUntil = boss.armorUntil; // parts share the form's armor beat
+      // r6.5: P2's armor node is the phase's ONLY led/aimed emitter (the boss
+      // itself speaks pure spirals) — it carries more hp so slow-target
+      // coverage survives deep into the phase; still a snappy point-blank kill
+      if (boss.phase === 1) p.hp = 56;
+    }
+  }
+}
+
 const MIDBOSS_TIMEOUT = 1400;          // ~23s — no milking (S6)
-const BOSS_PHASE_HP = [110, 160, 190]; // HP is a pattern-duration knob [BOGHOG T1]; index 0 unused (spawn hp)
-const BOSS_PHASE_TIMEOUT = 1450;       // ~24s per phase — passive dodging times out
+const BOSS_PHASE_HP = [110, 134, 135]; // HP is a pattern-duration knob [BOGHOG T1]; index 0 unused
+// (spawn hp is ENEMY_DEFS[5].hp). P2/P3 trimmed r6.3: the camp governor's bands hold campers to
+// near-zero income (referee probes: 0 kills, pure timeouts), so HP now only needs to fit the honest
+// expert's tail under the timeout across every robust seed, with kills under the 1200f decay knee.
+export const BOSS_PHASE_TIMEOUT = 1450; // ~24s per phase — passive dodging times out
 
 // Enemies may not fire from the player's band or below (WS04 bottom no-shoot).
 function mayFire(g, e) {
@@ -167,7 +198,67 @@ export function updateEnemy(g, e) {
       }
       break;
     }
+    case 6: { // r6 boss sub-part: position slaved to the boss every frame; hosts
+      // one of the phase's emitters, so killing it REDUCES the phase's output
+      // (DDP: the structure changes as you win). Dies with its phase.
+      let boss = null;
+      for (let i = 0; i < g.enemies.count; i++) {
+        const o = g.enemies.items[i];
+        if (o.type === 5) { boss = o; break; }
+      }
+      if (!boss || boss.dead || boss.phase !== e.phase) { e.dead = 1; break; } // phase over → part despawns scorelessly
+      e.x = boss.x + PART_GEO[e.phase][0] * e.side;
+      e.y = boss.y + PART_GEO[e.phase][1];
+      e.fireT++;
+      if (!mayFire(g, e)) break;
+      // r6.5: parts fire LED (net-velocity from the boss's own player ema) —
+      // the boss's direct-aimed beats supply the mix, so neither standing
+      // still nor slow drifting is a safe answer to the pair (S3b, critic B)
+      const vL = (g.player.x - boss.pxEma) * 0.04;
+      if (e.phase === 0) {        // wing pod: extra lance volleys (P1's boss-only dialect)
+        if (e.fireT % 100 === (e.side < 0 ? 35 : 85)) lanceVolley(g, e.x, e.y + 8, 4, 3.1, 0.015, vL);
+      } else if (e.phase === 1) { // armor node: P2's ONLY spray emitter — kill it and
+        // the phase strips down to pure spirals (felt output reduction)
+        if (e.fireT % 56 === 40) spray(g, e.x, e.y + 8, 8, 0.5, 2.0, 3.1, vL); // narrowed
+        // r6.5 so the led aim keeps density at the intercept point (a 1.0-spread
+        // led spray diluted to ~9% in-fire vs a slow crosser — measured)
+      } else {                    // core relay node: aimed lance beats over P3's medley
+        // (in-family — the lance IS the medley's P1 signature; aimed fire keeps
+        // the fight dancing, which also keeps honest play off the camp governor)
+        if (e.fireT % 120 === (e.side < 0 ? 30 : 90)) lanceVolley(g, e.x, e.y + 8, 4, 3.0, 0.015, vL);
+      }
+      break;
+    }
   }
+}
+
+// r6.3: distance from x to the nearest latched (banned) band center.
+function latchDist(e, x) {
+  let d = e.latchX > -1e8 ? Math.abs(x - e.latchX) : 1e9;
+  if (e.latchX2 > -1e8) d = Math.min(d, Math.abs(x - e.latchX2));
+  return d;
+}
+// r6.4: which side of a banned band the sweep target is pushed to. Normally the
+// BOSS's current side (no flap-crossings); near a field edge, the side with open
+// field — a 1.2px/f crawler otherwise herds the boss into the clamp corner and
+// gets served continuously there (critic B's drift probe, P3).
+function bandSide(e, bandC) {
+  if (bandC < 90) return 55;
+  if (bandC > W - 90) return -55;
+  return e.x >= bandC ? 55 : -55;
+}
+
+// r6.3: P1 dwell spot for a rationed phase — the candidate farthest from every
+// banned band. A 2-spot rail shuffler bans both rails and the boss holds the
+// middle; a center camper bans the middle and the rails stay in play.
+function pickSafeX(e) {
+  const cands = [52, 106, 160, 214, 268];
+  let best = 160, bestD = -1;
+  for (const c of cands) {
+    const d = latchDist(e, c);
+    if (d > bestD) { bestD = d; best = c; }
+  }
+  return best;
 }
 
 export function updateBoss(g, e) {
@@ -175,9 +266,184 @@ export function updateBoss(g, e) {
   // escalation per cycle (S3); super-linear past rep 3 — killers resolve phases
   // by rep 2-4, so the steep tail is what riding a timeout costs (S4/S6, r3)
   const k = Math.min(1 + rep * 0.08 + Math.max(0, rep - 3) * 0.22, 2.2);
-  if (e.age < 90) { e.y += 1.33; return; }  // gravitas entrance — the one allowed pause
+  if (e.age < 90) { // gravitas entrance — the one allowed pause. The wing pods
+    // deploy on the last beat, so the spawn-frame field is bare (S3b arrival
+    // ritual: no live enemies but the boss itself at spawn).
+    e.y += 1.33;
+    if (e.age === 89 && e.phase === 0) spawnParts(g, e);
+    return;
+  }
   // (descends to y≈93: fights inside the capped-pipeline's effective range, so
   // closing on the boss is rewarded the same way it is against everything else)
+  // r6 S3b burn telegraph: during the 60f handoff armor the outgoing form BURNS —
+  // ember spray from logic (deterministic; renderer adds the red tint/flicker).
+  if (e.phase > 0 && g.frame < e.armorUntil && (g.frame & 3) === 0) {
+    for (let i = 0; i < 3; i++) {
+      const q = g.particles.spawn(); if (!q) break;
+      q.x = e.x + g.rng.range(-24, 24); q.y = e.y + g.rng.range(-20, 20);
+      q.vx = g.rng.range(-0.8, 0.8); q.vy = g.rng.range(-2.4, -0.6);
+      q.max = q.life = (16 + g.rng.range(0, 12)) | 0; q.hue = 10; // 10 = burn red
+    }
+  }
+  // r6.3 camp governor (critic 3, F1-F3). What the referee's probes share —
+  // and honest play never does — is STILLNESS: pinned and shuttle campers hold
+  // input-still at their stops, while a live player is perpetually dodging the
+  // boss's own aimed fire. Co-movement "pursuit" detection failed empirically
+  // (the dodging expert's net track reads ~0% pursuit), so the governor keys
+  // on posture instead:
+  //  - campT accrues only while STILL (|Δpx| < 0.7/f): being served (gap<48)
+  //    or holding a parked column waiting for delivery. Any dodging decays it,
+  //    so pursuit and point-blank play are never taxed (F1, F3).
+  //  - each trip LATCHES the spot as a banned band — TWO bands remembered, so
+  //    a 2-spot shuffler banks both stops (F2) — and ratchets the phase's
+  //    serve ration 55 → 25 → 12 → 6 → 2 (floor 2 once the grind account is spent).
+  //  - refund: while latched the boss is BY CONSTRUCTION never over a banned
+  //    stop, so closeness can only mean the player CAME TO the relocated boss.
+  //    ~60f of demonstrated tracking (trackT, gap<40 while latched) clears the
+  //    bands and the ration. A blind shuffler's stops stay ≥55px from the
+  //    latched boss forever, so it can never demonstrate tracking; a live
+  //    player who follows the relocation keeps shooting the whole time.
+  const pVx = g.player.x - g.player.prevX;
+  const gap = Math.abs(g.player.x - e.x);
+  e.pxEma += (g.player.x - e.pxEma) * 0.04;
+  const parked = Math.abs(g.player.x - e.pxEma) < 20; // holding a spot (~0.4s)
+  const still = Math.abs(pVx) < 0.7;
+  // r6.4 crawl detector (critic B's 1.2px/f sawtooth): machine-crawl = moving
+  // frames that NEVER reverse direction (humans and bots flip every few frames;
+  // the sawtooth flips only at field edges) at slow net speed — the fast-ema
+  // lag reads net speed: crawler ~30px, a traverse-following tracker ~90px,
+  // a hovering fighter <20px. Only the crawler band is flagged.
+  {
+    const dir = pVx > 0.7 ? 1 : pVx < -0.7 ? -1 : 0;
+    if (dir !== 0) {
+      if (dir === -e.lastDir) e.monoT = 0; // reversal: humans flip constantly
+      else e.monoT++;
+      e.lastDir = dir; // (r6.4 bugfix: the reset branch must record the new
+      // direction too, or one flip zeroes monoT forever and the detector is dead)
+      e.stillRun = 0;
+    } else if (++e.stillRun >= 15) e.monoT = 0;
+    // ^ r6.5: a REAL dwell (15+ consecutive still frames) breaks a monotonic
+    // run — the honest bot's dwell-separated same-direction follows were
+    // chaining past 60 (measured 20% mono60 on facade P1, false crawl flags).
+    // KNOWN SEAM (r6.6 arbitration): the fixed 15f threshold is a laundering
+    // window — a blind 15f-sprint/15f-stop stutterer sits exactly on it and
+    // zeroes its own crawl evidence. Attempts to close it (gap-gating,
+    // proportional draining, dual-horizon lead) traded away honest-play greens
+    // and were rejected; the invulnerable stutter probe ships as a documented
+    // residual, and its MORTAL twin dies to this boss's fire regardless.
+  }
+  const emaLag = Math.abs(g.player.x - e.pxEma);
+  const crawl = e.monoT > 25 && emaLag >= 20 && emaLag < 60
+    && (Math.abs(g.player.x - e.x) >= 30 || e.monoT > 60);
+  // ^ the gap≥30 standoff spares honest hug-follows, but an ESCORTED crawler
+  // (the mid-field sweep co-moving with it at its own speed, gap<30 for a whole
+  // half-period) is caught by monoT>60. Honest play DOES log monoT runs past 60
+  // (measured 71-74 on the expert) — the catch is safe because crawl also
+  // requires emaLag ∈ [20,60): the expert's long one-way runs are full-speed
+  // chases (lag ~90) or end in dwells at the boss (lag <20, and the 15f
+  // dwell-reset above clears them); only slow sustained transit lands in both.
+  // ^ the lag window separates the kinematic classes: hovering fighter <20,
+  // machine crawl 20-60, full-speed chase ≥60 (a hop-follow is exempt); the
+  // gap≥30 standoff gate spares an honest hug-follow AT the boss — a crawler's
+  // pass spends its serve time crossing the 30-48 shell and beyond, a fighter
+  // holds the column at <30
+  // r6.4 graze layer (critic B: a 1.2px/f sawtooth and a 3-spot shuffler slid
+  // between the posture detectors). The one thing every such probe does — and
+  // no surviving player can — is stand IN FIRE: their trajectories ignore
+  // bullets, and their mortal twins die on exactly these frames. Any bullet
+  // touching graze range opens a ~0.5s in-fire window; damage dealt from
+  // in-fire play bills a per-phase grind account (grindHp), and once it's
+  // spent the phase stops serving that play outright: ration floor 2, no trip
+  // immunity, no tracking refunds. Honest dodging rarely grazes, and its
+  // in-fire damage stays far under the account.
+  {
+    let grazed = false;
+    const px = g.player.x, py = g.player.y;
+    for (let i = 0; i < g.eBullets.count; i++) {
+      const b = g.eBullets.items[i];
+      const dx = b.x - px, dy = b.y - py, rr = b.r + 5;
+      if (dx * dx + dy * dy < rr * rr) { grazed = true; break; }
+    }
+    e.grazeT = grazed ? 30 : Math.max(0, e.grazeT - 1);
+  }
+  const dHp = e.prevHp - e.hp; e.prevHp = e.hp;
+  if (dHp > 0 && e.grazeT > 0) e.grindHp += dHp;
+  const grindSpent = e.grindHp > 25; // measured: honest bots bill ~0 here (they
+  // never deal damage from inside fire); every exploit probe bills 27-84/phase
+  let latched = e.latchX > -1e8;
+  if (latched && !grindSpent) {
+    // tracking credit: near the boss and NOT in transit (a shuffler's travel
+    // leg blasting through the boss's column at full speed earned refunds —
+    // measured 4 in P1; an engaged player HOVERS, mixing still and dodge frames).
+    // gap bar sits just inside the 55px exclusion band: a banded camper's
+    // parked frames are geometrically ≥55 away and can never earn credit.
+    e.trackT = Math.max(0, e.trackT + (gap < 52 && Math.abs(pVx) < 2.5 && emaLag < 45 && e.monoT < 40 ? 1.5 : -0.5));
+    // ^ r6.5 credit bounds: lag<45 admits P2's honest slow-FOLLOW (lag 24-48 —
+    // the old <24 bar starved it: 0 refunds, P2 timeouts on 2 seeds) while
+    // monoT<40 blocks a crawler mid-leg (its runs never reverse; an honest
+    // follower's dodge reverses every few dozen frames), and the grind gate
+    // below (led-aim fills a camper's account, honest stays 0) backstops both.
+    // ^ credit bounds (r6.5 final form): emaLag < 45 admits both honest credit
+    // modes — hovering at the boss (lag <20) and P2's slow sweep-FOLLOW (lag
+    // 24-48; an earlier <24 bar starved it: 0 refunds, P2 timeouts) — while
+    // monoT < 40 keeps a crawler mid-leg out (its runs never reverse), and the
+    // refund's grind gate below backstops whatever slips the kinematics.
+    if (e.trackT >= 50 + 25 * e.latchT && e.grindHp < 6) { // tracking demonstrated
+      // AND the grind account is clean: refunds are for players who never deal
+      // damage from inside fire (measured: honest bots bill ~0 grindHp, every
+      // exploit probe bills 27-93). r6.5: each refund in a phase costs 25 MORE
+      // tracking credit (latchT counts refunds, reset per phase) — an engaged
+      // player's credit flows at +1.5/f and affords it; a probe's credit only
+      // trickles during boss-near-stop coincidences and rarely affords a second
+      // re-prime of its serve ration.
+      e.latchX = -1e9; e.latchX2 = -1e9; e.latchN = 0; e.trackT = 0; e.campT = 0;
+      e.latchT++;
+      latched = false;
+    }
+  } else e.trackT = 0;
+  if (still && gap < 48) e.campT += 0.6; // still while served (soft: an honest
+  // hover under a slow sweep shares this posture — the hard evidence for camping
+  // is waiting/crawling/in-fire play, which accrue at full or better rates)
+  else if (still && parked) e.campT += 1.5; // parked WAITING for delivery — trips
+  // before the boss ever arrives, so pins/shufflers get banded pre-serve
+  else if (crawl && gap < 48) e.campT += 1.5; // machine-crawl being served
+  else if (e.grazeT > 0 && gap < 48) e.campT += 1.5; // fighting from inside fire
+  else e.campT = Math.max(0, e.campT - (crawl ? 0 : 3));
+  // ^ a flagged crawler gets no forgiveness between serves (its 2-still-1-move
+  // cadence decay-washed to nothing otherwise, critic B's drift probe); everyone
+  // else keeps the fast decay. (A mean-gap 'remote' bar once lived here and was
+  // abandoned: measured, it flickered across serves and overlapped displaced
+  // honest play — its dead pxEma2 plumbing was deleted in r6.6 housekeeping.)
+  // ration ratchet is band-count-independent (r6.4 critic B: two bands were one
+  // short vs a 3-spot shuffler): latchN never resets without a tracking refund,
+  // so a phase that keeps relocating serves thinner and thinner slices.
+  const ration = grindSpent ? 2
+    : e.latchN === 0 ? 55 : e.latchN === 1 ? 25 : e.latchN === 2 ? 12 : e.latchN === 3 ? 6 : 2;
+  if (e.campT > ration) { // over budget
+    e.campT = 0;
+    // trip IMMUNITY while demonstrably tracking (trackT ≥ 8): an engaged
+    // player absorbing a trip keeps the boss in place — re-banding a tracker's
+    // CURRENT spot only chased the boss off its own pursuer (measured stalls;
+    // at floor rations the chase cycle outpaced credit accumulation, so the
+    // bar sits at the first few frames of legitimate close-hover). ANY grind
+    // billing (≥6hp dealt from in-fire play) voids the immunity — in-fire
+    // "tracking" is not play, and honest accounts measure 0.
+    if (!latched || e.trackT < 8 || e.grindHp >= 6) {
+      // bands update only from non-TRANSIT positions (r6.4): a graze-trip caught
+      // mid-travel (full-speed lag ~90) would latch a transient x, pulling a band
+      // OFF a shuffler's real stop and re-opening it — but a slow crawler
+      // (lag ~29) must still band, or it escapes banding entirely (measured)
+      if (emaLag < 45) {
+        if (e.latchX > -1e8 && Math.abs(g.player.x - e.latchX) > 55) e.latchX2 = e.latchX;
+        e.latchX = g.player.x; latched = true;
+      }
+      e.latchN++;
+      if (phase === 0) e.holdT = Math.min(e.holdT, 1); // P1: this dwell ends now
+    }
+  }
+  // r6.5 led-aim input: the target's NET x-velocity, read off the boss's own
+  // player-position ema (a drifter's 1.2px/f reads exactly; a hoverer reads ~0)
+  const vLead = (g.player.x - e.pxEma) * 0.04;
   e.fireT++;
   const t = e.fireT % 240;
 
@@ -189,7 +455,9 @@ export function updateBoss(g, e) {
     // boss column for ~17f per crossing — not a free damage window (r4: at slow
     // hop speed the passive bot ground P1 down from camp). Dwells are where the
     // damage is, and dwells demand pursuit.
-    const railX = W / 2 + e.side * 100;
+    // while latched, dwell only at spots clear of every banned band (r6.3 —
+    // the far-rail rule alone DELIVERED the boss to a rail shuffler's next stop)
+    const railX = latched ? pickSafeX(e) : W / 2 + e.side * 100;
     if (Math.abs(e.x - railX) > 3) e.x += Math.sign(railX - e.x) * 4.2;
     else if (--e.holdT <= 0) {
       // hop to the rail on the FAR side of the player — but never dwell twice on
@@ -198,11 +466,21 @@ export function updateBoss(g, e) {
       // measured hp frozen a full phase). Forcing the cross also sweeps aimed
       // fans over campers: anti-camp from motion, not position.
       const far = g.player.x < W / 2 ? 1 : -1;
-      e.side = far === e.side ? -e.side : far;
+      // r6.2 rail-gap fix (critic 2): vs a LATCHED player (over-served and still
+      // sitting on the same spot) the boss simply stays on the far rail — a rail
+      // camper is served at most one dwell, then only crossing scraps. The
+      // never-same-rail alternation (r4 pursuit-lockout fix) is for players who
+      // actually move, and they keep it.
+      e.side = (far === e.side && !(parked || latched)) ? -e.side : far;
       e.holdT = 210;
     }
     if (mayFire(g, e)) {
-      if (t % 50 === 20) aimedFan(g, e.x, e.y + 14, 4 + Math.min(rep, 4), 0.6, 3.2 * k);
+      // r6.5: the fan is the led/direct MIX itself (ledFan interleaves needles
+      // aimed at where the target is and where its drift is taking it)
+      if (t % 46 === 20) ledFan(g, e.x, e.y + 14, 4 + Math.min(rep, 4), 0.6, 3.2 * k, vLead);
+      // P1 boss-only dialect (r6 S3b/L6): the accelerating lance, also carried by
+      // the wing pods — kill the pods and P1 drops to one lance beat per cycle
+      if (t === 70) lanceVolley(g, e.x, e.y + 14, 5 + Math.min(rep, 2), 3.3 * Math.min(k, 1.5));
       // wall lane biased TOWARD the boss's column: riding the lane IS pursuit —
       // it parks you under the boss where the aimed fans are hottest (risk buys
       // time-on-target). r3 fix: the old away-bias + far-rail hop deterministically
@@ -216,24 +494,73 @@ export function updateBoss(g, e) {
       // bullets leave the screen sooner, so speed-k alone never densifies (r3)
       if (rep >= 4 && t === 155) arcWall(g, e.x, e.y + 10, 13 + rep, 1.9, 1.6 * k, 5 + ((g.rng.next() * 3) | 0), 2);
     }
-  } else if (phase === 1) {  // P2: twin spirals + bounded spray on a wide slow sweep —
-    // the whole screen is its lane; you chase it or you don't hurt it (anti-camp).
-    e.x = W / 2 + Math.tanh(3.5 * Math.sin(e.age * 0.006 + e.sweepOff)) / Math.tanh(3.5) * 100;
+  } else if (phase === 1) {  // P2: shed-armor form — PURE twin spirals on a wide slow
+    // sweep (the phase's boss-only dialect, undiluted); the spray lives in the
+    // armor node sub-part, so killing the node strips P2 to spirals alone (r6).
+    // The whole screen is its lane; you chase it or you don't hurt it (anti-camp).
+    // r6.3 starve geometry (critic 3, F2): the sweep itself stays NORMAL — the
+    // guarantee lives entirely in the hard ±55px band exclusion below, so a
+    // latched pursuer only has to re-track the ordinary sweep (an earlier
+    // receding-sweep variant starved the honest expert too). holdT/vy relax
+    // back to the default center/amplitude.
+    {
+      e.holdT += Math.max(-0.4, Math.min(0.4, -e.holdT));
+      e.vy += Math.max(-0.25, Math.min(0.25, 100 - e.vy));
+    }
+    {
+      let tx = W / 2 + e.holdT + Math.tanh(3.5 * Math.sin(e.age * 0.006 + e.sweepOff)) / Math.tanh(3.5) * e.vy;
+      // r6.4: bands are WALLS, not detours — the boss stays on its side of every
+      // banned stop until a refund drops the bands. (The old push only redirected
+      // targets INSIDE a band; a raw target beyond it made the boss glide
+      // THROUGH the camper's stop, ~23 dmg per crossing — the last income leak
+      // for mid-field stops.) bandSide picks the boss's side, or open field near
+      // an edge so a crawler can't corner the boss against the clamp.
+      if (latched) { const s = bandSide(e, e.latchX); if (s > 0 ? tx < e.latchX + 55 : tx > e.latchX - 55) tx = e.latchX + s; }
+      if (e.latchX2 > -1e8) { const s = bandSide(e, e.latchX2); if (s > 0 ? tx < e.latchX2 + 55 : tx > e.latchX2 - 55) tx = e.latchX2 + s; }
+      tx = Math.max(52, Math.min(W - 52, tx)); // parts ride at ±38: keep them off the edge band (s5_edges)
+      e.x += Math.max(-4.4, Math.min(4.4, tx - e.x)); // continuity governor
+    }
     if (mayFire(g, e)) {
-      if (t % 30 === 10) twinSpiral(g, e.x, e.y + 8, (e.fireT * 0.11) % 6.28, 2 + (rep > 2 ? 1 : 0) + (rep > 3 ? 1 : 0), 1.7 * k, 1, 0.012);
+      if (t % 28 === 10) twinSpiral(g, e.x, e.y + 8, (e.fireT * 0.11) % 6.28, 3 + (rep > 2 ? 1 : 0) + (rep > 3 ? 1 : 0), 1.35 * k, 1, 0.012);
       if (rep >= 3 && t % 30 === 22) twinSpiral(g, e.x, e.y + 8, (e.fireT * 0.13 + 1.7) % 6.28, 2, 1.6 * k, -1, 0.012); // timeout-rider tax: counter-spiral
-      if (t % 90 === 60) spray(g, e.x, e.y + 14, 8 + Math.min(rep, 6), 1.0, 2.1, 3.2);
       if (rep >= 4 && t % 60 === 0) spray(g, e.x, e.y + 14, 10, 1.1, 2.0, 3.1); // timeout-rider tax
     }
-  } else {                   // P3: rhythm-broken finale — rings, bendy, fast aimed,
-    // riding the full-width sweep: stay on it or watch it time out (anti-camp).
-    e.x = W / 2 + Math.tanh(3.5 * Math.sin(e.age * 0.005 + e.sweepOff)) / Math.tanh(3.5) * 100;
+  } else {                   // P3: desperation MEDLEY (r6 S3b) — bare-core form
+    // recombining ONLY the earlier signatures: P1's lances (mirrored, scissoring
+    // at the player), P2's spirals, plus the stripped core's radial ring beat.
+    // Riding the full-width sweep: stay on it or watch it time out (anti-camp).
+    { // starve geometry same as P2: bands carry the guarantee, sweep stays normal
+      e.holdT += Math.max(-0.4, Math.min(0.4, -e.holdT));
+      e.vy += Math.max(-0.25, Math.min(0.25, 100 - e.vy));
+    }
+    {
+      let tx = W / 2 + e.holdT + Math.tanh(3.5 * Math.sin(e.age * 0.005 + e.sweepOff)) / Math.tanh(3.5) * e.vy;
+      // bands are walls, same as P2 (see bandSide there)
+      if (latched) { const s = bandSide(e, e.latchX); if (s > 0 ? tx < e.latchX + 55 : tx > e.latchX - 55) tx = e.latchX + s; }
+      if (e.latchX2 > -1e8) { const s = bandSide(e, e.latchX2); if (s > 0 ? tx < e.latchX2 + 55 : tx > e.latchX2 - 55) tx = e.latchX2 + s; }
+      tx = Math.max(52, Math.min(W - 52, tx)); // parts ride at ±38: keep them off the edge band (s5_edges)
+      e.x += Math.max(-4.4, Math.min(4.4, tx - e.x)); // continuity governor
+    }
+    // r6.2 (critic 1 partial, S3b-2): P3's movement STYLE is its own — the full
+    // sweep gains a slow vertical LUNGE between two heights (fireT-keyed, so the
+    // bob starts from rest at the t23 flip: the boss holds y≈91-93 there and the
+    // first bob step is ~0.3px/f — the handoff reads seamless). P1 hops rails,
+    // P2 glides flat, P3 breathes forward and back while sweeping.
+    e.y = 93 + Math.sin(e.fireT * 0.013) * 22;
     if (mayFire(g, e)) {
-      if (t === 20) ring(g, e.x, e.y, 22 + rep * 3, 1.7 * k, g.rng.range(0, 0.3));
-      if (t === 80) { bendyStream(g, e.x - 26, e.y, Math.PI / 2 - 0.7, 8 + rep, 1.1, 3.1); bendyStream(g, e.x + 26, e.y, Math.PI / 2 + 0.7, 8 + rep, 1.1, 3.1); }
-      if (t === 95 || t === 125 || t === 165) aimedFan(g, e.x, e.y + 14, 7 + Math.min(rep, 3), 0.5, 3.9 * k);
-      if (t === 210) spray(g, e.x, e.y + 10, 9 + Math.min(rep, 6), 1.3, 1.9, 3.3);
-      if (rep >= 3 && (t === 50 || t === 140)) ring(g, e.x, e.y, 20, 1.5, g.rng.range(0, 0.3)); // timeout-rider tax
+      if (t === 20) ring(g, e.x, e.y, 14 + Math.min(rep, 4) * 2, 1.45 * k, g.rng.range(0, 0.3)); // bare-core beat —
+      // slowed r6.2: at 1.7k the rings orbited even the reactDelay-0 expert (meanEmaD 95,
+      // P3 stalls); at 1.45k point-blank pursuit threads between beats (critic 2 f1)
+      if (t === 60 || t === 150) { // P1's dialect, doubled from the core's flanks —
+        // r6.5 mix: left lance direct, right lance LED (denies still AND drift)
+        lanceVolley(g, e.x - 26, e.y + 8, 5 + Math.min(rep, 3), 3.3 * Math.min(k, 1.5));
+        lanceVolley(g, e.x + 26, e.y + 8, 5 + Math.min(rep, 3), 3.3 * Math.min(k, 1.5), 0.015, vLead);
+      }
+      if (t === 105) lanceVolley(g, e.x, e.y + 10, 4, 3.1 * Math.min(k, 1.5), 0.015, vLead); // off-beat
+      // core lance, led: sustained pressure between the flank pairs
+      // core lance, led: sustained pressure between the flank pairs
+      if (t % 30 === 8) twinSpiral(g, e.x, e.y + 8, (e.fireT * 0.11) % 6.28, 2 + (rep > 2 ? 1 : 0), 1.4 * k, 1, 0.012); // P2's dialect
+      if (rep >= 3 && (t === 100 || t === 190)) ring(g, e.x, e.y, 14, 1.5, g.rng.range(0, 0.3)); // timeout-rider tax
     }
   }
 
@@ -244,11 +571,14 @@ export function updateBoss(g, e) {
   }
 }
 
-export function advanceBossPhase(g, e, killed) {
+export function advanceBossPhase(g, e, killed, fade = 1) {
   g.stats.bossPhaseFrames.push(e.fireT);
   if (killed) {
     bulletCancelWall(g, e.x, e.y);
-    for (let i = 0; i < 10; i++) spawnItem(g, e.x + g.rng.range(-33, 33), e.y + g.rng.range(-13, 27), 1000);
+    // r6 late-kill decay: the item shower shrinks with the kill's lateness
+    // (fade from scoreBossPhase) — a buzzer-grind pays like a timeout (S6)
+    const n = Math.round(10 * fade);
+    for (let i = 0; i < n; i++) spawnItem(g, e.x + g.rng.range(-33, 33), e.y + g.rng.range(-13, 27), 1000);
   } else {
     // timeout: bullets stay, no reward
   }
@@ -257,6 +587,9 @@ export function advanceBossPhase(g, e, killed) {
   if (e.phase >= 2) { e.dead = 1; g.gate = null; g.bossDown = true; return; }
   e.phase++; e.fireT = 0;
   e.hp = BOSS_PHASE_HP[e.phase];
+  e.prevHp = e.hp; e.campT = 0; e.latchX = -1e9; e.latchX2 = -1e9; e.latchN = 0;
+  e.grindHp = 0; e.latchT = 0; // fresh serve ration + grind account + refund price
+  // per form (moveT carries across the handoff: a live player stays credited)
   e.vulnAt = -1; e.armorUntil = g.frame + 60; // brief armor while next phase telegraphs
   // r5 S3-SHOULD-1: sync the incoming phase's free-running sweep to the boss's
   // CURRENT x, so the handoff is continuous at the flip frame (referee: any
@@ -267,9 +600,16 @@ export function advanceBossPhase(g, e, killed) {
   // dwell ≤3px outside it) — the residual step lands at the sweep extremum,
   // where sweep velocity is ~0, so the worst first-frame step stays ≤ ~3px.
   const omega = e.phase === 1 ? 0.006 : 0.005; // must match the P2/P3 sweeps above
-  const u = Math.max(-1, Math.min(1, (e.x - W / 2) / 100)) * Math.tanh(3.5);
+  // holdT is P1's dwell timer but the sweep phases' CENTER offset, and vy their
+  // AMPLITUDE (r6.2 rail-gap fix): reset both entering P2; entering P3 they
+  // carry over, so the solve below runs against the sweep's ACTUAL geometry.
+  if (e.phase === 1) { e.holdT = 0; e.vy = 100; }
+  const u = Math.max(-1, Math.min(1, (e.x - W / 2 - e.holdT) / e.vy)) * Math.tanh(3.5);
   const theta = Math.asin(Math.max(-1, Math.min(1, Math.atanh(u) / 3.5)));
   e.sweepOff = theta - e.age * omega;
+  // r6: the incoming form's sub-part(s) ride in with the new phase; the old
+  // phase's parts despawn themselves (updateEnemy case 6 checks boss.phase).
+  spawnParts(g, e);
 }
 
 // --- timeline ------------------------------------------------------------
@@ -330,7 +670,20 @@ export function buildTimeline() {
     for (let i = 0; i < 14; i++) spawnItem(g, 40 + i * 17, -10 - (i % 3) * 16, 150);
   });
 
-  // S8 boss — gate until the run resolves
+  // S8a WARNING ritual (r6 S3b, homage L3): scoreless sweep of any stragglers +
+  // full scoreless bullet cancel, then >=1s of WARNING over a guaranteed-empty
+  // field before the gate. warn suppresses the caravan pull (game.js), so the
+  // 70 stageT ticks to the gate are 70 real frames.
+  at(3830, (g) => {
+    for (let i = g.enemies.count - 1; i >= 0; i--) g.enemies.killAt(i);
+    for (let i = g.eBullets.count - 1; i >= 0; i--) g.eBullets.killAt(i);
+    g.warn = 70; g.gate = 'warning'; // gate: the ritual is a beat, not dead air
+    g.cancelFlash = Math.max(g.cancelFlash, 12); // soft blink sells the sweep
+  });
+
+  // S8 boss — gate until the run resolves; P1's wing pods deploy at entrance
+  // end (updateBoss). Entrance armor spans the whole 90f descent — set in
+  // spawnEnemy (r6.3) so every spawn path gets the untouchable entrance.
   at(3900, (g) => { g.gate = 'boss'; spawnEnemy(g, 5, W / 2, -27); });
 
   tl.sort((a, b) => a.t - b.t);

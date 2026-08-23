@@ -47,17 +47,63 @@ export function arcWall(g, x, y, n, spread, speed, gapIndex = -1, gapWidth = 0) 
 }
 
 // Randomized-within-limits spray (reactive dodging, bounded weights).
-export function spray(g, x, y, n, spread, sMin, sMax) {
-  const base = aimAt(g, x, y);
+// Optional vLead (r6.5, BOSS-ONLY callers): leads the aim point — see leadAngle.
+export function spray(g, x, y, n, spread, sMin, sMax, vLead = null) {
+  const base = vLead === null ? aimAt(g, x, y) : leadAngle(g, x, y, (sMin + sMax) / 2, vLead);
   for (let i = 0; i < n; i++) {
     const a = base + g.rng.range(-spread / 2, spread / 2);
     fire(g, x, y, a, g.rng.range(sMin, sMax), B_ROUND);
   }
 }
 
+// r6.5 BOSS-ONLY LED AIM (the r6.4 finding: no-lead aimed fire self-misses a
+// slow continuous mover by ~80px of lead error — the boss was BLIND to slow
+// targets, and the anti-camp governor was carrying a burden the guns should).
+// Leads the target's NET velocity (the caller passes it — typically the boss's
+// own player-position ema read, (player.x − pxEma) · emaRate, which measures a
+// drifter's true 1.2px/f exactly while a hovering fighter reads ≈ 0) by the
+// shot's flight time. The lead velocity is CLAMPED to walking pace (±1.8px/f):
+// slow crawls get an exact clip, fast reactive dodging is never hard-sniped.
+// Stage-section enemies NEVER call these — their no-lead fans are the stage's
+// dodge grammar, and led fire stays part of the boss-only dialect (S3b-6).
+export function leadAngle(g, x, y, speed, vLead) {
+  const v = Math.max(-1.8, Math.min(1.8, vLead));
+  const dist = Math.hypot(g.player.x - x, g.player.y - y);
+  return Math.atan2(g.player.y - y, g.player.x + v * (dist / speed) - x);
+}
+
+// Led needle fan, half-and-half: even needles aim at where the target IS, odd
+// needles at where its net drift is taking it — a pure-lead fan is dodged by
+// STOPPING (the inverse exploit), so every fan denies both answers at once.
+// (KNOWN SEAM, r6.6 arbitration: a sprint/stop stutterer whose net velocity
+// the ema averages can thread both aims; the referee ships that as a
+// documented residual — its mortal twin dies to this same fire.)
+export function ledFan(g, x, y, n, spread, speed, vLead) {
+  const led = leadAngle(g, x, y, speed, vLead);
+  const base = aimAt(g, x, y);
+  for (let i = 0; i < n; i++) {
+    const t = n === 1 ? 0 : i / (n - 1) - 0.5;
+    fire(g, x, y, ((i & 1) ? led : base) + t * spread, speed, B_NEEDLE);
+  }
+}
+
 // Bendy stream: same angle, increasing speeds → stretches into a line (S3 flair).
 export function bendyStream(g, x, y, angle, n, sMin, sMax) {
   for (let i = 0; i < n; i++) fire(g, x, y, angle, sMin + (sMax - sMin) * (i / (n - 1)), B_ROUND);
+}
+
+// Boss-only dialect (r6 S3b, homage L6): accelerating needle LANCE — a tight
+// column of aimed needles launched slow-to-fast (every one accelerates), so the
+// group visibly stretches then whip-cracks across the field. No stage section
+// ever fires accelerating needles: "stage or boss?" is readable from the
+// bullets alone (Psikyo's needle/dot caste, sharpened). Aimed ⇒ manipulable;
+// cyan needle family per S2 (aimed = cyan, no new color family).
+// Optional vLead (r6.5): a led lance aims at the target's drift-projected spot.
+// Acceleration shortens real flight time, so the lead projection uses an
+// effective speed ~1.35x the launch speed (empirical mid-flight average).
+export function lanceVolley(g, x, y, n, speed, accel = 0.015, vLead = null) {
+  const base = vLead === null ? aimAt(g, x, y) : leadAngle(g, x, y, speed * 1.35, vLead);
+  for (let i = 0; i < n; i++) fire(g, x, y, base, speed * (1 - i * 0.11), B_NEEDLE, accel, 0);
 }
 
 // Rotating double-emitter curve (boss): two spirals curving opposite ways.
