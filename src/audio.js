@@ -72,6 +72,13 @@ export function stopMusic(fade = 0.8) {
   current = null;
 }
 export function duckMusic(v, secs = 0.3) { if (ac && current) fadeTo(tracks[current], v, secs); }
+// Pause = silence: the element pauses in place and resumes from the same spot.
+export function pauseMusic(on) {
+  if (!ac || !current) return;
+  const t = tracks[current];
+  if (on) t.el.pause();
+  else { const p = t.el.play(); if (p && p.catch) p.catch(() => {}); }
+}
 
 // ---------- procedural SFX ----------
 function osc(type, f0, f1, dur, vol, { t0 = 0, curve = 'exp', detune = 0 } = {}) {

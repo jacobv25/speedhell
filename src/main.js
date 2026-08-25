@@ -23,7 +23,7 @@ addEventListener('keydown', (e) => {
   if (e.key.toLowerCase() === 'r' && (g.state === 'gameover' || g.state === 'clear' || g.state === 'play')) {
     g.seed = (Math.random() * 0xffffffff) >>> 0; beginRun(); // restart <2s (S7)
   }
-  if (e.key.toLowerCase() === 'p') { paused = !paused; audio.duckMusic(paused ? 0.25 : 1, 0.2); }
+  if (e.key.toLowerCase() === 'p') { paused = !paused; audio.pauseMusic(paused); }
   if (e.key.toLowerCase() === 'm') audio.toggleMute();
 });
 addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
