@@ -9,8 +9,21 @@
   clear/gameover. Core stays DOM-free: it only pushes ids into a 32-slot ring
   (`g.sfx`/`g.sfxN`, reset each frame; `sfx(g, id)` in game.js) that main.js drains.
   M = mute (persisted). Sim 16/16 green, shots harness green after the change.
-  NOT yet pushed to the public build / not yet playtested by Jacob with sound on —
-  tune levels (MUSIC_VOL/SFX_VOL in audio.js) to his ear first.
+  Follow-ups same day: P now pauses music outright (adf80d9); librosa analysis of
+  both tracks (docs/music/*.json) → boss track enters at 0:38.94 (its first full
+  section) and loops there instead of the quiet intro (ffa20da). Stage track is
+  flat-energy 123 BPM, never loops within a run.
+  **3 commits UNPUSHED** (ffb4852, adf80d9, ffa20da) — Jacob hasn't said push;
+  MP3s add ~7 MB. He played it locally; no level feedback captured yet — ask.
+- Beat-synced spawns were considered and parked: the caravan pull fast-forwards
+  stageT so spawns can't sit on a real-time beat grid without reopening certified
+  timing. Cosmetic beat pulses in the renderer (29.27 f/beat) are the safe version.
+- Caravan question answered: the pull only closes gaps (same waves, sooner) — never
+  adds enemies. Candidate r7 idea: RUSH x5 spawns a bonus popcorn wave (deterministic,
+  pillar 2/3 aligned). Not briefed yet.
+- Reference play: DoDonPachi + Strikers 1945 II (`s1945ii`, verified good) both
+  installed in ~/ROMs and launch via FBNeo in RetroArch. Jacob was playing S1945II
+  for ideas at close — ask what he noticed.
 
 ## Previous state: ROUND 6 SHIPPED ✅ — public build is live with the boss theatre
 
@@ -56,5 +69,5 @@
 
 ## Next first step
 
-Ask Jacob for his playtest ideas, then brief r7 (stagecraft) with them folded
-in. Verify green first: `cd ~/Dev/speedhell && node test/sim.mjs`.
+Ask Jacob (a) push the sound commits? (b) sound-level feedback, (c) what he
+noticed in S1945II/DDP. Then brief r7 (stagecraft + possibly the bonus-wave caravan). Verify green first: `cd ~/Dev/speedhell && node test/sim.mjs`.
