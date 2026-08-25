@@ -2,7 +2,7 @@
 // Design rules in play: chunks escalate, no encounter repeats >2 [BOGHOG_CRAFT],
 // top-lane flow / no simultaneous elites [WS05], bottom no-shoot band [WS04],
 // no breather after midboss (gate resumes immediately) [BOGHOG_CRAFT/T2].
-import { spawnEnemy, spawnItem, bulletCancelWall, W, H } from './game.js';
+import { sfx, SFX, spawnEnemy, spawnItem, bulletCancelWall, W, H } from './game.js';
 import { aimedFan, ring, arcWall, spray, bendyStream, twinSpiral, lanceVolley, ledFan } from './patterns.js';
 
 // HP retuned r3 (playtest 2: "easier, not better"). The r2 halving made range
@@ -678,6 +678,7 @@ export function buildTimeline() {
     for (let i = g.enemies.count - 1; i >= 0; i--) g.enemies.killAt(i);
     for (let i = g.eBullets.count - 1; i >= 0; i--) g.eBullets.killAt(i);
     g.warn = 70; g.gate = 'warning'; // gate: the ritual is a beat, not dead air
+    sfx(g, SFX.WARNING);
     g.cancelFlash = Math.max(g.cancelFlash, 12); // soft blink sells the sweep
   });
 

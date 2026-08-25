@@ -1,6 +1,18 @@
-# SPEEDHELL — Session Handoff (2026-08-23)
+# SPEEDHELL — Session Handoff (2026-08-24)
 
-## State: ROUND 6 SHIPPED ✅ — public build is live with the boss theatre
+## State: SOUND LANDED (r7-sfx) on top of ROUND 6 ✅
+
+- 2026-08-24: Jacob's first post-r6 idea was SFX + music. Shipped as `src/audio.js`:
+  procedural Web Audio SFX (shot/hit/kill/big-kill/phase/speed/rush/item/cancel/
+  bomb/die/warning/midboss/boss/clear/gameover) + music: `assets/music/skyline-breaker.mp3`
+  (stage) → WARNING ducks it → `insert-coin-skies.mp3` at the boss gate → fade on
+  clear/gameover. Core stays DOM-free: it only pushes ids into a 32-slot ring
+  (`g.sfx`/`g.sfxN`, reset each frame; `sfx(g, id)` in game.js) that main.js drains.
+  M = mute (persisted). Sim 16/16 green, shots harness green after the change.
+  NOT yet pushed to the public build / not yet playtested by Jacob with sound on —
+  tune levels (MUSIC_VOL/SFX_VOL in audio.js) to his ear first.
+
+## Previous state: ROUND 6 SHIPPED ✅ — public build is live with the boss theatre
 
 - **d2d5818** closed round 6 after 6 iterations (Jacob authorized r6.4/r6.5/r6.6,
   then the referee arbitrated the ship tree: r6.5 balance + r6.6 housekeeping).
@@ -14,7 +26,8 @@
 
 ## Left to do (priority order)
 
-1. **Jacob's new playtest ideas** (uncaptured — they outrank the list below).
+1. **Jacob's new playtest ideas** — first one (sound) done; ask if there are more.
+   Sound follow-ups: playtest levels, maybe a title-screen jingle/attract loop.
 2. R7 stagecraft package (docs/HOMAGE_STUDY.md): set-piece hull hosting turret
    alley, release-as-boss-approach, chain-route audit.
 3. R8 receipt package: itemized stage-clear tally.

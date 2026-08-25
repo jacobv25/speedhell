@@ -1,6 +1,7 @@
 // Browser bootstrap: input, fixed 60Hz logic, render on RAF.
 import { makeGame, startRun, update, W, H } from './core/game.js';
 import { draw, resetHud } from './render/renderer.js';
+import * as audio from './audio.js';
 
 const canvas = document.getElementById('game');
 canvas.width = W; canvas.height = H;
@@ -9,15 +10,21 @@ const ctx = canvas.getContext('2d');
 let g = makeGame((Math.random() * 0xffffffff) >>> 0);
 let paused = false, bgScroll = 0;
 
+function beginRun() { // every run-start path: new seed handled by callers
+  audio.unlock(); startRun(g); resetHud(); audio.playMusic('stage');
+}
+
 const keys = {};
 addEventListener('keydown', (e) => {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
   keys[e.key.toLowerCase()] = true;
-  if (e.key === 'Enter' && g.state === 'title') { startRun(g); resetHud(); }
+  audio.unlock(); // any key is the user gesture the AudioContext needs
+  if (e.key === 'Enter' && g.state === 'title') beginRun();
   if (e.key.toLowerCase() === 'r' && (g.state === 'gameover' || g.state === 'clear' || g.state === 'play')) {
-    g.seed = (Math.random() * 0xffffffff) >>> 0; startRun(g); resetHud(); // restart <2s (S7)
+    g.seed = (Math.random() * 0xffffffff) >>> 0; beginRun(); // restart <2s (S7)
   }
-  if (e.key.toLowerCase() === 'p') paused = !paused;
+  if (e.key.toLowerCase() === 'p') { paused = !paused; audio.duckMusic(paused ? 0.25 : 1, 0.2); }
+  if (e.key.toLowerCase() === 'm') audio.toggleMute();
 });
 addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 
@@ -48,11 +55,11 @@ function pollInput() {
     i.bomb = i.bomb || gp.buttons[1]?.pressed || gp.buttons[3]?.pressed;
     i.focus = i.focus || gp.buttons[4]?.pressed || gp.buttons[5]?.pressed
                        || gp.buttons[6]?.pressed || gp.buttons[7]?.pressed;
-    if (gp.buttons[9]?.pressed && g.state === 'title') { startRun(g); resetHud(); }
+    if (gp.buttons[9]?.pressed && g.state === 'title') beginRun();
     // select = instant restart (credit-feed feel; edge-triggered)
     const sel = !!gp.buttons[8]?.pressed;
     if (sel && !prevSelect && g.state !== 'title') {
-      g.seed = (Math.random() * 0xffffffff) >>> 0; startRun(g); resetHud();
+      g.seed = (Math.random() * 0xffffffff) >>> 0; beginRun();
     }
     prevSelect = sel;
   }
@@ -65,7 +72,7 @@ function frame(now) {
   if (acc > 200) acc = 200; // avoid spiral after tab-out
   while (acc >= STEP_MS) {
     pollInput();
-    if (!paused) { update(g); bgScroll += 1.05; }
+    if (!paused) { update(g); audio.drain(g); bgScroll += 1.05; }
     acc -= STEP_MS;
   }
   draw(g, ctx, bgScroll);
@@ -73,6 +80,10 @@ function frame(now) {
     ctx.font = '9px monospace'; ctx.textAlign = 'center';
     ctx.fillStyle = padName ? '#57e389' : '#8a8fa8';
     ctx.fillText(padName ? ('PAD: ' + padName.slice(0, 44)) : 'no gamepad — press a button on the stick', W / 2, H / 2 + 62);
+  }
+  if (audio.isMuted()) {
+    ctx.font = '9px monospace'; ctx.textAlign = 'right'; ctx.fillStyle = '#8a8fa8';
+    ctx.fillText('MUTED (M)', W - 6, H - 6);
   }
   requestAnimationFrame(frame);
 }

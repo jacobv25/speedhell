@@ -23,6 +23,18 @@ export const PLAYER = {
   shotSpeed: 9, shotLimit: 6, shotEvery: 3, shotDmg: 3,
 };
 
+// Sound events (r7-sfx). The core stays DOM-free: it only APPENDS event ids to a
+// fixed ring (g.sfx) each frame; the browser bootstrap drains it after update()
+// and the sim harness ignores it. Bounded (SFX_CAP) — zero per-frame allocation.
+export const SFX = {
+  SHOT: 1, HIT: 2, KILL: 3, KILL_BIG: 4, SPEED: 5, RUSH: 6, ITEM: 7, CANCEL: 8,
+  BOMB: 9, DIE: 10, WARNING: 11, MIDBOSS: 12, BOSS: 13, PHASE: 14, CLEAR: 15, GAMEOVER: 16,
+};
+const SFX_CAP = 32;
+export function sfx(g, id) {
+  if (g.sfxN < SFX_CAP) g.sfx[g.sfxN++] = id;
+}
+
 export function makeGame(seed = 1) {
   const g = {
     seed, rng: makeRng(seed), frame: 0,
@@ -64,6 +76,7 @@ export function makeGame(seed = 1) {
     particles: makePool(400, () => ({ x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 0, hue: 0 })),
     popups: makePool(32, () => ({ x: 0, y: 0, life: 0, text: '', big: 0 })),
     shake: 0, flash: 0, cancelFlash: 0,
+    sfx: new Array(SFX_CAP).fill(0), sfxN: 0, // sound-event ring, drained per frame
     // instrumentation (read by sim + critics; cheap fixed-size)
     stats: {
       maxEBullets: 0, deaths: [], killLog: [], bulletCurve: [],
@@ -126,6 +139,7 @@ export function spawnEnemy(g, type, x, y, opts = {}) {
   // descent. (r6.3 shipped this line BEFORE the armorUntil reset above — the
   // armor never existed and every strategy shaved free descent HP, critic B.)
   if (type === 5) e.armorUntil = g.frame + 95;
+  if (type === 5) sfx(g, SFX.BOSS); else if (type === 4) sfx(g, SFX.MIDBOSS);
   return e;
 }
 
@@ -140,10 +154,10 @@ function killEnemy(g, e, idx) {
   let v = e.value;
   if (speed) {
     v *= 2; g.chain++; g.speedKills++;
-    addPopup(g, e.x, e.y, 'SPEED', 1);
+    addPopup(g, e.x, e.y, 'SPEED', 1); sfx(g, SFX.SPEED);
     if (g.chain % 5 === 0) { // rush shower: garnish, subordinate to core (S6)
       for (let k = 0; k < 6; k++) spawnItem(g, e.x + g.rng.range(-20, 20), e.y + g.rng.range(-13, 13), g.chain * 20);
-      addPopup(g, e.x, e.y - 24, 'RUSH x' + g.chain, 1);
+      addPopup(g, e.x, e.y - 24, 'RUSH x' + g.chain, 1); sfx(g, SFX.RUSH);
     }
   } else {
     g.chain = 0;
@@ -155,6 +169,7 @@ function killEnemy(g, e, idx) {
   // boss sub-parts (type 6) pop like popcorn — shake stays reserved (S4-SHOULD)
   burst(g, e.x, e.y, big ? 60 : 16, e.type === 1 ? 200 : 30, big ? 2 : 1);
   if (big) g.shake = 14;
+  sfx(g, big ? SFX.KILL_BIG : SFX.KILL);
   if (e.type === 4) { // midboss down: relief wall + shower, gate opens — no breather (T2)
     bulletCancelWall(g, e.x, e.y);
     for (let i = 0; i < 8; i++) spawnItem(g, e.x + g.rng.range(-27, 27), e.y + g.rng.range(-7, 20), 800);
@@ -179,8 +194,9 @@ function scoreBossPhase(g, e) {
   // grinding is never a payday and camp-luck can't spike a passive score (S6).
   const fade = Math.max(0, Math.min(1, (BOSS_PHASE_TIMEOUT - dur) / 250));
   let v = Math.round(ENEMY_DEFS[5].value * fade / 10) * 10;
-  if (speed) { v *= 2; g.chain++; g.speedKills++; addPopup(g, e.x, e.y, 'SPEED', 1); }
+  if (speed) { v *= 2; g.chain++; g.speedKills++; addPopup(g, e.x, e.y, 'SPEED', 1); sfx(g, SFX.SPEED); }
   g.score += v; g.kills++;
+  sfx(g, SFX.PHASE);
   g.stats.killLog.push({ t: 5, f: e.vulnAt >= 0 ? g.frame - e.vulnAt : -1, s: speed ? 1 : 0 });
   burst(g, e.x, e.y, 70, 30, 2.2); g.shake = 16;
   advanceBossPhase(g, e, true, fade);
@@ -201,17 +217,17 @@ function cancelAllBullets(g, perBullet = 100) {
 
 export function bulletCancelWall(g, x, y, perBullet = 100) { // release moment (S5)
   const n = cancelAllBullets(g, perBullet);
-  if (n > 0) addPopup(g, x, y, 'CANCEL +' + (n * perBullet), 1);
+  if (n > 0) { addPopup(g, x, y, 'CANCEL +' + (n * perBullet), 1); sfx(g, SFX.CANCEL); }
 }
 
 function playerDie(g, cause) {
   const p = g.player;
   g.stats.deaths.push({ f: g.frame, x: p.x | 0, y: p.y | 0, c: cause });
   burst(g, p.x, p.y, 80, 0, 2.5);
-  g.shake = 20; g.chain = 0;
+  g.shake = 20; g.chain = 0; sfx(g, SFX.DIE);
   cancelAllBullets(g, 0); // safety clear, no points
   p.lives--;
-  if (p.lives < 0) { g.state = 'gameover'; g.endFrame = g.frame; return; }
+  if (p.lives < 0) { g.state = 'gameover'; g.endFrame = g.frame; sfx(g, SFX.GAMEOVER); return; }
   p.x = W / 2; p.y = H - 53; p.invuln = 150; p.bombs = 2; p.bombActive = 0;
 }
 
@@ -222,12 +238,13 @@ function fireBomb(g) {
   // bomb-cancel points are a garnish, subordinate to speed-kill core (S6)
   const n = cancelAllBullets(g, 30);
   addPopup(g, p.x, p.y - 40, n > 0 ? 'BOMB +' + (n * 30) : 'BOMB', 1);
-  g.flash = 12;
+  g.flash = 12; sfx(g, SFX.BOMB);
 }
 
 export function update(g) {
   if (g.state !== 'play') return;
   g.frame++;
+  g.sfxN = 0; // sound ring is per-frame: whatever wasn't drained is dropped
   if (!g.gate) {
     g.stageT++; // gates: timeline holds for midboss/boss, resumes instantly
     // Caravan pull (S5, WS06 lineage): speed-killing a wave pulls the next one in
@@ -260,7 +277,7 @@ export function update(g) {
       const b = g.pBullets.spawn(); if (!b) break;
       b.x = p.x + off; b.y = p.y - 10; b.vy = -PLAYER.shotSpeed;
     }
-    p.fireCd = PLAYER.shotEvery;
+    p.fireCd = PLAYER.shotEvery; sfx(g, SFX.SHOT);
   }
   for (let i = g.pBullets.count - 1; i >= 0; i--) {
     const b = g.pBullets.items[i];
@@ -295,7 +312,7 @@ export function update(g) {
         if (dxx * dxx + dyy * dyy < (e.r + 6) * (e.r + 6)) {
           g.pBullets.killAt(j);
           e.hp -= PLAYER.shotDmg;
-          burst(g, b.x, b.y, 1, 45, 0.5);
+          burst(g, b.x, b.y, 1, 45, 0.5); sfx(g, SFX.HIT);
           if (g.player.bombActive > 0) e.hp -= 0.5;
           if (e.hp <= 0) { if (e.type === 5) scoreBossPhase(g, e); else killEnemy(g, e, i); break; }
         }
@@ -351,7 +368,7 @@ export function update(g) {
     const dxx = p.x - it.x, dyy = p.y - it.y, d2 = dxx * dxx + dyy * dyy;
     if (d2 < 53 * 53) { const d = Math.sqrt(d2) || 1; it.x += (dxx / d) * 4; it.y += (dyy / d) * 4; }
     else it.y += it.vy;
-    if (d2 < 12 * 12) { g.score += it.val; g.items.killAt(i); continue; }
+    if (d2 < 12 * 12) { g.score += it.val; g.items.killAt(i); sfx(g, SFX.ITEM); continue; }
     if (it.y > H + 12) g.items.killAt(i);
   }
 
@@ -389,7 +406,7 @@ export function update(g) {
   if (g.clearAt && g.frame >= g.clearAt) {
     g.clearBonus = p.lives * 1000 + p.bombs * 500; // stock bonus, garnish-sized (S6)
     g.score += g.clearBonus;
-    g.state = 'clear'; g.endFrame = g.frame;
+    g.state = 'clear'; g.endFrame = g.frame; sfx(g, SFX.CLEAR);
   }
 
   // --- instrumentation (fixed cadence, bounded size) ---

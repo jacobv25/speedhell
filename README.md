@@ -13,7 +13,7 @@ corpora. Design constitution: `docs/DESIGN_PILLARS.md`, craft notes: `docs/BOGHO
 Open `index.html` in a browser (no build, no server needed — ES modules require
 `file://` module support; if blocked, `python3 -m http.server` in this dir).
 
-Arrows/WASD move · Z/space shot · Shift focus · X bomb · R restart · P pause. Gamepad supported.
+Arrows/WASD move · Z/space shot · Shift focus · X bomb · R restart · P pause · M mute. Gamepad supported.
 
 ## Verify (the referee)
 
@@ -29,6 +29,9 @@ never edit them** — that's grading your own homework.
 - `src/core/` — DOM-free deterministic game logic (fixed 60Hz, seeded RNG, object
   pools, hard caps). Imports cleanly into Node for the sim harness.
 - `src/render/` — Canvas2D layer, rubric S2 visibility rules.
+- `src/audio.js` — browser-only sound: procedural Web Audio SFX (no sample files) driven by
+  the core's per-frame sound-event ring (`g.sfx`), plus music in `assets/music/`
+  (Skyline Breaker = stage, Insert Coin Skies = boss; crossfade at the boss gate).
 - `test/sim.mjs` — scripted bots (expert/aggressive/passive/blind), S8 stress gate,
   determinism check, rubric metric checks.
 - `evidence/` — metrics + screenshots consumed by gauntlet critics.

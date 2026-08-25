@@ -3,9 +3,9 @@
   "generated": "sim.mjs",
   "stress": {
     "p50": 0.011,
-    "p99": 0.101,
-    "max": 0.727,
-    "heapDeltaKB": 3791,
+    "p99": 0.103,
+    "max": 0.882,
+    "heapDeltaKB": 3072,
     "budget": 16.6,
     "pass": true
   },
@@ -284,7 +284,7 @@
           "speed": 2
         }
       },
-      "simWallMs": 325
+      "simWallMs": 326
     },
     {
       "name": "aggressive-human",
@@ -940,7 +940,7 @@
           "speed": 1
         }
       },
-      "simWallMs": 114
+      "simWallMs": 121
     },
     {
       "name": "blind",
