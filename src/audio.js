@@ -3,9 +3,15 @@
 // Drains the core's per-frame sound ring (g.sfx / g.sfxN); core stays DOM-free.
 import { SFX } from './core/game.js';
 
+// Analysis (librosa, 2026-08-24): Skyline Breaker 123 BPM, flat full energy
+// 0:03-3:08 — never loops within a stage, any entry point works. Insert Coin
+// Skies 172 BPM: quiet intro until 0:39, then full; peak 1:33-1:38, breakdown
+// 1:39-1:43, slam 1:44-end. A boss fight is 35-70s, so it enters at the 0:39
+// section (on the beat grid: 0.975 + n*0.3483) and loops back there, never
+// to the intro. `start` = seconds; `loopTo` = seek target on end.
 const MUSIC = {
-  stage: 'assets/music/skyline-breaker.mp3',
-  boss: 'assets/music/insert-coin-skies.mp3',
+  stage: { src: 'assets/music/skyline-breaker.mp3', start: 0, loopTo: 3.69 },
+  boss: { src: 'assets/music/insert-coin-skies.mp3', start: 38.94, loopTo: 38.94 },
 };
 const MUSIC_VOL = 0.55, SFX_VOL = 0.5;
 
@@ -33,7 +39,9 @@ export function unlock() {
   const d = noiseBuf.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
   for (const k in MUSIC) {
-    const el = new Audio(MUSIC[k]); el.loop = true; el.preload = 'auto';
+    const el = new Audio(MUSIC[k].src); el.preload = 'auto';
+    // manual loop so the re-entry lands on the section, not the intro
+    el.addEventListener('ended', () => { if (current === k) { el.currentTime = MUSIC[k].loopTo; el.play().catch(() => {}); } });
     const node = ac.createMediaElementSource(el);
     const gain = ac.createGain(); gain.gain.value = 0;
     node.connect(gain); gain.connect(musicBus);
@@ -60,7 +68,7 @@ export function playMusic(name, { restart = true, fade = 0.6 } = {}) {
     setTimeout(() => { if (current !== old) t.el.pause(); }, fade * 1000 + 100);
   }
   const t = tracks[name]; if (!t) return;
-  if (restart) t.el.currentTime = 0;
+  if (restart) t.el.currentTime = MUSIC[name].start;
   const p = t.el.play(); if (p && p.catch) p.catch(() => {});
   fadeTo(t, 1, current === name ? 0.05 : fade);
   current = name;
