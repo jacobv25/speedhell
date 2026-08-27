@@ -2,7 +2,7 @@
 // Design rules in play: chunks escalate, no encounter repeats >2 [BOGHOG_CRAFT],
 // top-lane flow / no simultaneous elites [WS05], bottom no-shoot band [WS04],
 // no breather after midboss (gate resumes immediately) [BOGHOG_CRAFT/T2].
-import { sfx, SFX, spawnEnemy, spawnItem, bulletCancelWall, W, H } from './game.js';
+import { sfx, SFX, spawnEnemy, spawnItem, bulletCancelWall, spawnFx, FX, FAM, W, H } from './game.js';
 import { aimedFan, ring, arcWall, spray, bendyStream, twinSpiral, lanceVolley, ledFan } from './patterns.js';
 
 // HP retuned r3 (playtest 2: "easier, not better"). The r2 halving made range
@@ -278,11 +278,9 @@ export function updateBoss(g, e) {
   // r6 S3b burn telegraph: during the 60f handoff armor the outgoing form BURNS —
   // ember spray from logic (deterministic; renderer adds the red tint/flicker).
   if (e.phase > 0 && g.frame < e.armorUntil && (g.frame & 3) === 0) {
-    for (let i = 0; i < 3; i++) {
-      const q = g.particles.spawn(); if (!q) break;
-      q.x = e.x + g.rng.range(-24, 24); q.y = e.y + g.rng.range(-20, 20);
-      q.vx = g.rng.range(-0.8, 0.8); q.vy = g.rng.range(-2.4, -0.6);
-      q.max = q.life = (16 + g.rng.range(0, 12)) | 0; q.hue = 10; // 10 = burn red
+    for (let i = 0; i < 3; i++) { // r8-fx: small burn-red flame licks (reads as burning, not confetti)
+      if (!spawnFx(g, FX.FIRE, e.x + g.fxRng.range(-24, 24), e.y + g.fxRng.range(-20, 20),
+        g.fxRng.range(-0.8, 0.8), g.fxRng.range(-2.4, -0.6), 16 + g.fxRng.range(0, 12), 3 + g.fxRng.range(0, 3), FAM.BURN)) break;
     }
   }
   // r6.3 camp governor (critic 3, F1-F3). What the referee's probes share —

@@ -15,6 +15,18 @@ Open `index.html` in a browser (no build, no server needed — ES modules requir
 
 Arrows/WASD move · Z/space shot · Shift focus · X bomb · R restart · P pause · M mute. Gamepad supported.
 
+## Sandbox (dev testing)
+
+Open `sandbox.html` (same `http.server` caveat). It runs the **same core and renderer**
+with an empty timeline: click to spawn any enemy preset (zako/shooter/diver, mid, turret,
+elite at any rep, midboss, boss at P1/P2/P3), fire any emitter from `patterns.js` with live
+parameters (optionally on a repeat clock), tune the ship table live (with a few sketch
+presets), toggle god/∞ lives/∞ bombs, hand the stick to a referee bot, pause/frame-step/
+time-scale, overlay hitboxes + per-enemy hp/speed-kill-window labels, or jump the real
+timeline to any section. Every spawn/fire is logged as the core call that produced it
+(copy-paste repro for a builder brief). `window.__sandbox` exposes it all to devtools.
+The sandbox never touches `src/core/` — it is not part of the game or the referee.
+
 ## Verify (the referee)
 
 ```

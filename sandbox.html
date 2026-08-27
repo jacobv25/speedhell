@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SPEEDHELL — sandbox</title>
+<style>
+  :root { --bg: #05060a; --panel: #0d1019; --line: #1b2030; --fg: #cdd3e8; --dim: #6b7190; --hot: #ff4fa3; --cyan: #37d6e0; --gold: #ffd24a; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 11px/1.4 ui-monospace, Menlo, monospace; }
+  body { display: grid; grid-template-columns: 1fr 340px; height: 100vh; }
+  #stage { display: grid; place-items: center; min-width: 0; }
+  canvas { height: min(96vh, 100%); aspect-ratio: 320/427; image-rendering: pixelated; cursor: crosshair;
+           box-shadow: 0 0 60px rgba(255,79,163,.12), 0 0 120px rgba(55,214,224,.08); }
+  #panel { background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; padding: 8px 10px 40px; }
+  h1 { font-size: 12px; margin: 4px 0 8px; color: var(--hot); letter-spacing: .12em; }
+  h1 small { color: var(--dim); letter-spacing: 0; font-weight: normal; margin-left: 6px; }
+  details { border-top: 1px solid var(--line); padding: 6px 0; }
+  summary { cursor: pointer; color: var(--cyan); font-weight: bold; letter-spacing: .06em; user-select: none; }
+  summary:hover { color: #fff; }
+  .row { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; margin: 5px 0; }
+  .row label { color: var(--dim); }
+  button { background: #171c2b; color: var(--fg); border: 1px solid #262c40; border-radius: 3px; padding: 3px 7px; font: inherit; cursor: pointer; }
+  button:hover { border-color: var(--cyan); color: #fff; }
+  button.on { background: #1d3a3d; border-color: var(--cyan); color: #fff; }
+  button.hot { border-color: var(--hot); }
+  input[type=number], select, input[type=text] { background: #0a0d15; color: var(--fg); border: 1px solid #262c40; border-radius: 3px; font: inherit; padding: 2px 4px; width: 62px; }
+  select { width: auto; }
+  input[type=range] { width: 120px; vertical-align: middle; }
+  .grid { display: grid; grid-template-columns: auto 1fr; gap: 3px 8px; align-items: center; }
+  .grid label { color: var(--dim); text-align: right; }
+  .kv { display: grid; grid-template-columns: 1fr 1fr; gap: 1px 10px; color: var(--dim); }
+  .kv b { color: var(--fg); font-weight: normal; }
+  .kv .warn { color: var(--gold); }
+  textarea { width: 100%; height: 110px; background: #0a0d15; color: var(--fg); border: 1px solid #262c40; font: 10px/1.3 ui-monospace, Menlo, monospace; resize: vertical; box-sizing: border-box; }
+  .hint { color: var(--dim); font-size: 10px; }
+  kbd { background: #1b2030; border-radius: 2px; padding: 0 3px; color: #fff; }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="game"></canvas></div>
+<aside id="panel">
+  <h1>SPEEDHELL SANDBOX <small>same core + renderer, no timeline</small></h1>
+  <div class="hint">Click the field to act (mode below). <kbd>P</kbd> pause · <kbd>.</kbd> step · <kbd>[</kbd>/<kbd>]</kbd> speed · <kbd>H</kbd> hitboxes · <kbd>L</kbd> labels · <kbd>C</kbd> clear · <kbd>M</kbd> mute. Game keys work as usual.</div>
+
+  <details open><summary>SCENE</summary>
+    <div class="row">
+      <label>click:</label>
+      <button data-mode="spawn" class="on">spawn enemy</button>
+      <button data-mode="fire">fire pattern</button>
+      <button data-mode="player">move player</button>
+    </div>
+    <div class="row">
+      <button id="clear" class="hot">clear field</button>
+      <button id="reset">reset scene</button>
+      <label>seed</label><input type="text" id="seed" value="1">
+    </div>
+    <div class="row">
+      <label>time</label>
+      <button id="pause">pause</button>
+      <button id="step">step</button>
+      <select id="speed"><option>0.25</option><option>0.5</option><option selected>1</option><option>2</option><option>4</option></select><label>x</label>
+    </div>
+    <div class="row">
+      <label>backdrop</label>
+      <select id="backdrop">
+        <option value="0">intro</option><option value="120">s1 popcorn</option><option value="720">s2 turrets</option>
+        <option value="1700">s3 mids</option><option value="2400">s4 midboss</option><option value="2460">s5 rush</option>
+        <option value="2900">s6 elites</option><option value="3700">s7 release</option><option value="3900">s8 boss</option>
+      </select>
+    </div>
+  </details>
+
+  <details open><summary>ENEMIES</summary>
+    <div class="row"><select id="enemy"></select><button id="spawnTop">spawn at top</button></div>
+    <div class="hint">Click = spawn there (side = which half you clicked). Boss/midboss always enter top-center.</div>
+    <div class="row">
+      <button id="killAll">kill all (scored)</button>
+      <button id="cancel">cancel bullets</button>
+      <button id="waveZ">wave: zako ×6</button>
+    </div>
+  </details>
+
+  <details open><summary>PATTERNS</summary>
+    <div class="row"><select id="pattern"></select><button id="fireNow">fire at emitter</button></div>
+    <div class="grid" id="pparams"></div>
+    <div class="row">
+      <label><input type="checkbox" id="repeat"> repeat every</label><input type="number" id="repeatEvery" value="60" min="1"><label>f</label>
+    </div>
+    <div class="hint">Emitter = last click in fire mode (marked ✕). Patterns aim at the player, so move around.</div>
+  </details>
+
+  <details open><summary>PLAYER</summary>
+    <div class="row">
+      <button id="god" class="on">god</button>
+      <button id="infLives" class="on">∞ lives</button>
+      <button id="infBombs">∞ bombs</button>
+      <label>bot</label>
+      <select id="bot"><option value="">off</option><option value="expert">expert</option><option value="human">human (7f lag)</option><option value="passive">passive</option></select>
+    </div>
+    <div class="row"><label>ship preset</label><select id="ship"></select><button id="shipReset">defaults</button></div>
+    <div class="grid" id="ship-params"></div>
+    <div class="hint">Edits apply live to the shared PLAYER table (the game's one ship). Presets are sketches for future ship types.</div>
+  </details>
+
+  <details open><summary>VIEW</summary>
+    <div class="row">
+      <button id="hitboxes">hitboxes</button>
+      <button id="labels">labels</button>
+      <button id="sfx" class="on">sfx</button>
+      <label>music</label>
+      <button data-music="stage">stage</button><button data-music="boss">boss</button><button data-music="">stop</button>
+    </div>
+  </details>
+
+  <details open><summary>READOUT</summary>
+    <div class="kv" id="readout"></div>
+  </details>
+
+  <details><summary>STAGE JUMP (real timeline)</summary>
+    <div class="row">
+      <select id="jump">
+        <option value="0">start</option><option value="120">s1 popcorn</option><option value="720">s2 turrets</option>
+        <option value="1700">s3 mids</option><option value="2400">s4 midboss</option><option value="2460">s5 rush</option>
+        <option value="2900">s6 elites</option><option value="3700">s7 release</option><option value="3830">s8 warning+boss</option>
+      </select>
+      <button id="jumpGo">run from here</button>
+    </div>
+    <div class="hint">Loads the real stage timeline at that stageT. Reset scene returns to the empty sandbox.</div>
+  </details>
+
+  <details><summary>LOG (repro snippet)</summary>
+    <textarea id="log" readonly></textarea>
+    <div class="row"><button id="copyLog">copy</button><button id="clearLog">clear</button></div>
+    <div class="hint">Every spawn/fire is logged as the core call that made it — paste into a builder brief or test.</div>
+  </details>
+</aside>
+<script type="module" src="src/sandbox.js"></script>
+</body>
+</html>

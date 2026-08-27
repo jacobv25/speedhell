@@ -1,0 +1,35 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0;background:#000">
+<canvas id="game"></canvas>
+<script type="module">
+import { makeGame, startRun, update, spawnEnemy, explode, TIER, FAM, W, H } from '/src/core/game.js';
+import { draw, resetHud } from '/src/render/renderer.js';
+const canvas = document.getElementById('game'); canvas.width = W; canvas.height = H;
+const ctx = canvas.getContext('2d');
+const stubRng = { next: () => 0.5, range: (a, b) => (a + b) / 2 };
+const FRAMES = [0, 1, 3, 6, 10, 16, 26, 40], CROP = 140, SC = 3;
+function strip(label, setup) {
+  const g = makeGame(7); startRun(g); g.timeline = []; resetHud(); g.player.y = H - 20; g.player.invuln = 0;
+  const cx = W / 2, cy = 200;
+  const out = document.createElement('canvas'); out.width = CROP * SC * FRAMES.length; out.height = CROP * SC + 30;
+  const o = out.getContext('2d'); o.imageSmoothingEnabled = false; o.fillStyle = '#000'; o.fillRect(0, 0, out.width, out.height);
+  o.fillStyle = '#fff'; o.font = '20px monospace'; o.fillText(label, 8, 22);
+  setup(g, cx, cy);
+  let f = 0;
+  for (let i = 0; i < FRAMES.length; i++) {
+    while (f < FRAMES[i]) { update(g); f++; }
+    const real = g.rng; g.rng = stubRng; draw(g, ctx, 0); g.rng = real;
+    o.drawImage(canvas, cx - CROP / 2, cy - CROP / 2, CROP, CROP, i * CROP * SC, 30, CROP * SC, CROP * SC);
+    o.fillStyle = '#9aa'; o.fillText('f' + FRAMES[i] + ' p' + g.particles.count, i * CROP * SC + 6, 52);
+  }
+  return out.toDataURL('image/png');
+}
+const parkEnemy = (g, type, x, y) => { const e = spawnEnemy(g, type, x, y); e.vulnAt = g.frame; e.vx = e.vy = 0; e.armorUntil = 0; return e; };
+window.__fx = () => ({
+  pop: strip('POP over zako (type 0, r10)', (g, x, y) => { parkEnemy(g, 0, x - 50, y); explode(g, x, y, TIER.POP, FAM.ORANGE, 10); }),
+  med: strip('MED over turret (type 2, r12)', (g, x, y) => { parkEnemy(g, 2, x - 45, y); explode(g, x, y, TIER.MED, FAM.ORANGE, 12); }),
+  big: strip('BIG over elite ghost (type 3)', (g, x, y) => { parkEnemy(g, 3, x - 60, y); explode(g, x, y, TIER.BIG, FAM.ORANGE, 20); }),
+  phase: strip('PHASE (boss r30)', (g, x, y) => { explode(g, x, y, TIER.PHASE, FAM.ORANGE, 30); }),
+  player: strip('PLAYER', (g, x, y) => { explode(g, x, y, TIER.PLAYER, FAM.WHITE, 12); }),
+  hit: strip('HIT-FLASH on elite (flash=2 at f0)', (g, x, y) => { const e = parkEnemy(g, 3, x, y); e.flash = 2; }),
+});
+</script></body></html>

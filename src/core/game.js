@@ -31,6 +31,13 @@ export const SFX = {
   BOMB: 9, DIE: 10, WARNING: 11, MIDBOSS: 12, BOSS: 13, PHASE: 14, CLEAR: 15, GAMEOVER: 16,
 };
 const SFX_CAP = 32;
+// r8-fx: particle KINDS (the renderer draws each differently) and colour
+// FAMILIES (p.hue is a family index, not a hue). All fx randomness lives here
+// in core (g.rng) — the renderer keys only off g.frame (determinism seam).
+export const FX = { SPARK: 0, FIRE: 1, SMOKE: 2, DEBRIS: 3, RING: 4, CORE: 5 };
+export const FAM = { WHITE: 0, ORANGE: 1, CYAN: 2, BURN: 3 };
+export const TIER = { POP: 0, MED: 1, BIG: 2, PHASE: 3, PLAYER: 4 };
+
 export function sfx(g, id) {
   if (g.sfxN < SFX_CAP) g.sfx[g.sfxN++] = id;
 }
@@ -38,6 +45,9 @@ export function sfx(g, id) {
 export function makeGame(seed = 1) {
   const g = {
     seed, rng: makeRng(seed), frame: 0,
+    // r8-fx: particles roll on their OWN stream so effect tuning never perturbs the
+    // gameplay rng (the certified bot/camp laws replay against g.rng alone)
+    fxRng: makeRng((seed ^ 0x5bd1e995) >>> 0),
     state: 'title', // title | play | dead-wait | clear | gameover
     player: {
       x: W / 2, y: H - 53, prevX: W / 2, prevY: H - 53,
@@ -71,11 +81,16 @@ export function makeGame(seed = 1) {
       latchT: 0, // r6.5: refunds granted this phase (each further refund costs +25 credit)
       grazeT: 0, // r6.4: frames since a bullet grazed the player's core (in-fire window)
       grindHp: 0, // r6.4: per-phase hp dealt from IN-FIRE play — the grind account
+      flash: 0, // r8-fx S4-MUST: hit-flash frames remaining (renderer paints the silhouette white)
     })),
     items: makePool(200, () => ({ x: 0, y: 0, vy: 0, val: 0 })),
-    particles: makePool(400, () => ({ x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 0, hue: 0 })),
+    particles: makePool(400, () => ({
+      x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 0, hue: 0,
+      kind: 0, size: 0, rot: 0, vrot: 0, delay: 0, grav: 0, // r8-fx typed particle
+    })),
     popups: makePool(32, () => ({ x: 0, y: 0, life: 0, text: '', big: 0 })),
-    shake: 0, flash: 0, cancelFlash: 0,
+    shake: 0, shakeMax: 0, flash: 0, cancelFlash: 0,
+    hitstop: 0, fxHitstop: 0, // r8-fx: frames of world-freeze remaining; fxHitstop = frames granted per BIG/PHASE kill (0 = off)
     sfx: new Array(SFX_CAP).fill(0), sfxN: 0, // sound-event ring, drained per frame
     // instrumentation (read by sim + critics; cheap fixed-size)
     stats: {
@@ -115,12 +130,66 @@ function addPopup(g, x, y, text, big = 0) {
   p.x = x; p.y = y; p.life = 50; p.text = text; p.big = big;
 }
 
-function burst(g, x, y, n, hue, power = 1) {
+// r8-fx: single particle spawn. `delay` frames dormant before it lives (how a
+// composite explosion staggers its sub-bursts while all rng stays in core).
+export function spawnFx(g, kind, x, y, vx, vy, life, size, hue, delay = 0, grav = 0) {
+  const p = g.particles.spawn(); if (!p) return null;
+  p.kind = kind; p.x = x; p.y = y; p.vx = vx; p.vy = vy;
+  p.max = p.life = life | 0; p.size = size; p.hue = hue; p.delay = delay | 0; p.grav = grav;
+  p.rot = 0; p.vrot = 0;
+  return p;
+}
+
+function burst(g, x, y, n, hue, power = 1) { // isotropic spark spray
   for (let i = 0; i < n; i++) {
-    const p = g.particles.spawn(); if (!p) return;
-    const a = g.rng.range(0, Math.PI * 2), s = g.rng.range(0.5, 3.5) * power;
-    p.x = x; p.y = y; p.vx = Math.cos(a) * s; p.vy = Math.sin(a) * s;
-    p.max = p.life = (14 + g.rng.range(0, 12)) | 0; p.hue = hue;
+    const a = g.fxRng.range(0, Math.PI * 2), s = g.fxRng.range(0.5, 3.5) * power;
+    if (!spawnFx(g, FX.SPARK, x, y, Math.cos(a) * s, Math.sin(a) * s, 14 + g.fxRng.range(0, 12), 1, hue)) return;
+  }
+}
+
+function setShake(g, n) { g.shake = g.shakeMax = n; }
+
+// r8-fx S4-MUST "explosions punchy": composite explosion — frame 0 puts a
+// white-hot CORE over the whole sprite plus an expanding shockwave RING
+// (≤2 startup frames), then clustered FIRE sub-bursts pop over the next
+// frames (Psikyo cluster look), SMOKE lingers, DEBRIS tumbles out, sparks fly.
+// Footprint is >1.5x the sprite radius at every tier [Boghog: explosions
+// significantly bigger than the enemy, varied patterns, extra debris].
+// Tiers: POP (zako, sub-part) · MED (turret, mid) · BIG (elite, midboss) · PHASE (boss) · PLAYER.
+// Per-tier particle budgets (max): 31 · 38 · 55 · ~93 · ~63. Jacob 2026-08-26: "lean bigger".
+const TIER_SC = [1.6, 1.8, 2.3, 2.8, 2.6];
+const TIER_CORE = [3, 3, 4, 5, 6];
+const TIER_FIRE = [5, 6, 9, 9, 8], TIER_SPREAD = [8, 12, 18, 22, 16], TIER_STAG = [2, 2, 2, 3, 2];
+const TIER_SMOKE = [3, 4, 6, 8, 5], TIER_DEBRIS = [7, 8, 12, 14, 12], TIER_SPARK = [14, 18, 26, 30, 30], TIER_POWER = [1.2, 1.6, 2, 2.2, 2.5];
+export function explode(g, x, y, tier, hue = FAM.ORANGE, r = 10) {
+  const rng = g.fxRng;
+  const R = Math.max(r, 8) * TIER_SC[tier];
+  spawnFx(g, FX.CORE, x, y, 0, 0, TIER_CORE[tier], R * 1.1, hue); // white FLASH: 3-6 frames, not a blob
+  spawnFx(g, FX.RING, x, y, 0, 0, 9 + tier * 3, R * 2.4, hue);
+  for (let i = 0; i < TIER_FIRE[tier]; i++) {
+    const a = rng.range(0, 6.283), d = i === 0 ? 0 : rng.range(0, TIER_SPREAD[tier]);
+    spawnFx(g, FX.FIRE, x + Math.cos(a) * d, y + Math.sin(a) * d, rng.range(-0.6, 0.6), rng.range(-0.9, 0.1),
+      14 + rng.range(0, 10), R * rng.range(0.3, 0.55), hue, i * TIER_STAG[tier]);
+  }
+  for (let i = 0; i < TIER_SMOKE[tier]; i++) {
+    spawnFx(g, FX.SMOKE, x + rng.range(-R / 2, R / 2), y + rng.range(-R / 2, R / 2), rng.range(-0.3, 0.3), rng.range(-0.7, -0.2),
+      30 + rng.range(0, 20), R * 0.35, hue, 4 + rng.range(0, 8));
+  }
+  for (let i = 0; i < TIER_DEBRIS[tier]; i++) {
+    const a = rng.range(0, 6.283), s = rng.range(1.5, 4) * (0.8 + tier * 0.3);
+    const p = spawnFx(g, FX.DEBRIS, x, y, Math.cos(a) * s, Math.sin(a) * s - 1, 30 + rng.range(0, 20), 1.5 + rng.range(0, 2), hue, 0, 0.08);
+    if (p) { p.rot = rng.range(0, 6.283); p.vrot = rng.range(-0.4, 0.4); }
+  }
+  burst(g, x, y, TIER_SPARK[tier], hue, TIER_POWER[tier]);
+  if (tier === TIER.PHASE) { // decks stripping: a chain of secondary pops across the hull
+    for (let i = 0; i < 5; i++) {
+      const cx = x + (i - 2) * 16 + rng.range(-6, 6), cy = y + rng.range(-12, 12), dl = 6 + i * 6;
+      spawnFx(g, FX.CORE, cx, cy, 0, 0, 5, R * 0.45, hue, dl);
+      for (let k = 0; k < 3; k++) spawnFx(g, FX.FIRE, cx + rng.range(-4, 4), cy + rng.range(-4, 4), rng.range(-0.4, 0.4), rng.range(-0.8, 0), 14 + rng.range(0, 8), R * 0.3, hue, dl + k * 2);
+      for (let k = 0; k < 2; k++) spawnFx(g, FX.SMOKE, cx, cy, rng.range(-0.3, 0.3), -0.5, 30 + rng.range(0, 14), R * 0.2, hue, dl + 4);
+    }
+  } else if (tier === TIER.PLAYER) { // flame column
+    for (let i = 0; i < 6; i++) spawnFx(g, FX.FIRE, x + rng.range(-5, 5), y, rng.range(-0.3, 0.3), -1.5 - i * 0.4, 20 + rng.range(0, 8), R * 0.4, hue, 2 + i * 2);
   }
 }
 
@@ -132,7 +201,7 @@ export function spawnEnemy(g, type, x, y, opts = {}) {
   e.side = opts.side || 1; e.holdT = opts.holdT || 0;
   e.value = d.value; e.window = d.window; e.sweepOff = 0; e.campT = 0; e.prevHp = d.hp;
   e.latchX = -1e9; e.latchX2 = -1e9; e.latchN = 0; e.trackT = 0; e.pxEma = g.player.x;
-  e.grazeT = 0; e.grindHp = 0; e.lastDir = 0; e.monoT = 0; e.latchT = 0; e.stillRun = 0;
+  e.grazeT = 0; e.grindHp = 0; e.lastDir = 0; e.monoT = 0; e.latchT = 0; e.stillRun = 0; e.flash = 0;
   e.vulnAt = -1; e.armorUntil = 0; // vuln set once on-screen (top dead zone + intro armor)
   // r6.4: the boss's entrance armor lives HERE, not in the timeline event, so
   // every spawn path (referee camp probes included) gets the untouchable 90f
@@ -167,8 +236,9 @@ function killEnemy(g, e, idx) {
   g.stats.killLog.push({ t: e.type, f: aliveFrames, s: speed ? 1 : 0 });
   const big = e.type === 3 || e.type === 4; // elite/midboss get the shake (S4);
   // boss sub-parts (type 6) pop like popcorn — shake stays reserved (S4-SHOULD)
-  burst(g, e.x, e.y, big ? 60 : 16, e.type === 1 ? 200 : 30, big ? 2 : 1);
-  if (big) g.shake = 14;
+  const med = e.type === 1 || e.type === 2; // turret / mid: heavier than popcorn, no shake
+  explode(g, e.x, e.y, big ? TIER.BIG : med ? TIER.MED : TIER.POP, e.type === 1 ? FAM.CYAN : FAM.ORANGE, e.r);
+  if (big) { setShake(g, 14); g.hitstop = g.fxHitstop; }
   sfx(g, big ? SFX.KILL_BIG : SFX.KILL);
   if (e.type === 4) { // midboss down: relief wall + shower, gate opens — no breather (T2)
     bulletCancelWall(g, e.x, e.y);
@@ -198,7 +268,7 @@ function scoreBossPhase(g, e) {
   g.score += v; g.kills++;
   sfx(g, SFX.PHASE);
   g.stats.killLog.push({ t: 5, f: e.vulnAt >= 0 ? g.frame - e.vulnAt : -1, s: speed ? 1 : 0 });
-  burst(g, e.x, e.y, 70, 30, 2.2); g.shake = 16;
+  explode(g, e.x, e.y, TIER.PHASE, FAM.ORANGE, e.r); setShake(g, 16); g.hitstop = g.fxHitstop;
   advanceBossPhase(g, e, true, fade);
 }
 
@@ -207,7 +277,7 @@ function cancelAllBullets(g, perBullet = 100) {
   if (n === 0) return 0;
   for (let i = n - 1; i >= 0; i--) {
     const b = g.eBullets.items[i];
-    if ((i & 3) === 0) burst(g, b.x, b.y, 1, 190, 0.6);
+    if ((i & 3) === 0) burst(g, b.x, b.y, 1, FAM.CYAN, 0.6);
     g.eBullets.killAt(i);
   }
   g.score += n * perBullet;
@@ -223,8 +293,8 @@ export function bulletCancelWall(g, x, y, perBullet = 100) { // release moment (
 function playerDie(g, cause) {
   const p = g.player;
   g.stats.deaths.push({ f: g.frame, x: p.x | 0, y: p.y | 0, c: cause });
-  burst(g, p.x, p.y, 80, 0, 2.5);
-  g.shake = 20; g.chain = 0; sfx(g, SFX.DIE);
+  explode(g, p.x, p.y, TIER.PLAYER, FAM.WHITE, 12);
+  setShake(g, 20); g.chain = 0; sfx(g, SFX.DIE);
   cancelAllBullets(g, 0); // safety clear, no points
   p.lives--;
   if (p.lives < 0) { g.state = 'gameover'; g.endFrame = g.frame; sfx(g, SFX.GAMEOVER); return; }
@@ -243,8 +313,11 @@ function fireBomb(g) {
 
 export function update(g) {
   if (g.state !== 'play') return;
-  g.frame++;
   g.sfxN = 0; // sound ring is per-frame: whatever wasn't drained is dropped
+  // r8-fx hitstop: the world freezes for a few frames on a BIG/PHASE kill; only
+  // the fx layer keeps moving. g.frame does not advance (core-deterministic).
+  if (g.hitstop > 0) { g.hitstop--; updateFx(g); return; }
+  g.frame++;
   if (!g.gate) {
     g.stageT++; // gates: timeline holds for midboss/boss, resumes instantly
     // Caravan pull (S5, WS06 lineage): speed-killing a wave pulls the next one in
@@ -297,6 +370,7 @@ export function update(g) {
     e.age++;
     // vulnerability: on-screen + 30f intro armor (S4); speed-kill clock starts here
     if (e.vulnAt < 0 && e.y > 16 && e.age > 30 && g.frame >= e.armorUntil) e.vulnAt = g.frame;
+    if (e.flash > 0) e.flash--;
     if (e.type === 5) updateBoss(g, e); else updateEnemy(g, e);
     // outro: off-screen enemies despawn silently, fire nothing (S4)
     if (e.dead || e.y > H + 40 || e.y < -80 || e.x < -60 || e.x > W + 60) {
@@ -312,7 +386,15 @@ export function update(g) {
         if (dxx * dxx + dyy * dyy < (e.r + 6) * (e.r + 6)) {
           g.pBullets.killAt(j);
           e.hp -= PLAYER.shotDmg;
-          burst(g, b.x, b.y, 1, 45, 0.5); sfx(g, SFX.HIT);
+          // r8-fx S4-MUST hit-flash + hit spark: 3 sparks kicked back down the
+          // shot's path (the enemy visibly REACTS — Boghog) and a tiny flame lick
+          e.flash = 2;
+          for (let k = 0; k < 3; k++) {
+            const a = g.fxRng.range(0.3, 2.84), s = g.fxRng.range(1, 3);
+            spawnFx(g, FX.SPARK, b.x, b.y, Math.cos(a) * s, Math.sin(a) * s, 8 + g.fxRng.range(0, 6), 1, FAM.ORANGE);
+          }
+          spawnFx(g, FX.FIRE, b.x, b.y - 2, 0, -0.5, 8, 4, FAM.ORANGE);
+          sfx(g, SFX.HIT);
           if (g.player.bombActive > 0) e.hp -= 0.5;
           if (e.hp <= 0) { if (e.type === 5) scoreBossPhase(g, e); else killEnemy(g, e, i); break; }
         }
@@ -372,12 +454,7 @@ export function update(g) {
     if (it.y > H + 12) g.items.killAt(i);
   }
 
-  // --- fx ---
-  for (let i = g.particles.count - 1; i >= 0; i--) {
-    const q = g.particles.items[i];
-    q.x += q.vx; q.y += q.vy; q.vx *= 0.94; q.vy *= 0.94;
-    if (--q.life <= 0) g.particles.killAt(i);
-  }
+  updateFx(g);
   for (let i = g.popups.count - 1; i >= 0; i--) {
     const q = g.popups.items[i];
     // float up, but hold below the HUD block (y 58) and queue behind any popup
@@ -391,9 +468,6 @@ export function update(g) {
     if (rise) q.y -= 0.5;
     if (--q.life <= 0) g.popups.killAt(i);
   }
-  if (g.shake > 0) g.shake--;
-  if (g.flash > 0) g.flash--;
-  if (g.cancelFlash > 0) g.cancelFlash--;
   if (g.warn > 0) {
     g.warn--;
     // the WARNING ritual holds the timeline via a gate (so the emptied field is
@@ -417,6 +491,26 @@ export function update(g) {
   }
 }
 
+// r8-fx: particles + screen counters. Runs every frame, hitstop included.
+function updateFx(g) {
+  for (let i = g.particles.count - 1; i >= 0; i--) {
+    const q = g.particles.items[i];
+    if (q.delay > 0) { q.delay--; continue; } // dormant sub-burst
+    q.x += q.vx; q.y += q.vy;
+    switch (q.kind) {
+      case FX.SPARK: q.vx *= 0.94; q.vy *= 0.94; break;
+      case FX.FIRE: q.vx *= 0.9; q.vy *= 0.9; break;
+      case FX.SMOKE: q.vx *= 0.97; q.vy *= 0.97; break;
+      case FX.DEBRIS: q.vy += q.grav; q.vx *= 0.97; q.vy *= 0.97; q.rot += q.vrot; break;
+      default: break; // RING / CORE are stationary
+    }
+    if (--q.life <= 0) g.particles.killAt(i);
+  }
+  if (g.shake > 0) g.shake--;
+  if (g.flash > 0) g.flash--;
+  if (g.cancelFlash > 0) g.cancelFlash--;
+}
+
 // Debug/stress API for the sim harness (rubric S8 gate).
 export function stressScene(g) {
   g.state = 'play'; g.timeline = []; g.tlIndex = 0;
@@ -428,6 +522,6 @@ export function stressScene(g) {
     b.vx = Math.cos(a) * 2; b.vy = Math.abs(Math.sin(a) * 2) + 1;
     b.kind = i & 1; b.r = 3; b.accel = 0; b.curve = 0; b.age = 0;
   }
-  for (let i = 0; i < 200; i++) burst(g, g.rng.range(0, W), g.rng.range(0, H), 1, 30, 1);
+  for (let i = 0; i < 200; i++) burst(g, g.fxRng.range(0, W), g.fxRng.range(0, H), 1, FAM.ORANGE, 1);
   g.player.invuln = 999999;
 }

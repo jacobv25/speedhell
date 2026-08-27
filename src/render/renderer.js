@@ -1,7 +1,18 @@
 // Canvas2D renderer. Visibility rules from rubric S2: washed-out low-contrast
 // background; bullets pair dark rims with bright cores; consistent language
 // (pink rounds = static/random, cyan needles = aimed); bullets on top.
-import { W, H, PLAYER } from '../core/game.js';
+import { W, H, PLAYER, FX } from '../core/game.js';
+
+// r8-fx explosion palette, indexed [family][heat stop 0=hot … 3=cool] by the
+// particle's remaining life. Lookup tables: no string building in the hot loop (S8).
+const FX_RAMP = [
+  ['#ffffff', '#e8dcff', '#b49aff', '#6a4fc0'], // 0 WHITE/violet — player
+  ['#ffffff', '#ffe27a', '#ff9a3c', '#c8401e'], // 1 ORANGE — default kill
+  ['#ffffff', '#c8f4ff', '#7fd8ff', '#2f7fb0'], // 2 CYAN — chevron kill / bullet cancel
+  ['#ffd27a', '#ff8a4a', '#e0503a', '#7a2a22'], // 3 BURN — boss handoff embers
+];
+const FX_SMOKE = ['#3a3648', '#2c2a38', '#2a3038', '#3a2424'];
+const FX_DEBRIS = ['#c8bfe8', '#d07a3a', '#5fb4d8', '#b0503a'];
 
 const ENEMY_TINT = ['#8a8fa8', '#9aa0b8', '#7d8298', '#a8adc4', '#b8bdd4', '#c8cde0', '#c0c6da'];
 let displayScore = 0; // ticks up toward real score [BOGHOG_CRAFT]
@@ -39,7 +50,10 @@ export function resetHud() { displayScore = 0; }
 
 export function draw(g, ctx, bgScroll) {
   ctx.save();
-  if (g.shake > 0) ctx.translate((g.rng.next() - 0.5) * g.shake, (g.rng.next() - 0.5) * g.shake);
+  if (g.shake > 0) { // r8-fx: squared decay — snaps hard, settles fast (no constant buzz)
+    const k = g.shakeMax > 0 ? g.shake / g.shakeMax : 1, amp = (g.shakeMax || g.shake) * k * k;
+    ctx.translate((g.rng.next() - 0.5) * amp, (g.rng.next() - 0.5) * amp);
+  }
 
   // background: deep indigo, faint slow stars — low value contrast (S2),
   // hue-accented per section so each place reads distinct (r5 S5-SHOULD-1).
@@ -96,16 +110,10 @@ export function draw(g, ctx, bgScroll) {
   // player
   drawPlayer(ctx, g);
 
-  // particles (below bullets: explosions must never mask threats, S2)
-  for (let i = 0; i < g.particles.count; i++) {
-    const q = g.particles.items[i];
-    const a = q.life / q.max;
-    ctx.globalAlpha = a;
-    ctx.fillStyle = q.hue === 0 ? '#ffffff' : q.hue === 10 ? '#ff6247' : q.hue === 200 ? '#7fd8ff' : q.hue === 190 ? '#9fe8ff' : '#ffb347';
-    const s = 2 + a * 3;
-    ctx.fillRect(q.x - s / 2, q.y - s / 2, s, s);
-  }
-  ctx.globalAlpha = 1;
+  // particles (below bullets: explosions must never mask threats, S2).
+  // r8-fx: two passes — smoke + debris in source-over, then the hot kinds
+  // (fire / core / ring / spark) additive so overlapping fireballs bloom white.
+  drawFx(ctx, g);
 
   // player shots — tall white-core bolts with pale-violet edges (S1); moved out
   // of the cyan/teal family entirely — that family belongs to enemy needles
@@ -191,16 +199,75 @@ export function draw(g, ctx, bgScroll) {
   drawHud(ctx, g);
 }
 
+function drawFx(ctx, g) {
+  const n = g.particles.count, items = g.particles.items;
+  for (let i = 0; i < n; i++) { // pass 1: smoke, debris
+    const q = items[i];
+    if (q.delay > 0 || (q.kind !== FX.SMOKE && q.kind !== FX.DEBRIS)) continue;
+    const a = q.life / q.max;
+    if (q.kind === FX.SMOKE) {
+      ctx.globalAlpha = a * 0.7;
+      ctx.fillStyle = FX_SMOKE[q.hue];
+      ctx.beginPath(); ctx.arc(q.x, q.y, q.size * (1 + (1 - a) * 1.2), 0, 7); ctx.fill();
+    } else {
+      ctx.globalAlpha = Math.min(1, a * 3);
+      ctx.fillStyle = FX_DEBRIS[q.hue];
+      ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.rot);
+      ctx.fillRect(-q.size, -q.size / 2, q.size * 2, q.size);
+      ctx.restore();
+    }
+  }
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < n; i++) { // pass 2: hot kinds, additive
+    const q = items[i];
+    if (q.delay > 0 || q.kind === FX.SMOKE || q.kind === FX.DEBRIS) continue;
+    const a = q.life / q.max, ramp = FX_RAMP[q.hue];
+    const stop = ((1 - a) * 3.99) | 0;
+    switch (q.kind) {
+      case FX.SPARK: {
+        ctx.globalAlpha = a;
+        ctx.fillStyle = ramp[stop];
+        const s = 1 + a * 2;
+        ctx.fillRect(q.x - s / 2, q.y - s / 2, s, s);
+        break;
+      }
+      case FX.FIRE: { // swells fast, then shrinks as it cools
+        const r = q.size * (a < 0.85 ? a / 0.85 : 0.4 + (1 - a) / 0.15 * 0.6);
+        ctx.globalAlpha = Math.min(1, a * 1.5) * 0.85;
+        ctx.fillStyle = ramp[1 + (((1 - a) * 2.99) | 0)]; // fire never starts white — the CORE owns the flash; overlaps bloom via 'lighter'
+        ctx.beginPath(); ctx.arc(q.x, q.y, r, 0, 7); ctx.fill();
+        break;
+      }
+      case FX.CORE: { // full size on frame 0, collapses
+        ctx.globalAlpha = a;
+        ctx.fillStyle = ramp[0];
+        ctx.beginPath(); ctx.arc(q.x, q.y, q.size * a, 0, 7); ctx.fill();
+        break;
+      }
+      case FX.RING: { // shockwave: expands out to `size`, thins and fades
+        ctx.globalAlpha = a;
+        ctx.strokeStyle = ramp[1]; ctx.lineWidth = 0.5 + a * 2;
+        ctx.beginPath(); ctx.arc(q.x, q.y, q.size * (1 - a) + 1, 0, 7); ctx.stroke();
+        break;
+      }
+    }
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = 1;
+}
+
 function drawEnemy(ctx, g, e) {
   const flick = e.vulnAt < 0 && (g.frame & 4); // intro armor shimmer
-  ctx.fillStyle = flick ? '#3a3f55' : ENEMY_TINT[e.type];
+  const hit = e.flash > 0; // r8-fx S4-MUST: hit-flash — every fill goes white for 2 frames
+  const F = (c) => { ctx.fillStyle = hit ? '#ffffff' : c; };
+  F(flick ? '#3a3f55' : ENEMY_TINT[e.type]);
   ctx.save(); ctx.translate(e.x, e.y);
   switch (e.type) {
     case 0: poly(ctx, [[0, -10], [8, 0], [0, 10], [-8, 0]]); break;         // diamond
     case 1: poly(ctx, [[-14, -6], [0, 4], [14, -6], [10, 8], [-10, 8]]); break; // chevron
-    case 2: ctx.fillRect(-10, -10, 20, 20); ctx.fillStyle = '#5a5f78'; ctx.fillRect(-3, 0, 6, 14); break; // turret
+    case 2: ctx.fillRect(-10, -10, 20, 20); F('#5a5f78'); ctx.fillRect(-3, 0, 6, 14); break; // turret
     case 3: poly(ctx, [[0, -20], [17, -10], [17, 10], [0, 20], [-17, 10], [-17, -10]]); break; // hex
-    case 4: poly(ctx, [[0, -26], [24, -8], [16, 22], [-16, 22], [-24, -8]]); ctx.fillStyle = '#6a7090'; poly(ctx, [[0, -14], [12, 8], [-12, 8]]); break;
+    case 4: poly(ctx, [[0, -26], [24, -8], [16, 22], [-16, 22], [-24, -8]]); F('#6a7090'); poly(ctx, [[0, -14], [12, 8], [-12, 8]]); break;
     case 5: {
       // r6 S3b: each phase is a FORM change — three distinct silhouettes.
       // During the 60f handoff armor the incoming form BURNS IN: red-hot
@@ -208,24 +275,24 @@ function drawEnemy(ctx, g, e) {
       const burning = e.vulnAt < 0 && e.phase > 0;
       const body = burning ? ((g.frame & 2) ? '#e0604a' : '#7a2a22') : (flick ? '#3a3f55' : ENEMY_TINT[5]);
       const core = burning ? '#ffb347' : (['#ff4fa3', '#37d6e0', '#ffd24a'][e.phase] || '#fff');
-      ctx.fillStyle = body;
+      F(body);
       if (e.phase === 0) {        // P1: winged carrier — broad hull + swept wing roots
         poly(ctx, [[0, -30], [28, -12], [22, 26], [-22, 26], [-28, -12]]);
         poly(ctx, [[-24, -8], [-42, 2], [-24, 12]]); // wing roots reach for the pods
         poly(ctx, [[24, -8], [42, 2], [24, 12]]);
-        ctx.fillStyle = core;
+        F(core);
         poly(ctx, [[0, -16], [14, 10], [-14, 10]]);
       } else if (e.phase === 1) { // P2: armor shed — wide flat hull, new geometry
         poly(ctx, [[-36, -4], [-16, -18], [16, -18], [36, -4], [24, 18], [-24, 18]]);
-        ctx.fillStyle = core;
+        F(core);
         ctx.fillRect(-20, -4, 40, 8); // exposed cyan core band
       } else {                    // P3: stripped bare core — small, angular, white-hot
         poly(ctx, [[0, -24], [17, 0], [0, 20], [-17, 0]]);
-        ctx.fillStyle = burning ? '#ffb347' : '#8a8fa8';
+        F(burning ? '#ffb347' : '#8a8fa8');
         ctx.fillRect(-26, -3, 9, 6); ctx.fillRect(17, -3, 9, 6); // bare struts
-        ctx.fillStyle = core;
+        F(core);
         poly(ctx, [[0, -13], [9, 0], [0, 11], [-9, 0]]);
-        ctx.fillStyle = '#fff6f0';
+        F('#fff6f0');
         ctx.fillRect(-2, -3, 4, 6); // white-hot center
       }
       break;
@@ -235,17 +302,17 @@ function drawEnemy(ctx, g, e) {
       // visibly amputates that piece (S3b part MUST). Shapes keyed to e.phase.
       if (e.phase === 0) {        // wing pod: outward-swept blade
         poly(ctx, [[0, -9], [e.side * 13, -2], [e.side * 9, 6], [0, 8]]);
-        ctx.fillStyle = '#ff4fa3';
+        F('#ff4fa3');
         ctx.fillRect(e.side * 3 - 2, -2, 4, 4);
       } else if (e.phase === 1) { // armor node: slab with exposed vent
         ctx.fillRect(-8, -8, 16, 16);
-        ctx.fillStyle = '#37d6e0';
+        F('#37d6e0');
         ctx.fillRect(-4, -3, 8, 6);
       } else {                    // core relay node: bright diamond
         poly(ctx, [[0, -9], [8, 0], [0, 9], [-8, 0]]);
-        ctx.fillStyle = '#ffd24a';
+        F('#ffd24a');
         poly(ctx, [[0, -5], [4, 0], [0, 5], [-4, 0]]);
-        ctx.fillStyle = '#fff';
+        F('#fff');
         ctx.fillRect(-1, -1, 2, 2);
       }
       break;
