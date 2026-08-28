@@ -6,7 +6,8 @@ fast bullets, aimed-heavy patterns, speed-kill scoring. Browser, zero dependenci
 Built with the **gauntlet-loop** method: builders and fresh-context blind critics judge
 every surface against `docs/CRITIC_RUBRIC.md`, whose rules are distilled from the
 `~/Dev/mark-msx-research` (critic theory) and `~/Dev/boghog-research` (developer craft)
-corpora. Design constitution: `docs/DESIGN_PILLARS.md`, craft notes: `docs/BOGHOG_CRAFT.md`.
+corpora. Design constitution: `docs/DESIGN_PILLARS.md`, craft notes: `docs/BOGHOG_CRAFT.md`,
+systems explainer (scoring, boss movement, open questions): `docs/DESIGN_WIKI.md`.
 
 ## Play
 
