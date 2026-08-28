@@ -177,6 +177,20 @@ export function updateEnemy(g, e) {
       e.fireT++;
       const half = e.hp < ENEMY_DEFS[4].hp * 0.45;
       if (mayFire(g, e)) {
+        // r9 arrival bloom: the fight OPENS at its densest — three slow, laned
+        // arc walls (~4.5s to cross the field). A point-blank kill inside the
+        // bloom detonates it (cancel = the release moment, BOGHOG_CRAFT L29);
+        // a slower kill sees it long gone. Density comes from the player's
+        // aggression, never from letting the midboss live (pillar 2). No rng:
+        // fixed lane so the referee's stream order is untouched. Waits for the
+        // screen to hold only the midboss: a straggler mid/elite killed a frame
+        // later would cancel the bloom for free (measured: 44 → 0 on seed C0FFEE).
+        if (!e.bloomed && g.enemies.count === 1) {
+          e.bloomed = 1;
+          arcWall(g, e.x, e.y + 10, 13, 2.6, 1.0, 6, 1);
+          arcWall(g, e.x, e.y + 10, 13, 2.6, 1.25, 6, 1);
+          arcWall(g, e.x, e.y + 10, 13, 2.6, 1.5, 6, 1);
+        }
         if (!half) { // phase A: aimed pressure + bendy obstacles
           if (e.fireT % 70 === 20) aimedFan(g, e.x - 18, e.y + 12, 5, 0.5, 3.1);
           if (e.fireT % 70 === 50) aimedFan(g, e.x + 18, e.y + 12, 5, 0.5, 3.1);

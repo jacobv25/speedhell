@@ -66,6 +66,7 @@ export function makeGame(seed = 1) {
     enemies: makePool(64, () => ({
       type: 0, x: 0, y: 0, vx: 0, vy: 0, hp: 0, r: 10, age: 0,
       vulnAt: 0, armorUntil: 0, holdT: 0, phase: 0, fireT: 0, side: 1, value: 0, window: 0, dead: 0,
+      bloomed: 0, // r9: midboss arrival bloom fired (waits for a clean screen so a straggler's cancel wall can't wipe it)
       sweepOff: 0, // boss-phase sweep phase offset (r5: continuous phase handoff)
       campT: 0, // r6 boss serve budget: continuous frames spent serving the player's column
       prevHp: 0, // r6: last frame's hp (boss damage-stream detection for the serve budget)
@@ -201,7 +202,7 @@ export function spawnEnemy(g, type, x, y, opts = {}) {
   e.side = opts.side || 1; e.holdT = opts.holdT || 0;
   e.value = d.value; e.window = d.window; e.sweepOff = 0; e.campT = 0; e.prevHp = d.hp;
   e.latchX = -1e9; e.latchX2 = -1e9; e.latchN = 0; e.trackT = 0; e.pxEma = g.player.x;
-  e.grazeT = 0; e.grindHp = 0; e.lastDir = 0; e.monoT = 0; e.latchT = 0; e.stillRun = 0; e.flash = 0;
+  e.grazeT = 0; e.grindHp = 0; e.lastDir = 0; e.monoT = 0; e.latchT = 0; e.stillRun = 0; e.flash = 0; e.bloomed = 0;
   e.vulnAt = -1; e.armorUntil = 0; // vuln set once on-screen (top dead zone + intro armor)
   // r6.4: the boss's entrance armor lives HERE, not in the timeline event, so
   // every spawn path (referee camp probes included) gets the untouchable 90f
@@ -241,7 +242,10 @@ function killEnemy(g, e, idx) {
   if (big) { setShake(g, 14); g.hitstop = g.fxHitstop; }
   sfx(g, big ? SFX.KILL_BIG : SFX.KILL);
   if (e.type === 4) { // midboss down: relief wall + shower, gate opens — no breather (T2)
-    bulletCancelWall(g, e.x, e.y);
+    // r9: the 100/bullet payday is a SPEED-kill property. A late kill cancels at
+    // garnish rate like every other wall, so a dense screen can never be farmed
+    // by waiting — density is only worth money to the player who beat the clock.
+    bulletCancelWall(g, e.x, e.y, speed ? 100 : 30);
     for (let i = 0; i < 8; i++) spawnItem(g, e.x + g.rng.range(-27, 27), e.y + g.rng.range(-7, 20), 800);
     g.gate = null;
   }
