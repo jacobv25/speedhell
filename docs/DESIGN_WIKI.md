@@ -10,7 +10,7 @@ it says so — the "Open questions" section is the part to send to a critic.*
 lineage laws), `BOGHOG_CRAFT.md` (craft notes), `CRITIC_RUBRIC.md` (the referee's
 acceptance criteria). This wiki is the explainer that sits underneath them.*
 
-Last updated: 2026-08-29 (r18 fire gating, uncommitted; r10–r17 committed — r12–r15 from a parallel session, r16/r17 from this one).
+Last updated: 2026-08-29 (r19 overlap pass, uncommitted; r10–r18 committed — r12–r15 from a parallel session).
 
 ---
 
@@ -42,7 +42,7 @@ state* (SPEED or not), never opaque frame math the player can't perceive.
 
 | Enemy | Count/stage | HP | Base | Speed-kill | Window |
 |---|---|---|---|---|---|
-| Zako (popcorn) | 80 | 2 | 200 | 400 | 75f · 1.25s |
+| Zako (popcorn) | 80 + 32 traffic (r19 crossers/risers) + ~6 midboss escort | 2 | 200 | 400 | 75f · 1.25s |
 | Turret | 12 | 24 | 500 | 1,000 | 150f · 2.5s |
 | Mid | 4 | 44 | 800 | 1,600 | 210f · 3.5s |
 | Elite | 2 | 134 | 3,000 | 6,000 | 380f · 6.3s |
@@ -130,7 +130,19 @@ firing. Point-blank on a turret is quiet (its reward) — nothing else is.
 - **Zako** (`stage.js:72`) — one-volley popcorn. Every 3rd in a group is a
   shooter (one aimed prong on the way down); the diver variant homes briefly
   at 40–70f then commits with a short aimed fan. Soft walls steer them back
-  inside the field so wall-hugging can't drag them off-screen.
+  inside the field so wall-hugging can't drag them off-screen. **r19 traffic
+  variants** (`phase` 2/3): **crossers** enter from a side at the top band's
+  height (y 38–58, x = 16 so the edge detector never trips), cross at 1.7px/f
+  through the lanes where a top-parker or point-blanker stands, and dive at the
+  far edge; a shooter fires one prong mid-crossing. **Risers** enter from the
+  bottom on the rails (x 40 / W−40), climb slowly for 40f (a corner-hugger keeps
+  ~16f before contact — S7), then fast to y 95, hang ~30f (the kill window —
+  they can't be shot until they're above you), and fall back as popcorn; a
+  shooter fires once from the apex. Placement: crossers in turret alley (both
+  reps, opposite the popcorn side) and the mid gauntlet; risers in the rush (×2)
+  and elite rep 2. Canon: boghog WS05 Top Line ("spawn enemies on opposite
+  sides… keep the player mobile"); Garegga st.5/6 side entries, st.4 "ambush
+  from below"; Gunvein's ships from the bottom. No rng.
 - **Turret** (`stage.js:133`) — scrolls down at 0.47px/f from y −16/−40; goes
   "angry" at 4s on-screen (more fire, same scroll speed, so a lingering angry
   turret still clears on schedule). **r17 arrival shot:** its polite 3-needle fan
@@ -202,6 +214,21 @@ gone within ~1s of the midboss going vulnerable (58 → 10 → 5 on one seed), s
 the bot ~22–41 bullets to cancel at its ~5s kill.
 
 ### 4.3 Decision (r9): density comes from aggression
+
+**r19 (overlap pass).** Two changes. (1) The midboss is **never sealed** — r18's
+48px seal let a hugger mute the whole fight, bloom included; bosses don't seal
+in the canon ("sealing only works on the weak"). Alone, this costs the expert
+bot 448→653f on its midboss kill — still a speed kill. (2) **Escort:** the gate
+freezes the timeline, so the fight was in a vacuum (Jacob: "way too easy to
+speedkill… doesn't even feel like a challenging section"). After the bloom (it
+still needs the clean screen), a crosser pair enters the top band every 150f
+(alternating sides, y 36/52, one shooter) — Psikyo bosses spawn popcorn;
+boghog: "one enemy that controls space + popcorn flying in". Measured (seed 1):
+enemies on screen during the fight 1.3 → 2.5–3.0; the bots kill ~9 popcorn per
+fight — and chase them: expert 653 → 912f, aggressive-human 743 → 1365f, both
+outside the 700f window. Isolation shows the escort, not the unseal, does that;
+the bot picks the nearest target above it, a human stays on the midboss. Bot
+artifact or real cost — Jacob's playtest decides (§8.10).
 
 1. **Arrival bloom** (`stage.js:180`) — once the screen holds only the midboss,
    it fires three slow, laned arc walls (13 bullets each at 1.0/1.25/1.5 px/f,
@@ -411,7 +438,7 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
    bullet-hell targeting rules, enemy density and destructible environment
    commissioned the same day (Jacob: the original research "was insufficient
    — this should have been an obvious hole").
-10. **The midboss is fought in a vacuum (Jacob, r18 playtest).** "Way too easy
+10. **The midboss is fought in a vacuum (Jacob, r18 playtest). SHIPPED r19 (escort + unseal, §4.3), playtest pending.** "Way too easy
     to speedkill… doesn't even feel like a challenging section." Nothing else is
     on screen during the fight, so the point-blank speed kill costs nothing.
     Options (no hp, per standing rule): (a) a popcorn stream that enters from
@@ -421,6 +448,17 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     (the wiki §3 note already flags that timing) so the gate opens under fire;
     (c) both, sequenced. Referee: s7_pressure/s6 walls will move; the midboss
     speed-kill window (11.7s) stays. First target of the S3/D pass.
+11. **Enemy visual identity (Booth session 1, 2026-08-30).** "All the enemies
+    are grey geometrical shapes of similar sizes… everything just looks like
+    grey, boring, geometric shapes." The r19 overlap works mechanically (replay:
+    a clean speed-kill sweep of turret alley rep 1) but doesn't read as an
+    encounter because nothing distinguishes popcorn, crossers and turrets. The
+    S4 "desaturated silhouettes" rule exists so bullets keep top contrast
+    (Pillar 6) — identity must come from shape, size hierarchy, motion and
+    ground/air layering, not colour. Art pass; pairs with the G-pass scenery.
+    Also from the session: the S1→S2 seam is a 2.5–3 s empty screen (flag 1)
+    and the crossers' top-side entry "doesn't feel right" (flag 3). Debrief:
+    `playtest/sessions/2026-08-30-booth-1.md`.
 
 ## 9. Practice notes (for humans)
 
@@ -579,3 +617,39 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   bosses spawn popcorn — "procrastinate a boss fight to capitalize on the
   popcorn waves that appear regularly", 1cclog on Strikers 1945). Folded into
   the S3/D-pass plan as its first target; see §8.10.
+- 2026-08-29 — r19 overlap pass (S3 of the canon report + §8.10): popcorn
+  CROSSERS through the top band (turret alley ×2, mid gauntlet ×2, 5 each),
+  RISERS from the bottom rails (rush ×2, elite rep 2, 4 each), a midboss
+  ESCORT (crosser pair every 150f after the bloom), and the midboss removed
+  from the seal (bosses never seal). +32 timeline popcorn (+~6 escort) →
+  ~138 enemies, ~30/min (canon report: 60–190; this is the first step, the
+  D-pass is the big one). Corpora: **boghog** WS05 Top Line ("break the top of
+  the screen into lanes… spawn enemies on opposite sides"), WS05 "sequences of
+  elite spawns get boring if not supported by smaller enemies like flying
+  popcorn", Gunvein "ships fly up from the bottom"; **Garegga** st.4 ambush from
+  below, st.5/6 side entries; **Psikyo** bosses spawn popcorn (1cclog S1945);
+  **MSX** density/entropy; Pillars 1, 5; standing rule no-hp honoured. S7
+  reaction floor for risers argued in §3 (40f slow start). G2 landmark turrets
+  deferred — needs the hull set-piece. **Referee vs r18 control (no referee
+  edits this pass):** s4_dynamic back to GREEN 1.44 → 1.89 (traffic reaches
+  the passive bot), s5_edges 2 → 0, s7_pressure 30.6 (bar 24), s6_topband
+  green; expert 100 → 128 kills, score 167,360 → 168,370, deaths 1 → 2; blind
+  bot lasts 0.71 → 0.86m and scores 32k → 69k (more popcorn to farm — watch
+  for the D-pass). **s7_robust red with a NEW cause:** 1234567 midboss timeout
+  (the bot chases escort popcorn until the 1400f timeout), facade boss-p3
+  (drift), feedf00d's old P3 timeout gone; lives 1 on three seeds. Midboss
+  isolation (seed 1): unseal alone 448 → 653f (speed kill kept); escort alone
+  → 912f (window missed) — bot target priority, see §4.3. Turret-alley camper
+  y40: 316 bullets, 4 deaths. BUILD r18 → r19. Open for Jacob: (a) accept the
+  escort and treat the bot's midboss chase as a referee-bot limitation (bot
+  target-priority edit = referee edit), (b) thin the escort (every 200f, or
+  one crosser instead of a pair), (c) escort only after the phase-B flip.
+- 2026-08-30 — Booth session 1 (r19): first pause-and-talk playtest. Two flags,
+  both replayed to the frame. Findings: (1) S1→S2 seam has a 2.5–3 s empty
+  screen even with the caravan pull — Bored; the turret arrival landing on the
+  music lift is a positive to protect; (2) turret alley overlap works
+  mechanically but isn't cohesive because all enemies read as the same grey
+  shape — enemy visual identity is the next hole (§8.11), crosser entry point
+  secondary. Tooling: `booth.html`/`src/booth.js`/`tools/booth-server.mjs`/
+  `tools/booth-replay.mjs`, `playtest/` (uncommitted). No code changes to the
+  game this session.

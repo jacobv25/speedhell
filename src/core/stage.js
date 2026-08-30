@@ -85,7 +85,7 @@ function sealed(g, e) {
 }
 function mayFire(g, e) {
   if (e.vulnAt < 0 || e.y <= 20) return false;
-  if (e.type === 5) return true;
+  if (e.type === 5 || e.type === 4) return true; // r19: the midboss is a boss — never sealed (r18 let a hugger mute its whole fight, bloom included)
   if (e.y > H - 60) return false;
   return !sealed(g, e);
 }
@@ -108,6 +108,26 @@ export function updateEnemy(g, e) {
       // way down — popcorn that bites keeps the waves alive without touching
       // any grind fight (s7_pressure, playtest 2 "feels easier, not better")
       if (e.phase === 0 && e.holdT === 1 && e.age === 55 && mayFire(g, e)) aimedFan(g, e.x, e.y + 6, 3, 0.45, 2.7);
+      // r19 overlap pass — top-band traffic. phase 2 = side CROSSER: enters at
+      // the top band's height from a side, crosses the lanes where a top-parker
+      // or a point-blanker stands, dives at the far edge (boghog WS05 Top Line
+      // — "spawning enemies on opposite sides of the screen"; Garegga st.5/6
+      // side entries; S3 of the canon report). phase 3 = RISER: enters from the
+      // bottom on a rail, climbs past the player's band from behind, hangs at
+      // the apex (the kill window), then falls back as ordinary popcorn
+      // (Garegga st.4 "ambush from below"; Gunvein's ships from the bottom).
+      // Slow first 40f: a corner-hugger at the rail still has ~16f before
+      // contact (S7 floor). Both deterministic — no rng, referee stream-safe.
+      if (e.phase === 2) {
+        if ((e.vx > 0 && e.x > W - 34) || (e.vx < 0 && e.x < 34)) { e.vx *= 0.5; e.vy = 2.1; }
+        if (e.holdT === 1 && e.age === 45 && mayFire(g, e)) aimedFan(g, e.x, e.y + 6, 3, 0.45, 2.7);
+      } else if (e.phase === 3) {
+        if (e.age < 40) e.vy = -1.0;
+        else if (e.y > 95 && e.age < 200) e.vy = -2.4;
+        else if (e.age < 200) e.vy = 0;
+        else e.vy = 1.6;
+        if (e.holdT === 1 && e.age === 130 && mayFire(g, e)) aimedFan(g, e.x, e.y + 6, 3, 0.45, 2.7);
+      }
       e.x += e.vx + Math.sin(e.age * 0.06) * e.side * 0.6;
       // soft wall: steer back inside rather than clipping the edge (s5_edges).
       // The vx guard must exceed the ±0.6 sine wobble, or the wobble out-drifts
@@ -270,6 +290,18 @@ export function updateEnemy(g, e) {
           // desperation layer — only campers who let it live this long ever see it
           if (e.fireT > 950 && e.fireT % 70 === 5) { bendyStream(g, e.x - 20, e.y + 8, Math.PI / 2 - 0.4, 7, 1.1, 2.8); bendyStream(g, e.x + 20, e.y + 8, Math.PI / 2 + 0.4, 7, 1.1, 2.8); }
         }
+      }
+      // r19 escort: the gate freezes the timeline, so the midboss was fought in a
+      // vacuum (playtest: "way too easy to speedkill… doesn't even feel like a
+      // challenging section"). Psikyo bosses spawn popcorn; boghog: "one enemy
+      // that controls space + popcorn flying in". After the bloom (which needs
+      // the clean screen), a crosser pair enters the top band every 150f —
+      // the point-blank speed kill now happens in traffic. No rng.
+      if (e.bloomed && e.fireT % 150 === 60) {
+        const k = ((e.fireT / 150) | 0) % 2;
+        const a = spawnEnemy(g, 0, k ? W - 16 : 16, 36, { vx: k ? -1.7 : 1.7, vy: 0.3, side: k ? 1 : -1, holdT: 1 });
+        const b = spawnEnemy(g, 0, k ? 16 : W - 16, 52, { vx: k ? 1.7 : -1.7, vy: 0.3, side: k ? -1 : 1, holdT: 0 });
+        if (a) a.phase = 2; if (b) b.phase = 2;
       }
       // timeout: flees, no score, gate opens — the stage does not wait (S6, T2)
       if (e.vulnAt >= 0 && g.frame - e.vulnAt > MIDBOSS_TIMEOUT) {
@@ -708,6 +740,24 @@ export function buildTimeline() {
     });
   };
 
+  // r19 overlap pass — top-band traffic helpers (see updateEnemy phase 2/3).
+  // crossers: n popcorn entering from `side` at the top band's height, 14f
+  // apart, stacked 7px so they read as a file. risers: n popcorn from the
+  // bottom on alternating rails, 18f apart. Spawn x=16 (not off-screen) so the
+  // s5_edges detector never reads an entry as an edge trap.
+  const crossers = (t, side, n, y = 38) => {
+    for (let i = 0; i < n; i++) at(t + i * 14, (g) => {
+      const e = spawnEnemy(g, 0, side < 0 ? 16 : W - 16, y + (i % 3) * 7, { vx: -side * 1.7, vy: 0.3, side, holdT: i % 3 === 1 ? 1 : 0 });
+      if (e) e.phase = 2;
+    });
+  };
+  const risers = (t, n) => {
+    for (let i = 0; i < n; i++) at(t + i * 18, (g) => {
+      const e = spawnEnemy(g, 0, i % 2 ? W - 40 : 40, H + 13, { vx: 0, vy: -1.0, side: i % 2 ? 1 : -1, holdT: i % 3 === 1 ? 1 : 0 });
+      if (e) e.phase = 3;
+    });
+  };
+
   // S1 popcorn intro — teach speed-kill (rep1, rep2 slightly faster: ≤2 reps)
   zakoGroup(120, -1, 6); zakoGroup(240, 1, 6);
   zakoGroup(420, -1, 7, { spd: 0.27 }); zakoGroup(420, 1, 7, { spd: 0.27 });
@@ -718,6 +768,7 @@ export function buildTimeline() {
     at(base, (g) => { spawnEnemy(g, 2, 60, -16); spawnEnemy(g, 2, 133, -40); });
     at(base + 120, (g) => { spawnEnemy(g, 2, W - 60, -16); spawnEnemy(g, 2, W - 133, -40); });
     zakoGroup(base + 180, r === 0 ? 1 : -1, 6, r === 1 ? { diver: true } : {});
+    crossers(base + 60, r === 0 ? 1 : -1, 5, 38); // r19: traffic through the turret columns' top band
   }
 
   // S3 mid gauntlet — sequenced sides suggest the route (never simultaneous)
@@ -727,18 +778,22 @@ export function buildTimeline() {
   midAt(1700, 80, -1, 127); midAt(1810, W - 80, 1, 140);
   midAt(1950, W / 2 - 40, -1, 120); midAt(2060, W / 2 + 40, 1, 153);
   zakoGroup(1880, -1, 5); zakoGroup(2100, 1, 5);
+  crossers(1760, 1, 5, 44); crossers(2000, -1, 5, 44); // r19: the mids' descent lane has traffic
 
   // S4 midboss — gate; killing it fast means the rush starts immediately (T2)
   at(2400, (g) => { g.gate = 'midboss'; spawnEnemy(g, 4, W / 2, -20); });
 
   // S5 rush — heavy overlap tension peak (WS05): divers + turrets + popcorn
   zakoGroup(2460, -1, 8, { spd: 0.33 }); zakoGroup(2520, 1, 8, { spd: 0.33 });
+  risers(2470, 4); // r19: "ships from the bottom later" — the rush is where escalation from behind begins
   at(2580, (g) => { spawnEnemy(g, 2, 93, -16); spawnEnemy(g, 2, W - 93, -16); });
   zakoGroup(2640, -1, 8, { diver: true, spd: 0.2 }); zakoGroup(2700, 1, 8, { diver: true, spd: 0.2 });
+  risers(2660, 4);
 
   // S6 elite pair — rep1 solo, rep2 + turrets (twist), never simultaneous elites
   at(2900, (g) => spawnEnemy(g, 3, W / 2 - 53, -16, { side: -1 }));
   at(3260, (g) => { spawnEnemy(g, 3, W / 2 + 53, -16, { side: 1 }); spawnEnemy(g, 2, 53, -16); spawnEnemy(g, 2, W - 53, -16); });
+  risers(3290, 4); // r19: rep-2 twist — the elite's grind lane is attacked from behind
 
   // S7 release — cancel wall + item shower + ~3s breather (WS05 tension-release)
   // Items here are routing signage, not a payday [BOGHOG T2] — low value, free wall pays little.
