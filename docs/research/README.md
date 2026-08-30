@@ -22,6 +22,14 @@ folder — the repo copies here are canonical).
 - **playtest-interviewing.md** — Nielsen think-aloud / RTA, Gow's word-list
   commentary protocol, Hopson's mid-playtest feedback methods. Drove the Booth
   (booth.html) and the interview rules Claude follows in it.
+- **undertale-free-release.md** — Undertale as "Trojan shmup": how danmaku
+  reached a mass audience (ZUN's spell-card thesis, patterns as
+  characterization, stakes inversion), Toby Fox's demo→Kickstarter→paid path
+  and Deltarune's free-Chapter-1 model, free-first precedents (Cave Story,
+  Touhou, FINALBOSS/ZeroRanger, Vampire Survivors), and a free-release
+  playbook for SPEEDHELL. Key: free-first never devalued anyone; pure-shmup
+  free-first caps at genre size (~1.6K reviews) — the story-game liberties are
+  the payload that breaks the ceiling.
 - **zeroranger.md** — ZeroRanger deep-dive: the 10-swatch hue=threat /
   value=identity palette, stage lengths (2:20→6:15 loop 1), the
   continues-as-currency economy and save wager, hidden rank, music state-cuts,
