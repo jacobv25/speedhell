@@ -10,7 +10,7 @@ it says so — the "Open questions" section is the part to send to a critic.*
 lineage laws), `BOGHOG_CRAFT.md` (craft notes), `CRITIC_RUBRIC.md` (the referee's
 acceptance criteria). This wiki is the explainer that sits underneath them.*
 
-Last updated: 2026-08-29 (r10–r17 all uncommitted on top of r9 = cba500a; r12–r15 from a parallel session, r16 gold pickups + r17 turret arrival shot from this one).
+Last updated: 2026-08-29 (r18 fire gating, uncommitted; r10–r17 committed — r12–r15 from a parallel session, r16/r17 from this one).
 
 ---
 
@@ -112,6 +112,21 @@ The house rule: a speed-killed enemy shows only its polite opening; an ignored
 one escalates and owns the screen. Escalation is on a *behavior* clock separate
 from the *scoring* window, so the two knobs can be tuned independently.
 
+**Fire gating (r18, `stage.js` `mayFire`).** Three gates, and only three: an
+enemy fires if it is (1) on-screen and vulnerable (y > 20, past spawn armor),
+(2) not in the **bottom screen band** (y > H−60 — enemies past the player's band
+go quiet: "the player typically can't shoot backwards", boghog WS04), and
+(3) not **sealed** — no shot from inside 48px of the player (48px at needle
+speed 3.3 ≈ 15f ≈ 240ms, above the rubric's 120ms reaction floor). The **boss
+is never sealed** and ignores the bottom band. Before r18 the rule was "the
+enemy must be 40px ABOVE the player", which no classic game has: it muted every
+fire site — boss included — for a player parked at the top (Jacob's friend,
+playtest 2026-08-29; referee: the old rule let a mortal top-parker clear the
+boss arena with three timeouts, 0 bullet deaths, 8 bullets fired). Canon
+sources: Yuge (Toaplan) on ground-enemy sealing; Toaplan's aim-anywhere vector
+tests; Ikeda hunting safe spots; Psikyo bosses ridden at point-blank and still
+firing. Point-blank on a turret is quiet (its reward) — nothing else is.
+
 - **Zako** (`stage.js:72`) — one-volley popcorn. Every 3rd in a group is a
   shooter (one aimed prong on the way down); the diver variant homes briefly
   at 40–70f then commits with a short aimed fan. Soft walls steer them back
@@ -120,7 +135,10 @@ from the *scoring* window, so the two knobs can be tuned independently.
   "angry" at 4s on-screen (more fire, same scroll speed, so a lingering angry
   turret still clears on schedule). **r17 arrival shot:** its polite 3-needle fan
   (3/0.4/2.3 — the same sentence) now fires the frame it becomes vulnerable
-  (y≈17), bypassing `mayFire`'s "player 40px below" mute; latched on `e.phase`.
+  (y≈17), bypassing the top-edge gate; latched on `e.phase`. Since r18 it honours
+  the 48px seal like every other shot — a point-blank arrival kill is quiet by
+  canon, but the top is no longer silent (popcorn, mids, elites and the boss all
+  fire at a top-parker now).
   Before r17 the first fan the mute allowed landed at age ~115 while a point-blank
   kill took 12f from vulnerability at age ~68 — and turrets that scrolled past
   *below* a top-camper could never fire at all. Probe (top camper at y 40–60,
@@ -363,6 +381,46 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
    kills). Tension with Pillar 2 (deliberate death becomes correct play) is the
    question to put to Mark directly. Decision: unresolved, unchanged in code —
    Jacob's call (leaning keep-as-discovered).
+9. **The top of the screen is a silence zone (playtest, Jacob's friend,
+   2026-08-29). PARTLY RESOLVED r18** — recommendations (1) and (2) shipped as
+   the `mayFire` rewrite (§3 fire gating) and the boss exemption; (4) shipped as
+   the `s6_topband` referee probe (four parks incl. the boss arena). Still open:
+   (3) side/rear entries into the top band, and the boss top-lane swoop. Original
+   text follows.** `mayFire` (`stage.js:66`) lets an enemy fire only when it is
+   40px ABOVE the player, so a player parked at y≈16 mutes all 17 fire sites —
+   including the boss (holds y≈92, r 30: no fire, no contact, and player shots
+   can't reach below, so three timeouts clear the stage at ~0 boss score). r17
+   patched the turret symptom; this is the disease. The referee is blind: every
+   S6 camp probe fires from the bottom band. Corpora: MSX **entropy** ("you can
+   set the controller down and break the game's logic" — explicitly opposed);
+   boghog "checkmate from physical properties, not stats" [T3], "aimed forces
+   movement" [T3], "ships from the bottom later" [T2]; Pillar 5 (top must be
+   risky, not forbidden), Pillar 6 (fire from below in the existing needle
+   language). **Four recommendations, logged for Jacob's decision, in order:**
+   (1) replace the "40px above" rule with a distance floor (~48px, any
+   direction; 48px at needle speed 3.3 ≈ 15f ≈ 240ms, above the S7 120ms
+   floor) — un-mutes everything from the top; biggest referee event yet, and
+   `bot.mjs` targeting uses the same skip (referee edit); (2) exempt the boss
+   from any mute — it always fires, the camp governor owns position; (3) make
+   the top band physically alive: side-entering popcorn crossing y 30–60 per
+   section, later a bottom-entering diver group (Strikers / Star Soldier side
+   and rear entries) — timeline-only, no stats; (4) add a top-band camp probe
+   to the S6 referee set. Sequence: 1+2, playtest, then 3 (boghog
+   pass-cooldown). Jacob has his own ideas from Strikers 1945 II, Star Soldier
+   and DoDonPachi — not yet stated. Deep research on classic/Japanese
+   bullet-hell targeting rules, enemy density and destructible environment
+   commissioned the same day (Jacob: the original research "was insufficient
+   — this should have been an obvious hole").
+10. **The midboss is fought in a vacuum (Jacob, r18 playtest).** "Way too easy
+    to speedkill… doesn't even feel like a challenging section." Nothing else is
+    on screen during the fight, so the point-blank speed kill costs nothing.
+    Options (no hp, per standing rule): (a) a popcorn stream that enters from
+    the sides/bottom during the fight — Psikyo bosses spawn popcorn, boghog's
+    "space controller + popcorn flying in"; the r9 bloom's clean-screen wait
+    would need to tolerate popcorn; (b) let mid #4's exit overlap the arrival
+    (the wiki §3 note already flags that timing) so the gate opens under fire;
+    (c) both, sequenced. Referee: s7_pressure/s6 walls will move; the midboss
+    speed-kill window (11.7s) stays. First target of the S3/D pass.
 
 ## 9. Practice notes (for humans)
 
@@ -466,3 +524,58 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   tear-through kill into return fire). Dials in reserve if that changes: earlier
   arrival (fire at y≈0, before vulnerability), tighter pair timing (−40 spawn
   closer to −16), or arming the alley's popcorn too. No hp.
+- 2026-08-29 — top-of-screen silence zone found in playtest (Jacob's friend);
+  four recommendations logged as open question §8.9 (distance-floor mayFire,
+  boss never muted, side/rear entries into the top band, top-band referee
+  probe). No code. Deep research on classic/Japanese bullet hells commissioned:
+  targeting/fire-gating rules, enemy density per stage, destructible
+  environment — the three holes Jacob named after playing S1945II, Soldier
+  Blade, DDP.
+- 2026-08-29 — r18 fire gating: `mayFire` rewritten from "enemy must be 40px
+  ABOVE the player" to the canon's three gates (on-screen; bottom screen band
+  y > H−60; 48px seal), boss never sealed; the r17 arrival shot now honours the
+  seal. Deep-research report (`~/Dev/claude-visualizations/shmup-canon-three-
+  holes-report.md`) found no classic game gates fire by the player being above
+  or beside an enemy. Corpora: **boghog** WS04 ("ground enemies will stop
+  shooting if the player is close… a zone at the bottom of the screen where
+  enemies will stop shooting since the player typically can't shoot backwards";
+  the top is dangerous because "their collision hitboxes still make that area
+  very dangerous" — WS05); **Toaplan/Yuge** (proximity seal "so people wouldn't
+  think the game was unfair"; "tests to see whether the enemies could hit the
+  ship at any given location on the screen"); **Ikeda** ("I do my best to find
+  and remove [safe spots]"); **MSX** entropy ("consequence for the player being
+  idle"); Pillar 5 (top risky, not forbidden), Pillar 6 (fire from below in the
+  existing needle language — no new bullet family), rubric S7 reaction floor
+  (48px ≈ 240ms). Pushback noted: canon seals GROUND enemies only; we seal all
+  non-boss enemies because S7's floor demands it — air enemies at 20px would be
+  unreactable. **Referee (Jacob-authorized edits: new `s6_topband` probe; the
+  bot's 40px target filter is untouched — it picks what to shoot, and shots only
+  travel up):** old rule → boss-arena top-parker CLEARED with 3 timeouts, 0
+  bullet deaths, 8 bullets fired, score 0 (the friend's bug, reproduced); r18 →
+  dies in 562f to 124 bullets. Stage top-parks: first bullet death 12.7s → 2.6s.
+  Turret-alley camper (y 40, sidestepping): 24 → 369 bullets, 0 → 3 deaths.
+  Expert bot BYTE-IDENTICAL (167,360, same deaths) — honest low play never
+  touched the old mute. Aggressive-human: avgBullets 28.7 → 36.8, one new
+  MIDBOSS timeout + one more death (the midboss now fires when hugged from
+  beside/above — the first real balance signal, expected: aggression costs
+  bullets now). **s4_dynamic RED 1.97 → 1.44 (bar 1.6)** — the passive/
+  aggressive bullet contrast narrows because the aggressive bot takes fire it
+  used to mute; §8.1 already asks whether that bar encodes the old world.
+  Recert decision. s7_robust unchanged (feedf00d P3, pre-existing). s6_nocamp,
+  s7_clearable, s7_pressure (36.8, bar 24) green. BUILD r17 → r18.
+  **Playtest verdict (Jacob, same day):** (1) "top of the screen is not a safe
+  zone anymore — you get shot in the ass"; (2) midboss: "we have work to do, but
+  it's ok for now" — follow-up item, not a blocker; (3) turrets still easy when
+  point-blanking and speed-killing — expected, it's the canon's seal reward, and
+  the real fix is overlap (S3 top-band traffic + D-pass density), next; (4)
+  needles from beside/below read fine (Pillar 6 holds). r18 pass settled.
+  **Midboss (Jacob, after r18):** "way too easy to speedkill. With no
+  overlapping enemies it's very boring — doesn't even feel like a challenging
+  section." Diagnosis matches the research: the midboss is fought in a vacuum
+  (mid #4 exits, nothing else is on screen — the r9 bloom waits for a clean
+  screen by design), so the point-blank speed kill has no cost. The canon
+  answer is overlap, not hp (standing rule): popcorn flying in during the fight
+  (boghog WS05 "one enemy that controls space + popcorn flying in"; Psikyo
+  bosses spawn popcorn — "procrastinate a boss fight to capitalize on the
+  popcorn waves that appear regularly", 1cclog on Strikers 1945). Folded into
+  the S3/D-pass plan as its first target; see §8.10.

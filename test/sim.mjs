@@ -184,6 +184,61 @@ function mortalTrackerProbe() {
   };
 }
 
+// --- S6 top-band probe (r18, Jacob-authorized referee edit) --------------------
+// Playtest 2026-08-29 (Jacob's friend): a player parked at y≈16 was never shot
+// for the whole stage — boss included — because fire was gated on the enemy
+// being 40px ABOVE the player. The parker is MORTAL, holds fire, never dodges
+// bullets, but does what the human did: sidesteps enemy BODIES (contact is not
+// the bug — silence is). LAW: over the full stage timeline it must die to a
+// BULLET at least once at each park (center column, a rail, the y=40 camp).
+function topParkProbe(name, tx, ty = 16) {
+  const g = makeGame(SEED); startRun(g);
+  let spawned = 0, prev = 0, near = 0;
+  while (g.state === 'play' && g.frame < MAX_FRAMES) {
+    const p = g.player;
+    let ax = tx;
+    for (let k = 0; k < g.enemies.count; k++) { // sidestep any body about to ram the park
+      const e = g.enemies.items[k];
+      if (Math.abs(e.y - ty) < 44 && Math.abs(e.x - p.x) < e.r + 26) { ax = p.x + (e.x >= p.x ? -40 : 40); break; }
+    }
+    seekXY(Math.max(16, Math.min(W - 16, ax)), ty)(g); g.input.fire = true; g.input.bomb = false;
+    update(g);
+    const b = g.eBullets.count; if (b > prev) spawned += b - prev; prev = b;
+    for (let k = 0; k < g.eBullets.count; k++) { const q = g.eBullets.items[k]; if (Math.hypot(q.x - p.x, q.y - p.y) < 40) { near++; break; } }
+  }
+  const d = g.stats.deaths;
+  return {
+    name, outcome: g.state, frames: g.frame, deaths: d.length,
+    bulletDeaths: d.filter((x) => x.c === 'bullet').length, contactDeaths: d.filter((x) => x.c === 'contact').length,
+    firstBulletDeathSec: (() => { const f = d.find((x) => x.c === 'bullet'); return f ? +(f.f / 60).toFixed(1) : null; })(),
+    bulletsSpawned: spawned, threatFrames: near, score: g.score, timeouts: g.stats.timeouts,
+  };
+}
+
+// Boss-arena twin of the top-park (the friend's decisive observation: "the boss
+// doesn't target you either"). Same arena as the camp probes, MORTAL, parked at
+// the top center: the boss holds y≈92 (r 30), so a y=16 parker is 76px above it
+// — no contact, no return fire under the old rule, three scoreless timeouts.
+// LAW: the parker must take fire (threat frames > 0) and die to a bullet.
+function topParkBossProbe(name, tx, ty = 16) {
+  const g = makeGame(SEED); startRun(g);
+  g.timeline = []; g.tlIndex = 0; g.gate = 'boss';
+  spawnEnemy(g, 5, W / 2, -27);
+  let frames = 0, near = 0, spawned = 0, prev = 0;
+  while (!g.bossDown && g.state === 'play' && frames < 5400) {
+    seekXY(tx, ty)(g); g.input.fire = true; g.input.bomb = false;
+    update(g); frames++;
+    const p = g.player, b = g.eBullets.count; if (b > prev) spawned += b - prev; prev = b;
+    for (let k = 0; k < g.eBullets.count; k++) { const q = g.eBullets.items[k]; if (Math.hypot(q.x - p.x, q.y - p.y) < 40) { near++; break; } }
+  }
+  const d = g.stats.deaths;
+  return {
+    name, outcome: g.state === 'gameover' ? 'died' : (g.bossDown ? 'cleared' : 'capped'), frames,
+    deaths: d.length, bulletDeaths: d.filter((x) => x.c === 'bullet').length, contactDeaths: d.filter((x) => x.c === 'contact').length,
+    bulletsSpawned: spawned, threatFrames: near, timeouts: g.stats.timeouts, score: g.score,
+  };
+}
+
 // --- S8 performance gate -----------------------------------------------------
 function stressTest() {
   const g = makeGame(7); g.state = 'play'; g.timeline = []; startRun(g);
@@ -252,6 +307,8 @@ const ROBUST_RUNS = ROBUST_SEEDS.map((s) => {
 console.log('s7_robust seeds:', ROBUST_RUNS.map((r) => `${r.seedHex}:${r.outcome}/${r.timeouts}to/${r.livesLeft}L`).join(' '));
 const CAMP_PROBES = runCampProbes();
 console.log('s6_nocamp:', CAMP_PROBES.map((p) => `${p.name}:${p.bossKills}k/${p.timeouts}to`).join(' '));
+const TOP_PARK = [topParkProbe('top-center-y16', W / 2), topParkProbe('top-rail-left-y16', 60), topParkProbe('top-center-y40', W / 2, 40), topParkBossProbe('boss-top-center-y16', W / 2)];
+console.log('s6_topband:', TOP_PARK.map((p) => `${p.name}:${p.outcome}/${p.bulletDeaths}bd+${p.contactDeaths}cd/${p.threatFrames}tf/${p.bulletsSpawned}b`).join(' '));
 const TRACKER_WATCH = mortalTrackerProbe();
 console.log('s6 deathtank watch:', JSON.stringify(TRACKER_WATCH));
 const STUTTER_INVULN = campProbe('stutter-15-15-invuln', stutterMover());
@@ -333,6 +390,11 @@ const checks = {
     bossHpAt90: CAMP_PROBES.map((p) => ({ name: p.name, hp: p.bossHpAt90 })),
     fullHp: ENEMY_DEFS[5].hp,
     pass: CAMP_PROBES.every((p) => p.bossHpAt90 === null || p.bossHpAt90 >= ENEMY_DEFS[5].hp),
+  },
+  s6_topband: {
+    desc: 'the top of the screen is not a shelter (r18): a MORTAL top-parker (fire held, sidesteps bodies, never dodges bullets) must die to a BULLET at least once over the full stage at y 16 (center, rail) and y 40, AND in the boss arena parked at y 16 — before r18 the boss (y≈92, r 30) could neither reach nor be reached by that parker: three scoreless timeouts',
+    probes: TOP_PARK,
+    pass: TOP_PARK.every((p) => p.bulletDeaths >= 1 && p.threatFrames > 0),
   },
   s7_robust: {
     desc: 'expert clears BY KILLS (0 timeouts, ≥1 life) on 4 ALTERNATE seeds — green-on-the-certified-seed-only is not clearable (r6 critic 2: boss-p3 timed out on 4/8 seeds while the certified seed stayed green)',

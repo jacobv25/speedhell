@@ -62,9 +62,32 @@ const BOSS_PHASE_HP = [110, 134, 135]; // HP is a pattern-duration knob [BOGHOG 
 // expert's tail under the timeout across every robust seed, with kills under the 1200f decay knee.
 export const BOSS_PHASE_TIMEOUT = 1450; // ~24s per phase — passive dodging times out
 
-// Enemies may not fire from the player's band or below (WS04 bottom no-shoot).
+// r18 fire gating — the canon's three gates, replacing the "enemy must be 40px
+// ABOVE the player" rule that muted all 17 fire sites (boss included) for a
+// player parked at the top (playtest: Jacob's friend; probe: 0 bullets in the
+// whole alley, scoreless boss clear by timeout). No classic game gates fire by
+// the player being above or beside an enemy; what they document is:
+//   1. off-screen / top-edge enemies never fire (Raiden; Molinari; WS04 top dead zone)
+//   2. a BOTTOM SCREEN BAND where enemies past the player's band go quiet — "the
+//      player typically can't shoot backwards" (boghog WS04). A screen band, not
+//      a halo around the player: a halo is exactly what made the top safe.
+//   3. SEALING — no shot inside a close radius. Canon seals ground enemies (Yuge:
+//      "we didn't want people to think the game was unfair"); we apply the floor
+//      to every non-boss enemy because the rubric's S7 reaction floor (120ms)
+//      demands it: 48px at needle speed 3.3 ≈ 15f ≈ 240ms. Point-blank on a
+//      turret is quiet (its reward, Toaplan/CAVE) — but nothing ELSE is.
+//   The boss is never sealed (Ikeda hunts safe spots; Psikyo bosses are ridden
+//   at point-blank and still fire); its position pressure is the camp governor.
+const SEAL_R2 = 48 * 48; // H is read at call time — game.js imports this module first (circular)
+function sealed(g, e) {
+  const dx = e.x - g.player.x, dy = e.y - g.player.y;
+  return dx * dx + dy * dy < SEAL_R2;
+}
 function mayFire(g, e) {
-  return e.vulnAt >= 0 && e.y < g.player.y - 40 && e.y > 20;
+  if (e.vulnAt < 0 || e.y <= 20) return false;
+  if (e.type === 5) return true;
+  if (e.y > H - 60) return false;
+  return !sealed(g, e);
 }
 
 export function updateEnemy(g, e) {
@@ -148,7 +171,9 @@ export function updateEnemy(g, e) {
       // as the r10 mid / r11 elite entries. Same sentence (3/0.4/2.3), just said
       // on arrival; kill-fast-or-be-blanketed [T2] unchanged. No rng. e.phase
       // latches it (unused on type 2).
-      if (e.vulnAt >= 0 && e.phase === 0) { e.phase = 1; aimedFan(g, e.x, e.y + 6, 3, 0.4, 2.3); }
+      // r18: the arrival shot keeps its top-edge bypass but honours the seal —
+      // a point-blank arrival kill is quiet by canon; the top is no longer silent.
+      if (e.vulnAt >= 0 && e.phase === 0) { e.phase = 1; if (!sealed(g, e)) aimedFan(g, e.x, e.y + 6, 3, 0.4, 2.3); }
       const every = angry ? 34 : 85;
       if (e.fireT % every === 30 && mayFire(g, e))
         aimedFan(g, e.x, e.y + 6, angry ? 7 : 3, angry ? 1.0 : 0.4, angry ? 3.1 : 2.3);
