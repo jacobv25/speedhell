@@ -8,7 +8,10 @@ it says so — the "Open questions" section is the part to send to a critic.*
 
 *Companion docs: `DESIGN_PILLARS.md` (the constitution), `HOMAGE_STUDY.md` (the
 lineage laws), `BOGHOG_CRAFT.md` (craft notes), `CRITIC_RUBRIC.md` (the referee's
-acceptance criteria). This wiki is the explainer that sits underneath them.*
+acceptance criteria), and `research/` (the deep-research corpus: canon fire-
+gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger —
+see `research/README.md` for the roadmap state). This wiki is the explainer
+that sits underneath them.*
 
 Last updated: 2026-08-30 (r20 art pass + display contract §6.2, uncommitted; r10–r19 committed).
 
@@ -755,3 +758,10 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   death feels earned." Overall: "feels OK" — the display/identity debts are
   paid; the remaining gap to *feels great* is the open density/pacing work
   (S1→S2 seam, crosser entry, D-pass), not polish. r20 settled.
+- 2026-08-30 — research corpus moved into the repo (`docs/research/`, with
+  raw per-pass findings and an index that carries the roadmap state) so any
+  future agent can continue without this session's context. New: ZeroRanger
+  deep-dive (`research/zeroranger.md`) — hue=threat/value=identity palette
+  (adopt for the boss-art ramps), pattern-over-quantity density counterweight
+  to the canon numbers (weigh in the D-pass shape decision), boss timer and
+  overkill scoring candidates, save-wager refused (steal the stake shape only).
