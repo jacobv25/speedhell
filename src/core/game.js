@@ -84,7 +84,7 @@ export function makeGame(seed = 1) {
       grindHp: 0, // r6.4: per-phase hp dealt from IN-FIRE play — the grind account
       flash: 0, // r8-fx S4-MUST: hit-flash frames remaining (renderer paints the silhouette white)
     })),
-    items: makePool(200, () => ({ x: 0, y: 0, vy: 0, val: 0 })),
+    items: makePool(200, () => ({ x: 0, y: 0, vy: 0, val: 0, tw: 0 })),
     particles: makePool(400, () => ({
       x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 0, hue: 0,
       kind: 0, size: 0, rot: 0, vrot: 0, delay: 0, grav: 0, // r8-fx typed particle
@@ -216,6 +216,7 @@ export function spawnEnemy(g, type, x, y, opts = {}) {
 export function spawnItem(g, x, y, val = 500) {
   const it = g.items.spawn(); if (!it) return;
   it.x = x; it.y = y; it.vy = -1.0; it.val = val;
+  it.tw = (x + y * 0.7) * 0.1; // glint phase — cosmetic, spawn-position hash, no rng
 }
 
 function killEnemy(g, e, idx) {

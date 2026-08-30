@@ -93,15 +93,20 @@ export function draw(g, ctx, bgScroll) {
     ctx.fillRect(30 + (i * 97) % (W - 120), sy, 60, 34); // dim "terrain" slabs
   }
 
-  // items — gold, unmistakable vs bullets (S2)
+  // items — gold, unmistakable vs bullets (S2). Blue Revolver-sized: radius
+  // scales with value (fat chains pay in visibly fatter gold) and a slow
+  // glint pulse keeps the big discs reading as treasure, not UI. Safe to grow:
+  // items sit below enemies/fx/bullets, so size can never mask a threat.
   for (let i = 0; i < g.items.count; i++) {
     const it = g.items.items[i];
+    const r = Math.min(12, 7 + it.val / 150) + Math.sin(g.frame * 0.11 + it.tw) * 0.6;
     ctx.fillStyle = '#0e0c04';
-    ctx.beginPath(); ctx.arc(it.x, it.y, 6, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(it.x, it.y, r, 0, 7); ctx.fill();
     ctx.fillStyle = '#ffd24a';
-    ctx.beginPath(); ctx.arc(it.x, it.y, 4.5, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(it.x, it.y, r * 0.78, 0, 7); ctx.fill();
     ctx.fillStyle = '#fff6d0';
-    ctx.fillRect(it.x - 1, it.y - 1, 2, 2);
+    const hl = Math.max(2, r * 0.3);
+    ctx.fillRect(it.x - r * 0.4, it.y - r * 0.4, hl, hl);
   }
 
   // enemies — desaturated silhouettes, distinct per role (S4)

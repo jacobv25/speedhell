@@ -10,7 +10,7 @@ it says so — the "Open questions" section is the part to send to a critic.*
 lineage laws), `BOGHOG_CRAFT.md` (craft notes), `CRITIC_RUBRIC.md` (the referee's
 acceptance criteria). This wiki is the explainer that sits underneath them.*
 
-Last updated: 2026-08-29 (r10 mid entry shot + r11 cancel scoping — both uncommitted; r9 committed as cba500a).
+Last updated: 2026-08-29 (r10–r17 all uncommitted on top of r9 = cba500a; r12–r15 from a parallel session, r16 gold pickups + r17 turret arrival shot from this one).
 
 ---
 
@@ -77,7 +77,14 @@ bullets on screen. The item shower on a phase kill shrinks with the same fade.
   `chain × 20` each (chain 20 → 2,400). Resets to 0 on any non-speed kill or death.
 - **Items** — midboss kill: 8 × 800 (6,400). Boss phase kill: up to 10 × 1,000.
   S7 release: 14 × 150 (routing signage, not a payday). Items fall and are lost
-  off the bottom; magnet radius 53px.
+  off the bottom; magnet radius 53px, collect radius 12px (`game.js` item loop).
+  Rendered Blue Revolver-sized (r16): radius scales with value —
+  `min(12, 7 + val/150)` px, so a 150 release coin draws at 8 and an 800/1000
+  coin caps at 12 (old flat size was 6) — plus a slow deterministic glint pulse
+  (`renderer.js` items block; phase seeded per-coin in `spawnItem`, no rng).
+  Size-communicates-value, Psikyo small/large-coin style; safe to grow because
+  items render below enemies/fx/bullets so gold can never mask a threat (S2).
+  Collect radius intentionally NOT grown yet — open question below.
 - **Bullet cancels** — bullets convert to points at a per-bullet rate: 30 on an
   elite kill (LOCAL, 90px radius — r11), bombs, and the S7 wall; 100 on a midboss
   **speed** kill (30 if late — r9, see §4.3); 100 full-screen on a boss phase
@@ -109,8 +116,19 @@ from the *scoring* window, so the two knobs can be tuned independently.
   shooter (one aimed prong on the way down); the diver variant homes briefly
   at 40–70f then commits with a short aimed fan. Soft walls steer them back
   inside the field so wall-hugging can't drag them off-screen.
-- **Turret** (`stage.js:118`) — scrolls down; goes "angry" at 4s on-screen (more
-  fire, same scroll speed, so a lingering angry turret still clears on schedule).
+- **Turret** (`stage.js:133`) — scrolls down at 0.47px/f from y −16/−40; goes
+  "angry" at 4s on-screen (more fire, same scroll speed, so a lingering angry
+  turret still clears on schedule). **r17 arrival shot:** its polite 3-needle fan
+  (3/0.4/2.3 — the same sentence) now fires the frame it becomes vulnerable
+  (y≈17), bypassing `mayFire`'s "player 40px below" mute; latched on `e.phase`.
+  Before r17 the first fan the mute allowed landed at age ~115 while a point-blank
+  kill took 12f from vulnerability at age ~68 — and turrets that scrolled past
+  *below* a top-camper could never fire at all. Probe (top camper at y 40–60,
+  on-column): **zero enemy bullets in the whole alley, 4/4 speed kills at 7–9f,
+  no deaths** → with r17: a non-dodging camper loses 2–4 lives; a sidestepping
+  one keeps its speed kills (10–15f) and survives — the fast kill now costs a
+  sidestep. S7 "no unavoidable deaths": the only spawn-adjacent spot with no path
+  (on-column, y<35) is already a contact death when the turret passes.
 - **Mid** (`stage.js:97`) — descends at 1.5px/f (mute for ~88–110f), fires one
   aimed 5-needle fan at age 65 (y≈86) on the way down (r10, see below), then holds
   deep (y 120–153), aimed fans every 80f, a spray at 230f; past 300f it parks and
@@ -380,3 +398,51 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   no decision lost). Note: r15 coin-drops proposal (popcorn wave-end gold) is
   cleared-but-parked pending r13/r14 playtest settling (boghog pass-cooldown);
   this vacuum took the r15 build number.
+- 2026-08-29 — r16 gold pickup presentation (Blue Revolver homage; built before
+  r12–r15 landed from the parallel session, renumbered to avoid the r12 collision
+  — it never carried a BUILD tag until r17): coin radius
+  now scales with value (`min(12, 7 + val/150)`, was flat 6) + per-coin glint
+  pulse. Renderer-only + a cosmetic `tw` phase field on the item struct (no rng,
+  nothing in core reads it). Control run confirmed sim-invisible: gameplay
+  metrics byte-identical with/without; red set unchanged {s4_dynamic, s7_robust}.
+  Open: grow collect radius 12→~16 to match the new visual edge (Jacob's call;
+  shifts score timing a few frames, needs sim numbers).
+- 2026-08-29 — DECISION (consultation, no code): "hard mode with suicide bullets"
+  → **loop 2**, not a menu mode. Pillar 3 ("one honest difficulty, no menu
+  slider") + non-goals ("a second loop is the natural v2") forbid the toggle;
+  HOMAGE L8 / S1945II adopt #10 already spec the loop as a bullet-diff — same
+  stage, every kill (popcorn included, Psikyo precedent) spits slow aimed revenge
+  dots, cancel-eligible. MSX: options-menu difficulty "subverts the intended
+  difficulty curve through external factors"; loop 2 is earned in-credit (expert
+  bias) and Garegga-flavored (speed-killing everything now fills the screen).
+  Boghog: suicide bullets are the "just get paid" spam layer — slow, readable,
+  macro-dodge, licensed by cancels; rejects mode bloat. Cotton "You Do!" claim
+  from TV Tropes checked in-game by Jacob and NOT found — dropped. Cancel rate
+  for revenge dots = scoring, Jacob's call. Loop-1 referee path untouched by
+  design (`g.loop` flag); loop-2 cert is a separate question.
+- 2026-08-29 — r17 turret arrival shot (see §3 Turret). Problem (Jacob playtest):
+  "move to the top of the screen and kill all the turrets before they have a
+  chance to shoot." Probe confirmed it's structural, not skill: a top camper saw
+  0 bullets in the alley. Corpora: **boghog** — turrets are "kill fast or be
+  blanketed" [T2] but his speed kill had a price (off-route); ours had none →
+  "aimed forces movement" [T3], "balance = counters, not numbers" [T3] (no hp;
+  rejected per standing condition), same entry-signature grammar as r10/r11.
+  **MSX** — expert bias: the rewarded play must not be the trivial play (Pillar 2
+  inverted); difficulty clarifies design — the alley was "in low contrast."
+  **Rubric S7** no-unavoidable-deaths: argued in §3 (contact already owns the
+  no-path spot); not sim-enforced today. Pushback noted: boghog "don't design
+  around your own ideal route" — the bots never camped, so this is a human-only
+  fix and Jacob's playtest is the test (same caveat as r10). Referee (control =
+  same tree minus the one line): s7_pressure 34.2→28.7 aggressive (bar 24,
+  green), s4_dynamic 1.69→1.97 (green, up), s7_clearable green; **s7_robust
+  RED: one boss-P3 timeout on feedf00d**, all 6 seeds still clear with identical
+  lives — stream drift (alley changes bot timing → later spray rng lands
+  differently; boss is ~5,000 stage-frames downstream), same signature r11
+  logged on 5eed42. Recert item, not a balance regression. No rng drawn.
+  **Playtest verdict (Jacob, same day):** the free camp is gone but the alley
+  "still feels too easy — a master/expert shmupper will tear through it no
+  problemo." Accepted as-is for v1 / stage 1: it's the on-ramp, and expert
+  pressure on this section is deferred to loop 2 (L8 revenge dots turn every
+  tear-through kill into return fire). Dials in reserve if that changes: earlier
+  arrival (fire at y≈0, before vulnerability), tighter pair timing (−40 spawn
+  closer to −16), or arming the alley's popcorn too. No hp.

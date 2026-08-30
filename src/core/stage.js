@@ -138,6 +138,17 @@ export function updateEnemy(g, e) {
       const angry = e.vulnAt >= 0 && g.frame - e.vulnAt > 240;
       e.y += angry ? 0.4 : 0.47; // anger = more fire, not more dwell — a lingering
       // angry turret must still clear the screen on schedule (S4 outro)
+      // r17 arrival shot: the turret arrives ARMED — its polite fan fires the
+      // frame it becomes vulnerable (y≈17), bypassing mayFire's 40px-below mute.
+      // Playtest + probe: a top camper (y 40-60, on-column) saw ZERO bullets in
+      // the whole alley — the mute silenced everything it hovered over, turrets
+      // scrolling past below could never fire, and each turret died 7-9f after
+      // vulnerability (~47f before the first fan the mute allowed). Now the fast
+      // kill costs a sidestep (17-50px away, 7-20f at 2.3) — a race, same grammar
+      // as the r10 mid / r11 elite entries. Same sentence (3/0.4/2.3), just said
+      // on arrival; kill-fast-or-be-blanketed [T2] unchanged. No rng. e.phase
+      // latches it (unused on type 2).
+      if (e.vulnAt >= 0 && e.phase === 0) { e.phase = 1; aimedFan(g, e.x, e.y + 6, 3, 0.4, 2.3); }
       const every = angry ? 34 : 85;
       if (e.fireT % every === 30 && mayFire(g, e))
         aimedFan(g, e.x, e.y + 6, angry ? 7 : 3, angry ? 1.0 : 0.4, angry ? 3.1 : 2.3);
