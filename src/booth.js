@@ -31,7 +31,7 @@ const TAGS = ['split attention', 'directional noise', 'off-motif', 'no route', '
 let g = makeGame((Math.random() * 0xffffffff) >>> 0);
 let paused = false, flagged = false, bgScroll = 0;
 let session = null, run = 0, tick = 0, inputs = [], flagN = 0, repliesSeen = 0, currentFlag = null, pollT = 0;
-let pendingReplies = 0;
+let pendingReplies = 0, pendingCards = [], snapByFlag = {};
 
 async function api(path, data) {
   const r = await fetch(path, data ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) } : undefined);
@@ -87,11 +87,18 @@ const clearChips = () => chipsEl.querySelectorAll('.chip.on').forEach((c) => c.c
 function openFlag() {
   if (flagged) return;
   flagged = true; audio.pauseMusic(true);
-  if (g.state === 'play') { flagN++; currentFlag = { flag: flagN, snap: snapshot(), turn: 0 }; }
+  if (pendingCards.length) {
+    // a reply arrived after you resumed: reopen THAT flag's thread — not a new flag
+    const f = pendingCards[0].flag;
+    currentFlag = { flag: f, snap: snapByFlag[f] || snapshot(), turn: 1 };
+  } else if (g.state === 'play') { flagN++; currentFlag = { flag: flagN, snap: snapshot(), turn: 0 }; }
   else if (!currentFlag) { currentFlag = { flag: ++flagN, snap: snapshot(), turn: 0 }; }
+  snapByFlag[currentFlag.flag] = currentFlag.snap;
   $('idle').classList.add('hide'); $('flag').classList.remove('hide'); $('badge').style.display = 'none';
   const s = currentFlag.snap;
-  $('flagWho').textContent = `Flag #${currentFlag.flag}`;
+  $('flagWho').textContent = `Flag #${currentFlag.flag}` + (pendingCards.length ? ' · reply' : '');
+  for (const c of pendingCards) card('claude', c.text, true);
+  pendingCards = []; pendingReplies = 0;
   $('flagMeta').textContent = `${s.section} · stageT ${s.stageT} · frame ${s.frame} · lives ${s.lives} · chain ${s.chain} · ${s.enemies.length} enemies / ${s.bullets} bullets`;
   $('status').textContent = '';
   setTimeout(() => $('text').focus(), 30);
@@ -126,12 +133,11 @@ async function pollReplies(now) {
     const r = await api(`/booth/replies?since=${repliesSeen}`);
     repliesSeen = r.next;
     for (const rep of r.replies) {
-      if (flagged) { card('claude', rep.text, true); $('status').textContent = ''; }
-      else { pendingReplies++; $('badge').textContent = `${pendingReplies} reply from Claude — press Tab / START`; $('badge').style.display = 'block'; if (!currentFlag) currentFlag = { flag: rep.flag || flagN, snap: snapshot(), turn: 1 }; }
+      if (flagged && currentFlag && (rep.flag == null || rep.flag === currentFlag.flag)) { card('claude', rep.text, true); $('status').textContent = ''; }
+      else { pendingCards.push({ flag: rep.flag ?? flagN, text: rep.text }); pendingReplies = pendingCards.length; $('badge').textContent = `${pendingReplies} reply from Claude — press Tab / button 3 to read`; $('badge').style.display = 'block'; }
       logLine(`claude → flag #${rep.flag ?? '?'}: ${rep.text.slice(0, 40)}`);
     }
   } catch { /* offline */ }
-  if (flagged && now !== 'once') { pendingReplies = 0; }
 }
 setInterval(() => pollReplies(), 1500);
 
@@ -174,10 +180,10 @@ function pollInput() {
     if (gp.buttons[14]?.pressed) i.dx = -1; if (gp.buttons[15]?.pressed) i.dx = 1;
     if (gp.buttons[12]?.pressed) i.dy = -1; if (gp.buttons[13]?.pressed) i.dy = 1;
     i.fire = i.fire || gp.buttons[0]?.pressed || gp.buttons[2]?.pressed;
-    i.bomb = i.bomb || gp.buttons[1]?.pressed || gp.buttons[3]?.pressed;
-    i.focus = i.focus || gp.buttons[4]?.pressed || gp.buttons[5]?.pressed || gp.buttons[6]?.pressed; // R2 (7) is the Booth's FLAG button
+    i.bomb = i.bomb || gp.buttons[1]?.pressed; // button 3 is the Booth's FLAG button (Jacob's stick)
+    i.focus = i.focus || gp.buttons[4]?.pressed || gp.buttons[5]?.pressed || gp.buttons[6]?.pressed || gp.buttons[7]?.pressed;
     // START = flag (arcade stick: every action button is taken; start is free during play)
-    const start = !!gp.buttons[9]?.pressed, flagBtn = !!gp.buttons[7]?.pressed;
+    const start = !!gp.buttons[9]?.pressed, flagBtn = !!gp.buttons[3]?.pressed;
     if (start && !prevStart) { if (g.state === 'title') beginRun(); else if (g.state === 'play') openFlag(); }
     if (flagBtn && !prevFlagBtn && g.state === 'play') openFlag();
     prevStart = start; prevFlagBtn = flagBtn;
@@ -192,7 +198,7 @@ function pollInput() {
 function padResumePoll() {
   const pads = navigator.getGamepads ? navigator.getGamepads() : [];
   let gp = null; for (const p of pads || []) if (p && p.connected && p.buttons.length) { gp = p; break; }
-  const start = !!gp?.buttons[9]?.pressed, flagBtn = !!gp?.buttons[7]?.pressed;
+  const start = !!gp?.buttons[9]?.pressed, flagBtn = !!gp?.buttons[3]?.pressed;
   if ((start && !prevStart) || (flagBtn && !prevFlagBtn)) closeFlag();
   prevStart = start; prevFlagBtn = flagBtn;
 }

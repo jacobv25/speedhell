@@ -141,14 +141,17 @@ export function draw(g, ctx, bgScroll) {
         ctx.beginPath(); ctx.arc(b.x, b.y, 5.6, 0, 7); ctx.fill();
         ctx.fillStyle = '#ff4fa3';
         ctx.beginPath(); ctx.arc(b.x, b.y, 4.2 + Math.sin(g.frame * 0.24) * 0.35, 0, 7); ctx.fill();
+        // r20 (Booth session 2): the WHITE part of a bullet is the part that
+        // counts — Touhou's "non-white border does not count", now literal.
+        // White core = the true 3px hit circle; ring and rim are graze area.
         ctx.fillStyle = '#ffe6f2';
-        ctx.beginPath(); ctx.arc(b.x, b.y, 1.8, 0, 7); ctx.fill();
+        ctx.beginPath(); ctx.arc(b.x, b.y, 3, 0, 7); ctx.fill();
       } else { // cyan needle: elongated along velocity (S2 telegraphing)
         const ang = Math.atan2(b.vy, b.vx);
         ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(ang);
         ctx.fillStyle = '#031418'; ctx.fillRect(-7, -3, 14, 6);
         ctx.fillStyle = '#37d6e0'; ctx.fillRect(-6, -2, 12, 4);
-        ctx.fillStyle = '#e8feff'; ctx.fillRect(0, -1, 6, 2);
+        ctx.fillStyle = '#e8feff'; ctx.fillRect(-3, -2, 7, 4); // white = the 3px hit circle at the centre (+1px nose taper)
         ctx.restore();
       }
     }
@@ -261,18 +264,108 @@ function drawFx(ctx, g) {
   ctx.globalAlpha = 1;
 }
 
-function drawEnemy(ctx, g, e) {
+// r20 enemy identity pass (Booth session 1: "everything just looks like grey,
+// boring, geometric shapes"). Identity comes from SHAPE, SIZE, MOTION and
+// LAYER — never saturated colour, which stays reserved for bullets, items and
+// the player (Pillar 6; boghog WS02 "values are the most important thing…
+// colours still matter"). Two families: AIR — aircraft silhouettes, nose along
+// their heading, banking with lateral velocity, prop flicker; GROUND — squat,
+// wide, a base plate with a drop shadow and a barrel that aims at the ship
+// (Komazawa: "the way tanks fire… every enemy had a backstory"). Size ladder
+// per DDP's "big things are slow; fast things are small". Every behaviour
+// variant is its own craft: fighter, diver, crosser dart, riser climber.
+// Hit-flash and armor flicker unchanged. Renderer-only: core hitboxes
+// (ENEMY_DEFS r) untouched — sprites stay within ~1.2r.
+const AIR = { base: '#8d97b4', shade: '#5c6584', hi: '#c9d1e8', glass: '#eef1f8' };
+const GROUND = { base: '#9a9678', shade: '#5f5c3e', hi: '#c6c2a2', plate: '#34321f' };
+const HEAVY = { base: '#7a8097', shade: '#474c60', hi: '#aab1c8', stripe: '#8a5a52' };
+// sprites are drawn nose-DOWN (+y, toward the player); rotate to the velocity
+// heading when moving so crossers fly sideways and risers climb nose-up
+function heading(e) {
+  // zako motion = vx + a sine wobble (core: sin(age*0.06)*side*0.6) that is
+  // bigger than vx itself — Booth flag: "the nose doesn't point where they fly"
+  const vx = e.type === 0 ? e.vx + Math.sin(e.age * 0.06) * e.side * 0.6 : e.vx;
+  return (vx * vx + e.vy * e.vy > 0.09) ? Math.atan2(e.vy, vx) - Math.PI / 2 : 0;
+}
+const TURRET_PLATE = [[-9, -13], [9, -13], [13, -9], [13, 9], [9, 13], [-9, 13], [-13, 9], [-13, -9]];
+
+export function drawEnemy(ctx, g, e) {
   const flick = e.vulnAt < 0 && (g.frame & 4); // intro armor shimmer
   const hit = e.flash > 0; // r8-fx S4-MUST: hit-flash — every fill goes white for 2 frames
   const F = (c) => { ctx.fillStyle = hit ? '#ffffff' : c; };
-  F(flick ? '#3a3f55' : ENEMY_TINT[e.type]);
+  const S = (c) => F(flick ? '#3a3f55' : c); // surface fill: armor shimmer applies
+  const prop = (g.frame & 2) ? 1 : 0;
   ctx.save(); ctx.translate(e.x, e.y);
   switch (e.type) {
-    case 0: poly(ctx, [[0, -10], [8, 0], [0, 10], [-8, 0]]); break;         // diamond
-    case 1: poly(ctx, [[-14, -6], [0, 4], [14, -6], [10, 8], [-10, 8]]); break; // chevron
-    case 2: ctx.fillRect(-10, -10, 20, 20); F('#5a5f78'); ctx.fillRect(-3, 0, 6, 14); break; // turret
-    case 3: poly(ctx, [[0, -20], [17, -10], [17, 10], [0, 20], [-17, 10], [-17, -10]]); break; // hex
-    case 4: poly(ctx, [[0, -26], [24, -8], [16, 22], [-16, 22], [-24, -8]]); F('#6a7090'); poly(ctx, [[0, -14], [12, 8], [-12, 8]]); break;
+    case 0: { // popcorn family — each behaviour variant is its own craft
+      ctx.rotate(heading(e));
+      if (e.phase === 2) {          // CROSSER: dart interceptor — long, swept, flies sideways across the top band
+        S(AIR.shade); poly(ctx, [[0, 12], [8, -5], [0, -10], [-8, -5]]);
+        S(AIR.base); poly(ctx, [[0, 13], [2.5, -3], [0, -9], [-2.5, -3]]);
+        S(AIR.hi); poly(ctx, [[0, 12], [8, -5], [7, -5], [0, 10]]);
+        S(AIR.glass); ctx.fillRect(-1, 1, 2, 3);
+      } else if (e.phase === 3) {   // RISER: stubby climber with exhaust — nose flips as it turns to fall
+        S(GROUND.shade); poly(ctx, [[0, 9], [8, 2], [8, -3], [-8, -3], [-8, 2]]);
+        S(GROUND.base); poly(ctx, [[0, 11], [4, 0], [4, -8], [-4, -8], [-4, 0]]);
+        S(GROUND.hi); ctx.fillRect(-4, -8, 8, 1);
+        S(AIR.glass); ctx.fillRect(-1, 2, 2, 3);
+        if (e.vy < -0.5 && prop) { S('#d9c08a'); poly(ctx, [[-3, -8], [3, -8], [0, -15]]); }
+      } else {                      // FIGHTER — and its diver twin (phase 1): darker, nose on the target
+        const c = e.phase === 1 ? HEAVY : AIR;
+        S(c.shade); ctx.fillRect(-9, -2, 18, 4);       // main wing
+        S(c.shade); ctx.fillRect(-4, -8, 8, 2);        // tailplane
+        S(c.base); poly(ctx, [[0, 10], [2.5, 2], [2.5, -8], [0, -10], [-2.5, -8], [-2.5, 2]]); // fuselage
+        S(c.hi); ctx.fillRect(-9, -2, 18, 1);          // leading-edge light
+        S(AIR.glass); ctx.fillRect(-1, 0, 2, 3);       // canopy
+        S(c.hi); if (prop) ctx.fillRect(-4, 9, 8, 1); else ctx.fillRect(-1, 7, 2, 4); // prop disc flicker
+      }
+      break;
+    }
+    case 1: { // MID — twin-boom heavy fighter: wider, taller, two engines; bobs while parked
+      ctx.rotate(heading(e)); ctx.translate(0, Math.sin(e.age * 0.09) * 0.8);
+      S(AIR.shade); ctx.fillRect(-15, -4, 30, 5);                               // wing
+      S(AIR.shade); ctx.fillRect(-10, -13, 3, 10); ctx.fillRect(7, -13, 3, 10); // tail booms
+      S(AIR.base); ctx.fillRect(-13, -13, 26, 2);                               // tailplane bar
+      S(AIR.base); poly(ctx, [[0, 13], [3.5, 3], [3.5, -9], [0, -11], [-3.5, -9], [-3.5, 3]]); // fuselage
+      S(AIR.base); ctx.fillRect(-11, -6, 5, 9); ctx.fillRect(6, -6, 5, 9);      // engine nacelles
+      S(AIR.hi); ctx.fillRect(-15, -4, 30, 1);
+      S(AIR.glass); ctx.fillRect(-1.5, 2, 3, 4);
+      S(AIR.hi); if (prop) { ctx.fillRect(-12, 3, 7, 1); ctx.fillRect(5, 3, 7, 1); }
+      break;
+    }
+    case 2: { // TURRET — ground family: plate + drop shadow, khaki dome, barrel aims at the ship; rust when angry
+      const angry = e.vulnAt >= 0 && g.frame - e.vulnAt > 240;
+      const a = Math.atan2(g.player.y - e.y, g.player.x - e.x);
+      if (!hit) { ctx.save(); ctx.translate(3, 4); ctx.globalAlpha = 0.45; ctx.fillStyle = '#000'; poly(ctx, TURRET_PLATE); ctx.restore(); }
+      S(GROUND.plate); poly(ctx, TURRET_PLATE);
+      S(GROUND.shade); ctx.beginPath(); ctx.arc(0, 0, 9, 0, 7); ctx.fill();
+      S(angry ? HEAVY.stripe : GROUND.base); ctx.beginPath(); ctx.arc(-1, -1, 7, 0, 7); ctx.fill();
+      ctx.save(); ctx.rotate(a); S(GROUND.shade); ctx.fillRect(0, -2.5, 15, 5); S(GROUND.hi); ctx.fillRect(4, -2.5, 11, 1.5); ctx.restore();
+      S(GROUND.hi); ctx.fillRect(-4, -5, 3, 2);
+      break;
+    }
+    case 3: { // ELITE — heavy bomber: broad wing, four engines, rust wingtip stripes; the space controller
+      ctx.rotate(heading(e));
+      S(HEAVY.shade); poly(ctx, [[-22, -4], [22, -4], [18, 4], [-18, 4]]);                 // wing
+      S(HEAVY.shade); ctx.fillRect(-9, -18, 18, 3);                                        // tailplane
+      S(HEAVY.base); poly(ctx, [[0, 20], [7, 8], [7, -14], [3, -19], [-3, -19], [-7, -14], [-7, 8]]); // fuselage
+      S(HEAVY.base); for (const x of [-17, -10, 5, 12]) ctx.fillRect(x, -6, 5, 11);         // engines
+      S(HEAVY.stripe); ctx.fillRect(-22, -1, 6, 2); ctx.fillRect(16, -1, 6, 2);            // wingtip stripes
+      S(HEAVY.hi); ctx.fillRect(-22, -4, 44, 1);
+      S(AIR.glass); ctx.fillRect(-2, 8, 4, 5);
+      S(HEAVY.hi); if (prop) for (const x of [-17, -10, 5, 12]) ctx.fillRect(x - 1, 5, 7, 1);
+      break;
+    }
+    case 4: { // MIDBOSS — flying-wing gunship; the phase-B flip (r14) exposes a pale core
+      S(HEAVY.shade); poly(ctx, [[0, -22], [30, -4], [30, 6], [12, 18], [-12, 18], [-30, 6], [-30, -4]]);
+      S(HEAVY.base); poly(ctx, [[0, -20], [28, -4], [28, 3], [11, 15], [-11, 15], [-28, 3], [-28, -4]]);
+      S(HEAVY.base); poly(ctx, [[0, 24], [8, 10], [8, -16], [0, -20], [-8, -16], [-8, 10]]);   // central hull
+      S(HEAVY.stripe); ctx.fillRect(-28, -2, 8, 2); ctx.fillRect(20, -2, 8, 2);
+      S(e.phase === 1 ? '#f0e6c8' : HEAVY.shade); poly(ctx, [[0, 12], [5, 2], [0, -8], [-5, 2]]);
+      S(HEAVY.hi); poly(ctx, [[0, -20], [28, -4], [27, -3], [0, -19], [-27, -3], [-28, -4]]);
+      S(HEAVY.hi); if (prop) { ctx.fillRect(-22, 8, 8, 1); ctx.fillRect(14, 8, 8, 1); }
+      break;
+    }
     case 5: {
       // r6 S3b: each phase is a FORM change — three distinct silhouettes.
       // During the 60f handoff armor the incoming form BURNS IN: red-hot
@@ -332,23 +425,41 @@ function poly(ctx, pts) {
   ctx.closePath(); ctx.fill();
 }
 
-function drawPlayer(ctx, g) {
+export function drawPlayer(ctx, g) {
   const p = g.player;
   if (p.invuln > 0 && (g.frame & 2)) return; // classic invuln blink
   ctx.save(); ctx.translate(p.x, p.y);
   // option trail (follow-through, S1) — violet family: the whole player identity
   // sits outside the enemy needle cyan (r5 S2-MUST-3, with the shot recolor)
   ctx.fillStyle = '#4a3f78';
-  ctx.fillRect(-13 - (p.x - p.prevX) * 2, 4 - (p.y - p.prevY) * 2, 5, 5);
-  ctx.fillRect(9 - (p.x - p.prevX) * 2, 4 - (p.y - p.prevY) * 2, 5, 5);
-  ctx.fillStyle = '#f0ecff';
-  poly(ctx, [[0, -12], [9, 10], [0, 5], [-9, 10]]);
-  ctx.fillStyle = '#9a7dff';
-  poly(ctx, [[0, -4], [4, 8], [-4, 8]]);
-  if (p.focus) { // hitbox dot only while focused
-    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, PLAYER.hitR, 0, 7); ctx.fill();
-    ctx.strokeStyle = '#ff4fa3'; ctx.stroke();
-  }
+  ctx.fillRect(-19 - (p.x - p.prevX) * 2, 6 - (p.y - p.prevY) * 2, 5, 5);
+  ctx.fillRect(15 - (p.x - p.prevX) * 2, 6 - (p.y - p.prevY) * 2, 5, 5);
+  // r20 (Booth flags): the ship is drawn BIG around a tiny core — 28px span on
+  // a 3px hit radius (bullets add their own 3px: a bullet kills when its
+  // centre is within 6px of the dot). boghog WS01: "small hitboxes, much
+  // smaller than their sprites… if it harms the player, make it small";
+  // Cave ships run ~8–10:1 sprite:hitbox, the old 18px body was 3:1 and the
+  // focus ring read as "the hitbox is half the ship". The core dot is always
+  // drawn (visible hit point); focus brightens it, no ring.
+  ctx.fillStyle = '#6b5aa8';                                   // wing underside shade
+  poly(ctx, [[-14, 12], [-4, 4], [4, 4], [14, 12], [10, 15], [-10, 15]]);
+  ctx.fillStyle = '#f0ecff';                                   // hull
+  poly(ctx, [[0, -17], [4, -8], [13, 11], [5, 8], [0, 12], [-5, 8], [-13, 11], [-4, -8]]);
+  ctx.fillStyle = '#c9bdf5';                                   // wing leading edges
+  poly(ctx, [[4, -8], [13, 11], [11, 11], [3, -6]]); poly(ctx, [[-4, -8], [-13, 11], [-11, 11], [-3, -6]]);
+  ctx.fillStyle = '#4a3f78'; ctx.fillRect(-2, 12, 4, 4);       // exhaust
+  // r20 hitbox marker, per the genre research (hitbox-display-report.md): the
+  // marker is NEVER smaller than the truth — Touhou draws a 10px dot over a
+  // ~3-7px hitbox; Mushihimesama's circle covers "a few pixels". Every bullet
+  // here has the same 3px radius, so we fold it in and draw ONE dot at the
+  // full effective radius (hitR + 3 = 6px): a bullet's CENTRE touching your
+  // dot is a hit — no smaller mark exists to mis-read, and every surprise is
+  // a pleasant one. Dark well behind it for value contrast (WS02); focus
+  // whitens the dot and adds the pink rim.
+  ctx.fillStyle = '#241f38'; ctx.beginPath(); ctx.arc(0, 0, PLAYER.hitR + 5, 0, 7); ctx.fill();
+  ctx.fillStyle = p.focus ? '#ffffff' : '#e8e2ff';
+  ctx.beginPath(); ctx.arc(0, 0, PLAYER.hitR + 3, 0, 7); ctx.fill();
+  if (p.focus) { ctx.strokeStyle = '#ff4fa3'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, PLAYER.hitR + 3, 0, 7); ctx.stroke(); }
   ctx.restore();
 }
 

@@ -249,7 +249,13 @@ export function updateEnemy(g, e) {
       if (e.y < 73) { e.y += 1.05; return; }
       // tanh edge-dwell sweep (house style, see boss): parks at the rails so a
       // tracker gets stable time-on-target; a center-camper gets brief crossings
-      e.x = W / 2 + Math.tanh(3.5 * Math.sin(e.age * 0.008)) / Math.tanh(3.5) * 70;
+      // r20 fix (Booth flag): the sweep runs off e.age, which is ~89 at park, so
+      // the first parked frame used to SNAP the hull from centre to a rail — a
+      // "teleport" Jacob had seen "since day 1". Glide from centre onto the
+      // same sweep over the first 60 parked frames: after that the trajectory
+      // is identical to before (referee-neutral past the glide), no rng.
+      const sx = W / 2 + Math.tanh(3.5 * Math.sin(e.age * 0.008)) / Math.tanh(3.5) * 70;
+      e.x = W / 2 + (sx - W / 2) * Math.min(1, e.fireT / 60);
       e.fireT++;
       const half = e.hp < ENEMY_DEFS[4].hp * 0.45;
       if (mayFire(g, e)) {

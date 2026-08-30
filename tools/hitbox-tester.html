@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SPEEDHELL — hitbox tester</title>
+<style>
+  html, body { margin:0; background:#05060a; color:#e9edf7; font:13px/1.45 -apple-system, "Helvetica Neue", system-ui, sans-serif; height:100%; }
+  body { display:grid; grid-template-columns: auto 330px; height:100vh; }
+  #stage { display:grid; place-items:center; position:relative; }
+  canvas#game { height:min(100vh, 96vh); aspect-ratio:320/427; image-rendering:pixelated; }
+  canvas#mag { position:absolute; top:12px; right:12px; width:192px; height:192px; image-rendering:pixelated; border:2px solid #1c2236; background:#0a0c14; }
+  #panel { background:#0b0e19; border-left:2px solid #1c2236; padding:14px; overflow:auto; display:flex; flex-direction:column; gap:10px; }
+  h1 { font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:#37d6e0; margin:0; }
+  .lbl { font:10px monospace; letter-spacing:.1em; text-transform:uppercase; color:#7c86a6; }
+  .big { font: 700 28px "Avenir Next Condensed", "Helvetica Neue", system-ui, sans-serif; }
+  .row { display:flex; gap:6px; flex-wrap:wrap; }
+  button { font:12px inherit; font-weight:700; padding:6px 9px; border:0; border-radius:2px; cursor:pointer; background:#1c2236; color:#e9edf7; }
+  button.on { background:#37d6e0; color:#0b0e19; }
+  kbd { font:11px monospace; background:#141a2c; padding:1px 5px; border-radius:2px; color:#c3a8ff; }
+  #log { font:11px monospace; color:#7c86a6; white-space:pre-wrap; }
+  .card { border:1px solid #1c2236; padding:8px 10px; border-radius:2px; }
+  .pink { color:#ff4fa3; } .cyan { color:#37d6e0; } .gold { color:#ffd24a; }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="game"></canvas><canvas id="mag" width="96" height="96"></canvas></div>
+<aside id="panel">
+  <h1>Hitbox tester</h1>
+  <div class="card">
+    <div class="lbl">the rule</div>
+    Everything is greyscale except the two <span style="color:#ff2b2b">red circles</span>: the bullet's killbox and your hitbox. <b>When the two red circles touch, that's a hit.</b> Nothing else on screen matters.
+  </div>
+  <div class="card">
+    <div class="lbl">precision mode · <kbd>P</kbd></div>
+    Freezes time. <b>Arrows/WASD move the SHIP 1px</b> per press; <b>I J K L move the BULLET 1px</b>. The readout shows the exact distance and flips to HIT the moment the circles touch (no death, just the fact).
+  </div>
+  <div class="lbl">closest approach since last hit (bullet centre → core)</div>
+  <div class="big" id="closest">—</div>
+  <div class="lbl">right now</div>
+  <div id="now" class="big" style="font-size:20px">—</div>
+  <div class="lbl">scenario</div>
+  <div class="row">
+    <button data-mode="hover" class="on">1 hover</button><button data-mode="gate">2 gate</button><button data-mode="rain">3 rain</button><button data-mode="needles">4 needles</button><button data-mode="ring">5 ring</button>
+  </div>
+  <div class="lbl">gap between the two gate bullets (edge to edge) · <kbd>[</kbd> <kbd>]</kbd></div>
+  <div id="gap" class="big" style="font-size:20px">14 px</div>
+  <div class="lbl">bullet speed · <kbd>-</kbd> <kbd>=</kbd> &nbsp; · time scale · <kbd>,</kbd> <kbd>.</kbd></div>
+  <div id="speed" style="font:14px monospace">speed 2.3 px/f · time 0.5×</div>
+  <div class="lbl">controls</div>
+  <div>arrows / WASD move · <kbd>shift</kbd> focus · <kbd>space</kbd> fire · <kbd>R</kbd> reset scenario · <kbd>P</kbd> precision mode · <kbd>H</kbd> toggle outlines · stick works too</div>
+  <div class="lbl">hits</div>
+  <div id="log"></div>
+</aside>
+<script type="module">
+import { makeGame, startRun, update, W, H, PLAYER } from '../src/core/game.js';
+import { draw, resetHud } from '../src/render/renderer.js';
+
+const $ = (id) => document.getElementById(id);
+const canvas = $('game'); canvas.width = W; canvas.height = H; const ctx = canvas.getContext('2d', { willReadFrequently: true });
+const mag = $('mag'); const mctx = mag.getContext('2d', { willReadFrequently: true }); mctx.imageSmoothingEnabled = false;
+const KILL = PLAYER.hitR + 3; // core radius + bullet hit radius
+
+let g = startRun(makeGame(1)); g.timeline = []; g.tlIndex = 0; g.gate = 'boss'; // empty stage, clock held
+let mode = 'hover', gap = 14, speed = 2.3, timeScale = 0.5, overlays = true, closest = Infinity, lastHitAt = 0, t = 0, precision = false;
+function toGrey(c, w, h) { // pixel desat: ctx.filter is not reliable across browsers
+  const img = c.getImageData(0, 0, w, h), d = img.data;
+  for (let i = 0; i < d.length; i += 4) { const v = (d[i] * 0.3 + d[i + 1] * 0.5 + d[i + 2] * 0.2) | 0; d[i] = d[i + 1] = d[i + 2] = v; }
+  c.putImageData(img, 0, 0);
+}
+const keys = {};
+
+function bullet(x, y, vx, vy, kind = 0) { const b = g.eBullets.spawn(); if (!b) return; b.x = x; b.y = y; b.vx = vx; b.vy = vy; b.kind = kind; b.r = 3; b.accel = 0; b.curve = 0; b.age = 0; }
+function clearBullets() { for (let i = g.eBullets.count - 1; i >= 0; i--) g.eBullets.killAt(i); }
+function resetScenario() {
+  clearBullets(); g.player.x = W / 2; g.player.y = H - 90; g.player.invuln = 0; closest = Infinity; t = 0; $('closest').textContent = '—';
+  if (mode === 'hover') bullet(W / 2, H / 2, 0, 0, 0);
+  if (mode === 'ring') { for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2; bullet(W / 2 + Math.cos(a) * 60, H / 2 + Math.sin(a) * 60, 0, 0, k & 1); } }
+}
+function spawnTick() {
+  t++;
+  if (mode === 'gate' && t % 70 === 1) { const half = gap / 2 + 3; bullet(W / 2 - half, -8, 0, speed, 0); bullet(W / 2 + half, -8, 0, speed, 0); }
+  if (mode === 'needles' && t % 70 === 1) { const half = gap / 2 + 3; bullet(W / 2 - half, -8, 0, speed, 1); bullet(W / 2 + half, -8, 0, speed, 1); }
+  if (mode === 'rain' && t % 40 === 1) { const p = g.player, x = W / 2 + ((t / 40) % 3 - 1) * 40, dx = p.x - x, dy = p.y + 8; const d = Math.hypot(dx, dy) || 1; bullet(x, -8, dx / d * speed, dy / d * speed, (t / 40) & 1); }
+}
+function nearest() {
+  const p = g.player; let best = Infinity, bb = null;
+  for (let i = 0; i < g.eBullets.count; i++) { const b = g.eBullets.items[i]; const d = Math.hypot(b.x - p.x, b.y - p.y); if (d < best) { best = d; bb = b; } }
+  return { d: best, b: bb };
+}
+function logLine(s) { $('log').textContent = s + '\n' + $('log').textContent; }
+
+addEventListener('keydown', (e) => {
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
+  const k = e.key;
+  if (k.toLowerCase() === 'p') { precision = !precision; $('now').textContent = precision ? 'precision: frozen' : '—'; return; }
+  if (precision) {
+    const p = g.player, n = nearest();
+    if (k === 'ArrowLeft' || k === 'a') p.x -= 1; if (k === 'ArrowRight' || k === 'd') p.x += 1;
+    if (k === 'ArrowUp' || k === 'w') p.y -= 1; if (k === 'ArrowDown' || k === 's') p.y += 1;
+    if (n.b) { if (k === 'j') n.b.x -= 1; if (k === 'l') n.b.x += 1; if (k === 'i') n.b.y -= 1; if (k === 'k') n.b.y += 1; }
+    return;
+  }
+  keys[e.key.toLowerCase()] = true;
+  if (k >= '1' && k <= '5') { mode = ['hover', 'gate', 'rain', 'needles', 'ring'][+k - 1]; syncButtons(); resetScenario(); }
+  if (k === '[') gap = Math.max(0, gap - 1); if (k === ']') gap += 1;
+  if (k === '-') speed = Math.max(0.5, +(speed - 0.1).toFixed(1)); if (k === '=') speed = +(speed + 0.1).toFixed(1);
+  if (k === ',') timeScale = Math.max(0.1, +(timeScale - 0.1).toFixed(1)); if (k === '.') timeScale = Math.min(1, +(timeScale + 0.1).toFixed(1));
+  if (k.toLowerCase() === 'r') resetScenario();
+  if (k.toLowerCase() === 'h') overlays = !overlays;
+  $('gap').textContent = `${gap} px`; $('speed').textContent = `speed ${speed} px/f · time ${timeScale}×`;
+});
+addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+for (const b of document.querySelectorAll('[data-mode]')) b.onclick = () => { mode = b.dataset.mode; syncButtons(); resetScenario(); };
+function syncButtons() { for (const b of document.querySelectorAll('[data-mode]')) b.classList.toggle('on', b.dataset.mode === mode); }
+
+function pollInput() {
+  const i = g.input;
+  i.dx = (keys['arrowright'] || keys['d'] ? 1 : 0) - (keys['arrowleft'] || keys['a'] ? 1 : 0);
+  i.dy = (keys['arrowdown'] || keys['s'] ? 1 : 0) - (keys['arrowup'] || keys['w'] ? 1 : 0);
+  i.focus = !!keys['shift']; i.fire = !!keys[' ']; i.bomb = false;
+  const pads = navigator.getGamepads ? navigator.getGamepads() : []; let gp = null;
+  for (const p of pads || []) if (p && p.connected && p.buttons.length) { gp = p; break; }
+  if (gp) {
+    if (Math.abs(gp.axes[0] || 0) > 0.35) i.dx = Math.sign(gp.axes[0]); if (Math.abs(gp.axes[1] || 0) > 0.35) i.dy = Math.sign(gp.axes[1]);
+    if (gp.buttons[14]?.pressed) i.dx = -1; if (gp.buttons[15]?.pressed) i.dx = 1; if (gp.buttons[12]?.pressed) i.dy = -1; if (gp.buttons[13]?.pressed) i.dy = 1;
+    i.fire = i.fire || gp.buttons[0]?.pressed || gp.buttons[2]?.pressed;
+    i.focus = i.focus || gp.buttons[4]?.pressed || gp.buttons[5]?.pressed || gp.buttons[6]?.pressed || gp.buttons[7]?.pressed;
+  }
+}
+
+function overlay(c, scale, ox, oy) {
+  // ox, oy: world coords that map to canvas origin; scale: px per world px
+  const p = g.player;
+  c.save(); c.scale(scale, scale); c.translate(-ox, -oy); c.lineWidth = 1 / scale;
+  c.strokeStyle = '#ff2b2b';
+  for (let i = 0; i < g.eBullets.count; i++) { const b = g.eBullets.items[i]; c.beginPath(); c.arc(b.x, b.y, b.r, 0, 7); c.stroke(); }
+  c.beginPath(); c.arc(p.x, p.y, PLAYER.hitR, 0, 7); c.stroke();
+  c.restore();
+}
+
+const STEP_MS = 1000 / 60; let last = performance.now(), acc = 0, bg = 0;
+function frame(now) {
+  acc += now - last; last = now; if (acc > 200) acc = 200;
+  if (precision) {
+    const n = nearest();
+    if (n.b) $('now').innerHTML = `${n.d.toFixed(2)} px centre-to-centre · gap ${(n.d - KILL).toFixed(2)} px · ` + (n.d < KILL ? '<span style="color:#ff2b2b;font-weight:700">HIT — the circles touch</span>' : '<span class="gold">no hit</span>');
+    acc = 0;
+  } else while (acc >= STEP_MS * (1 / timeScale)) {
+    pollInput(); spawnTick();
+    const before = nearest(), lives = g.player.lives;
+    g.player.invuln = Math.min(g.player.invuln, 0); // no mercy frames: every touch counts
+    update(g); bg += 1.05;
+    if (g.state !== 'play') { g.state = 'play'; }
+    if (g.player.lives < lives || g.player.invuln > 0) { // a hit happened this frame
+      logLine(`HIT · nearest bullet centre was ${before.d.toFixed(1)} px from the core (${before.b && before.b.kind ? 'needle' : 'round'})`);
+      g.player.lives = 3; g.player.invuln = 0; lastHitAt = t; closest = Infinity; $('closest').textContent = '—';
+      resetScenario();
+    } else {
+      const n = nearest();
+      if (n.b && n.d < closest) { closest = n.d; $('closest').textContent = `${closest.toFixed(1)} px`; }
+      if (n.b) $('now').innerHTML = `${n.d.toFixed(1)} px <span class="${n.d <= KILL ? 'pink' : 'gold'}">${n.d <= KILL ? 'INSIDE the kill ring' : `${(n.d - KILL).toFixed(1)} px of room`}</span>`;
+    }
+    acc -= STEP_MS * (1 / timeScale);
+  }
+  draw(g, ctx, bg); toGrey(ctx, W, H);
+  if (overlays) overlay(ctx, 1, 0, 0);
+  // magnifier: 6x around the core
+  const p = g.player, Z = 6, span = 96 / Z;
+  mctx.fillStyle = '#0a0c14'; mctx.fillRect(0, 0, 96, 96);
+  mctx.save(); mctx.scale(Z, Z); mctx.translate(-(p.x - span / 2), -(p.y - span / 2)); draw(g, mctx, bg); mctx.restore(); toGrey(mctx, 96, 96);
+  if (overlays) overlay(mctx, Z, p.x - span / 2, p.y - span / 2);
+  requestAnimationFrame(frame);
+}
+resetScenario(); requestAnimationFrame(frame);
+</script>
+</body>
+</html>

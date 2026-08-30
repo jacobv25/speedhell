@@ -10,7 +10,7 @@ it says so — the "Open questions" section is the part to send to a critic.*
 lineage laws), `BOGHOG_CRAFT.md` (craft notes), `CRITIC_RUBRIC.md` (the referee's
 acceptance criteria). This wiki is the explainer that sits underneath them.*
 
-Last updated: 2026-08-29 (r19 overlap pass, uncommitted; r10–r18 committed — r12–r15 from a parallel session).
+Last updated: 2026-08-30 (r20 art pass + display contract §6.2, uncommitted; r10–r19 committed).
 
 ---
 
@@ -348,6 +348,62 @@ because the cap only binds at range. This is the game's real risk/reward: range
 play is a grind (elite ~2.3s), point-blank is the snappy kill (~1.1s). "The gap
 is the felt content, not a stat multiplier" (S1).
 
+### 6.2 Hitboxes and the display contract (r20)
+
+*Written for outside eyes (Mark MSX, boghog): this is the collision model and
+the exact promises the visuals make about it. Found and fixed across two Booth
+playtest sessions, 2026-08-30. Full research: `~/Dev/claude-visualizations/
+hitbox-display-report.md` (Touhou/CAVE/indie marker conventions, all cited).*
+
+**The model.** Circle vs circle. Player hurtbox r = 3px at the ship's origin
+(`PLAYER.hitR`); every enemy bullet carries r = 3px (uniform across rounds and
+needles). A hit = centre distance < 6px. Same structure as modern Touhou
+(player r 2–3 vs per-bullet circles).
+
+**The display contract** — after r20, every visual statement about collision is
+either exactly true or errs in the player's favour, never against:
+
+![display contract](img/r20-display-contract.png)
+
+- **The ship's dot is drawn at 6px — the full effective kill radius** (your 3 +
+  the bullet's 3, foldable because bullet radius is uniform). Rule: *a bullet's
+  centre touching your dot is a hit.* No smaller mark exists inside it. This
+  follows the genre's one unanimous convention: the marker is never smaller
+  than the truth — Touhou draws a 10×10 dot over a 3.3–7px hitbox, Mushihimesama
+  a circle over "a few pixels" (research doc, verified). Before r20 the ship
+  showed a growing pink centre SMALLER than the truth — the cheating direction,
+  and the thing playtests called "hit when it feels like you should not have".
+- **A bullet's WHITE part is the part that counts.** The white core of a round
+  and the white centre of a needle are drawn at exactly the 3px hit circle;
+  ring, rim, nose and tail are free graze area (Touhou's "the non-white border
+  does not count", made literal). Jacob caught the pre-fix mismatch himself:
+
+  ![bullet core before the fix — the red truth circle sat outside the white core](img/r20-bullet-core-before.png)
+
+- **Focus feedback is a shape, not a colour** (WS02: colour-only changes die in
+  peripheral vision — and in greyscale, which is the same test): focus whitens
+  the dot and adds a pink rim. The old 6px dashed ring was information at an
+  unreadable scale and is gone.
+- **Sprites overstate enemies, never understate:** enemy sprites stay within
+  ~1.2× their core hitbox; the ship sprite grew 18 → 28px around its unchanged
+  3px core (was 3:1, now ≈4.7:1; Cave runs 8–10:1) so wing-clips read as the
+  theatre they are.
+
+**Verification tooling** (dev-only, served by the booth server):
+`tools/hitbox-tester.html` — greyscale field where the ONLY colour is the two
+red truth circles, with a 6× magnifier, adjustable bullet gates, slow motion,
+and a 1px-nudge precision mode with live centre-distance readout; and
+`tools/enemy-gallery.html` — every sprite at 4×.
+
+![hitbox tester](img/r20-hitbox-tester.png)
+
+![enemy families and the player marker](img/r20-enemy-gallery.png)
+
+**Deliberately NOT changed:** the collision numbers themselves. Shrinking the
+bullet hit radius to the old visual core (3 → ~2) would make every dodge in
+the game easier — a balance decision (and a full referee re-roll), parked
+unless playtests ask for a more lenient game.
+
 ## 7. The referee (how "balanced" is decided)
 
 `test/sim.mjs` runs the real core headlessly with scripted bots (expert,
@@ -448,7 +504,7 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     (the wiki §3 note already flags that timing) so the gate opens under fire;
     (c) both, sequenced. Referee: s7_pressure/s6 walls will move; the midboss
     speed-kill window (11.7s) stays. First target of the S3/D pass.
-11. **Enemy visual identity (Booth session 1, 2026-08-30).** "All the enemies
+11. **Enemy visual identity (Booth session 1, 2026-08-30). FIRST PASS SHIPPED r20 (renderer-only), Booth playtest pending.** "All the enemies
     are grey geometrical shapes of similar sizes… everything just looks like
     grey, boring, geometric shapes." The r19 overlap works mechanically (replay:
     a clean speed-kill sweep of turret alley rep 1) but doesn't read as an
@@ -653,3 +709,44 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   secondary. Tooling: `booth.html`/`src/booth.js`/`tools/booth-server.mjs`/
   `tools/booth-replay.mjs`, `playtest/` (uncommitted). No code changes to the
   game this session.
+- 2026-08-30 — r20 enemy identity art pass (§8.11; renderer-only, hitboxes
+  and core untouched → referee unaffected by construction). Replaces the five
+  flat grey polygons with two families and a size ladder: AIR — propeller
+  fighter (popcorn), darker tilted diver twin, swept dart CROSSER flying
+  sideways, stubby khaki RISER that climbs nose-up with exhaust and flips to
+  fall, twin-boom MID that bobs while parked, four-engine bomber ELITE with
+  rust wingtips, flying-wing MIDBOSS whose core goes pale on the phase-B flip;
+  GROUND — TURRET on an octagonal plate with a drop shadow, khaki dome, a
+  barrel that aims at the ship, rust when angry. All sprites nose-along-
+  heading (rotate to velocity), two-tone shade/base/highlight, prop flicker.
+  Palette stays desaturated (steel-blue air, olive ground, dark steel heavies)
+  so pink/cyan/gold/violet remain bullets/items/player-only. Corpora:
+  **boghog** WS02 ("values are the most important thing… colours still
+  matter"; reserve bullet hues), WS04 ("enemies should react to getting hit…
+  visible damage and destructible parts sell the feeling of interaction" — hit-
+  flash kept); **Komazawa** ("the way tanks fire… every enemy and character in
+  that game had a backstory"); **DDP** scale hierarchy ("big things are slow;
+  fast things are small"); **Psikyo** WWII planes vs ground guns (S1945II
+  study); Pillar 6 readable chaos honoured (enemies below bullets, no
+  saturated colour). Gallery: tools/enemy-gallery.html (served by the booth
+  server). Open after playtest: sprite detail at 2× canvas scale, whether the
+  khaki riser reads as "from the ground", boss forms (untouched, already
+  three silhouettes). BUILD r19 → r20.
+- 2026-08-30 — r20 continued: Booth session 2 (three display lies + two bugs,
+  all found by Jacob in play; debrief `playtest/sessions/2026-08-30-booth-2.md`).
+  Fixed: popcorn nose now follows true flight (the core adds a sine wobble
+  bigger than stored vx — renderer now adds the same term); midboss "teleport"
+  at park (sweep ran off e.age ≈ 89 — now a 60f glide onto the same path;
+  referee vs r19 control: s4_dynamic green 1.82, s6_alignment 2.81 vs bar 3 —
+  RED, same recert class as §8.1; s7_robust swaps facade boss-p3 → midboss);
+  WARNING now CUTS the stage track (was a 0.9s fade, audible under the siren);
+  player ship redesigned 18 → 28px around the unchanged 3px core; hitbox
+  display research commissioned and applied — ship dot drawn at the 6px
+  effective radius, bullet white cores at their true 3px (see §6.2, with
+  pictures). New dev tools: hitbox tester + enemy gallery. Corpora: boghog
+  WS01 ("small hitboxes… much smaller than their sprites"; "tiny sizes can
+  still be unintuitive to new players — find a balance"), WS02 value contrast;
+  Touhou/CAVE/Blue Revolver marker conventions (hitbox-display-report.md);
+  Significant Bits "players were less likely to feel cheated if they came out
+  on the positive end". Open: shrink bullet hit radius 3 → ~2 (balance +
+  referee, Jacob's call, parked); boss art to match the families (§8.11 scope).

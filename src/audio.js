@@ -126,7 +126,7 @@ const HANDLERS = {
   [SFX.CANCEL]: () => { noise(0.5, 0.35, { hp: 1200 }); osc('sawtooth', 200, 1600, 0.45, 0.2); },
   [SFX.BOMB]: () => { noise(0.9, 0.7, { lp: 6000, lpEnd: 80 }); osc('sawtooth', 60, 20, 0.9, 0.5); osc('sine', 800, 40, 0.5, 0.4); },
   [SFX.DIE]: () => { osc('square', 600, 40, 0.6, 0.35, { curve: 'lin' }); noise(0.6, 0.5, { lp: 4000, lpEnd: 100 }); duckMusic(0.35, 0.05); setTimeout(() => duckMusic(1, 0.6), 700); },
-  [SFX.WARNING]: () => { for (let i = 0; i < 3; i++) { osc('square', 440, 440, 0.18, 0.22, { t0: i * 0.36 }); osc('square', 330, 330, 0.18, 0.22, { t0: i * 0.36 + 0.18 }); } duckMusic(0, 0.9); },
+  [SFX.WARNING]: () => { for (let i = 0; i < 3; i++) { osc('square', 440, 440, 0.18, 0.22, { t0: i * 0.36 }); osc('square', 330, 330, 0.18, 0.22, { t0: i * 0.36 + 0.18 }); } stopMusic(0.12); }, // r20 (Booth flag): the stage track used to FADE over 0.9s and was still audible under the siren — arcade warnings cut the music; the boss track then starts clean
   [SFX.MIDBOSS]: () => { osc('sawtooth', 80, 200, 0.6, 0.3); osc('square', 55, 55, 0.7, 0.2); },
   [SFX.BOSS]: () => { playMusic('boss'); osc('sawtooth', 60, 160, 1.0, 0.35); noise(1.2, 0.25, { lp: 700, lpEnd: 100 }); },
   [SFX.CLEAR]: () => { stopMusic(1.5); arp([523, 659, 784, 1047, 1319, 1568], 0.09, 0.5, 'square', 0.22); },
