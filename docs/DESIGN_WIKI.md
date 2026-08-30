@@ -343,6 +343,26 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
 7. **Chain as a scoreboard.** The HUD's most prominent number is the least
    valuable one. Keep it (it's the *speed-kill streak*, which is the identity)
    or demote it?
+8. **The suicide-for-bombs meta (accidental Garegga).** Discovered by Jacob in
+   play (2026-08-29): bombs deal 30 dmg field-wide, so one bomb kills both boss
+   side parts (24 hp) inside their window; bomb kills credit as speed kills
+   (killEnemy is damage-source-agnostic), so bombs also insure the chain; death
+   refills bombs to 2. The math: suiciding before the boss costs ~1,000 (one
+   stock life, chain reset in empty air) and buys up to ~33,500 (parts 2,000×4
+   + phase conversions 12,000×2 + cancel garnish) — optimal by 10–30×.
+   **MSX verdict: keep as-is** — natural meta ("can you do it in the game?"),
+   lives as convertible currency = Pillar 4 taken seriously, and it's Garegga's
+   celebrated depth *without* Garegga's hidden-rank opacity (the trade is fully
+   visible). **Boghog verdict: keep the move, fix the price** — the economy fell
+   out of three unrelated decisions (mercy refill, garnish stock, bomb dmg
+   tuning), and "balance = counters, not numbers": at 30× it's a dominant strat,
+   not a decision. Candidate reprices: stock life 1,000→~5,000 (still ~3% of
+   budget, S6 holds) or death refills 1 bomb, not 2. Both lenses bless the
+   sub-mechanic (bomb kills = speed kills): bombs are scarce and priced; they
+   patch a chain, they can't be one (102/104 still took ~100 honest speed
+   kills). Tension with Pillar 2 (deliberate death becomes correct play) is the
+   question to put to Mark directly. Decision: unresolved, unchanged in code —
+   Jacob's call (leaning keep-as-discovered).
 
 ## 9. Practice notes (for humans)
 
