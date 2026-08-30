@@ -2,6 +2,12 @@
 import { makeGame, startRun, update, W, H } from './core/game.js';
 import { draw, resetHud } from './render/renderer.js';
 import * as audio from './audio.js';
+import { BUILD } from './version.js';
+
+// build tag pinned bottom-right, its own element — never pushed off-screen by
+// the controls line on narrow windows; confirms which build the browser loaded
+const ver = document.getElementById('ver');
+if (ver) ver.textContent = BUILD;
 
 const canvas = document.getElementById('game');
 canvas.width = W; canvas.height = H;

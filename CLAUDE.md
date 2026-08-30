@@ -5,6 +5,17 @@ Read `README.md` first, then `docs/DESIGN_PILLARS.md` (constitution) and
 
 ## Rules
 
+- **Every design question or change must be cleared against both corpora BEFORE
+  implementing:** `docs/BOGHOG_CRAFT.md` + the boghog WS# rules in
+  `docs/CRITIC_RUBRIC.md`, and the Mark MSX doctrine
+  (`~/.claude/skills/mark-msx/references/philosophy.md`; deeper corpus in
+  `~/Dev/mark-msx-research`), plus `docs/DESIGN_PILLARS.md` and
+  `docs/HOMAGE_STUDY.md`. State what each lens says — including where it pushes
+  back — and cite the specific principles in the wiki changelog entry. A change
+  neither corpus supports needs Jacob's explicit override. Standing conditions
+  already set: no hp-inflation fixes; no collect-streaks/medal-ladders or any
+  opaque scoring math (MSX/Pillar 2); loot stays garnish-priced (S6); boghog
+  pass-cooldown — settle the current pass in playtest before opening another.
 - **After any design change, check whether `docs/DESIGN_WIKI.md` needs updating.**
   A design change is anything that alters scoring values or windows, enemy/boss
   behavior or movement, the camp governor, cancels/items/bombs, the stage
@@ -22,3 +33,6 @@ Read `README.md` first, then `docs/DESIGN_PILLARS.md` (constitution) and
   measured numbers (headless sim), implement what he picks, commit when asked.
 - Keep `src/core/` DOM-free and deterministic; fx randomness uses `g.fxRng`,
   never `g.rng`.
+- **Bump `BUILD` in `src/version.js` with every design change** (rN, matching the
+  wiki changelog). It renders in the page footer so playtests can confirm which
+  build the browser loaded.

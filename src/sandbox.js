@@ -371,3 +371,6 @@ syncButtons();
 // devtools handle: __sandbox.g() is the live game; spawn/fire/stageJump script the scene
 window.__sandbox = { g: () => g, S, PLAYER, spawnPreset, firePattern, stageJump, clearField, newScene, ENEMIES, PATTERNS };
 requestAnimationFrame(frame);
+
+// build tag (see src/version.js)
+import('./version.js').then(({ BUILD }) => { document.title += ' \u00b7 ' + BUILD; });

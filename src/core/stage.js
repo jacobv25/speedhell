@@ -100,10 +100,25 @@ export function updateEnemy(g, e) {
         e.vy -= 0.053; e.y += e.vy; e.x += e.side * 0.4;
         break;
       }
+      // r12 (mock, playtest pending): the mid's own voice. r10's entry fan was
+      // the turret's sentence at higher volume (turret aimedFan 3/0.4/2.3 vs mid
+      // 4/0.5/3.1 — same demand, learned 30s earlier). New sentence: SPRAY on
+      // entry (pink terrain that lingers), then once parked a 160f cycle of
+      // DOUBLE-TAP (two 2-needle prongs 12f apart, each aimed at fire time — the
+      // second tracks your dodge: turret says "step aside", mid says "keep
+      // moving") alternating with another spray. Needles stay needles, rounds
+      // stay rounds (L6 castes); lances/led/spirals stay boss, bendy stays
+      // midboss, laned wall stays elite. r10's race survives: kill before
+      // age 65 and the terrain never exists. Sprays draw rng (stream shifts).
+      // r13 ramp (playtest: r12 still speed-killable before anything dangerous):
+      // sprays start at age 45 and repeat mid-descent, 10 pinks each; the parked
+      // cycle tightened 160f -> 100f with the double-tap landing almost on park.
+      if ((e.age === 45 || e.age === 85) && mayFire(g, e)) spray(g, e.x, e.y + 8, 10, 1.0, 1.6, 2.7);
       if (e.y < e.holdT) e.y += 1.5; else {
         e.fireT++;
-        if (e.fireT % 80 === 20 && mayFire(g, e)) aimedFan(g, e.x, e.y + 8, 4, 0.5, 3.1);
-        if (e.fireT === 230 && mayFire(g, e)) spray(g, e.x, e.y + 8, 10, 1.1, 1.7, 2.8);
+        if (e.fireT % 100 === 10 && mayFire(g, e)) aimedFan(g, e.x, e.y + 8, 2, 0.12, 3.4); // tap 1
+        if (e.fireT % 100 === 22 && mayFire(g, e)) aimedFan(g, e.x, e.y + 8, 2, 0.12, 3.4); // tap 2 (re-aimed)
+        if (e.fireT % 100 === 60 && mayFire(g, e)) spray(g, e.x, e.y + 8, 10, 1.0, 1.6, 2.7);
         // leave-alive escalation: past the polite phase it parks and hoses hard —
         // this is the S4 dynamic-lifecycle contrast: a speed-killed mid shows only
         // the polite fans; an ignored one owns the screen
@@ -138,6 +153,11 @@ export function updateEnemy(g, e) {
       // scenery — and deep targets are where the capped pipeline actually delivers,
       // so the grind-it-down option is real (S1 economy; boghog: one enemy that
       // controls space + popcorn flying in)
+      // r11 entry signature: the elite's laned arc wall fires ON THE WAY DOWN
+      // (age 70, y≈68) so the pattern is FELT inside the speed-kill window —
+      // before, a fast kill (the rewarded play) skipped every pattern it had
+      // (2.3s mute descent + ~1.1s point-blank kill). Fixed center lane, no rng.
+      if (e.age === 70 && mayFire(g, e)) arcWall(g, e.x, e.y + 10, 11, 1.5, 1.7, 5, 1);
       if (e.y < 150) { e.y += 1.2; break; }
       // patrols the full width (house tanh sweep, Psikyo strafe): its column
       // crosses yours whether you chase or not — every crossing is a grind
@@ -177,6 +197,15 @@ export function updateEnemy(g, e) {
       e.fireT++;
       const half = e.hp < ENEMY_DEFS[4].hp * 0.45;
       if (mayFire(g, e)) {
+        // r14 flip beat: phase B is hp-triggered but its patterns were
+        // clock-triggered (%130) — at point-blank DPS the whole phase lasts
+        // ~0.5s, so a committed player MATHEMATICALLY could not see act two
+        // (measured: 1.4s floor kill). The form change now announces itself:
+        // the frame hp crosses 45%, the B ring fires immediately (boghog T2
+        // "phases bleed into each other"; T1 "HP is a pattern-duration knob";
+        // MSX expert bias: better play gets more, not less). e.phase latches
+        // it (unused on type 4). Deterministic — ring draws no rng.
+        if (half && e.phase === 0) { e.phase = 1; ring(g, e.x, e.y, 20, 1.6, (e.fireT * 0.13) % 1); }
         // r9 arrival bloom: the fight OPENS at its densest — three slow, laned
         // arc walls (~4.5s to cross the field). A point-blank kill inside the
         // bloom detonates it (cancel = the release moment, BOGHOG_CRAFT L29);

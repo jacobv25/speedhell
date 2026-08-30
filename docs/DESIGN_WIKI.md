@@ -10,7 +10,7 @@ it says so — the "Open questions" section is the part to send to a critic.*
 lineage laws), `BOGHOG_CRAFT.md` (craft notes), `CRITIC_RUBRIC.md` (the referee's
 acceptance criteria). This wiki is the explainer that sits underneath them.*
 
-Last updated: 2026-08-27 (r9, midboss bloom — uncommitted at time of writing).
+Last updated: 2026-08-29 (r10 mid entry shot + r11 cancel scoping — both uncommitted; r9 committed as cba500a).
 
 ---
 
@@ -78,9 +78,11 @@ bullets on screen. The item shower on a phase kill shrinks with the same fade.
 - **Items** — midboss kill: 8 × 800 (6,400). Boss phase kill: up to 10 × 1,000.
   S7 release: 14 × 150 (routing signage, not a payday). Items fall and are lost
   off the bottom; magnet radius 53px.
-- **Bullet cancels** — the screen's bullets convert to points at a per-bullet
-  rate: 30 on elite/turret kills, bombs, and the S7 wall; 100 on a midboss
-  **speed** kill (30 if late — r9, see §4.3); 100 on a boss phase kill.
+- **Bullet cancels** — bullets convert to points at a per-bullet rate: 30 on an
+  elite kill (LOCAL, 90px radius — r11), bombs, and the S7 wall; 100 on a midboss
+  **speed** kill (30 if late — r9, see §4.3); 100 full-screen on a boss phase
+  kill. Mids cancel nothing (r11; they did full wipes before). The authored
+  full-screen release moments are midboss, boss phases, S7, and bombs — only.
 - **Bombs** — cancel at 30/bullet, 180f invulnerability, 90f cooldown. The panic
   button has a price: each unused bomb is 500 at the clear tally.
 - **Clear tally** — `lives × 1,000 + bombs × 500` (`game.js:481`).
@@ -109,15 +111,36 @@ from the *scoring* window, so the two knobs can be tuned independently.
   inside the field so wall-hugging can't drag them off-screen.
 - **Turret** (`stage.js:118`) — scrolls down; goes "angry" at 4s on-screen (more
   fire, same scroll speed, so a lingering angry turret still clears on schedule).
-- **Mid** (`stage.js:97`) — enters, holds deep (y 120–153), aimed fans every 80f,
-  a spray at 230f; past 300f it parks and hoses. Exits (committed, never
+- **Mid** (`stage.js:97`) — descends at 1.5px/f (mute for ~88–110f), fires one
+  aimed 5-needle fan at age 65 (y≈86) on the way down (r10, see below), then holds
+  deep (y 120–153), aimed fans every 80f, a spray at 230f; past 300f it parks and
+  hoses. Exits (committed, never
   re-descends) at fireT > 560. *Note: the comment says it "exits before the
   midboss arrives"; mid #4 spawns at 2060 and exits around stage-frame 2710,
   after the midboss lands at ~2489. See §4.3 for why that matters.*
-- **Elite** (`stage.js:131`) — parks deep (y 150), patrols the full width on the
-  house tanh sweep, area-denial cycles that escalate per 210f rep: rep 0 is
-  grindable, ring joins at rep 1, hose at rep 2, overstay tax at rep 3+. Killing
-  an elite or turret fires a 30/bullet relief wall — "speed-kill = safety."
+  **r10 entry shot (2026-08-27).** Playtest: the mute descent plus a 0.37s
+  point-blank / 0.76s range kill meant a positioned human killed every mid in
+  the silence — four free 800-point pinatas, and range play was already a safe
+  kill (Pillar 2 inverted: no reason to close). Fix: one aimed fan at age 65,
+  timed between a close kill (~age 55, earns the quiet) and a range kill
+  (~age 77, eats the fan first). Same hp, same windows — a race, not a slog.
+  Rejected: more hp (a grind). Dials in reserve: faster descent, overlapping
+  mids. Caveat: the bots never killed mids in the silence anyway (expert: ages
+  202–585), so the felt problem is human-only and the bot referee can't
+  confirm the fix — Jacob's playtest is the test.
+  **r11 (2026-08-29): mids no longer cancel on death.** Playtest: killing a mid
+  full-wiped the screen — four wipes per gauntlet erased each next mid's entry
+  fan and flattened tension into all-release. A one-column mid is not a
+  space-controller; its fans now persist and stack (measured: mid-section avg
+  bullets 59, max 127 for the reaction-delayed aggressive bot).
+- **Elite** (`stage.js:138`) — descends 2.3s (mute until r11's entry signature:
+  its laned arc wall now fires on the way down at age 70, so the pattern is FELT
+  inside the speed-kill window — before, the rewarded fast kill skipped every
+  pattern it had), parks deep (y 150), patrols the full width on the house tanh
+  sweep, area-denial cycles escalating per 210f rep: rep 0 grindable, ring at
+  rep 1, hose at rep 2, overstay tax at rep 3+. Killing an elite fires a LOCAL
+  30/bullet cancel (90px, r11 — was full-screen): its denial field dies with it,
+  the rest of the field's pressure stands. "Speed-kill = safety," locally."
 
 ## 4. The midboss
 
@@ -286,17 +309,20 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
 
 ## 8. Open questions (send these)
 
-1. **Camp governor vs point-blank lineage.** Should a behavioral meter tuned
+1. **Is s4_dynamic's 1.6× bar still right?** It encodes the wipe-heavy world;
+   r11 deliberately lets aggressive play coexist with more on-screen bullets.
+   Referee recert decision.
+2. **Camp governor vs point-blank lineage.** Should a behavioral meter tuned
    against bots shape boss movement, or should anti-camp live only in the
    bullets and the hop? If it stays, should it be *visible* (a meter, a tell)?
-2. **P3 parts reach.** Is the 5s part window honest for a human against the
+3. **P3 parts reach.** Is the 5s part window honest for a human against the
    sweep + bob, or a bot-only side-bet? Measure before tuning.
-3. **SPEED popups hide the number.** Show `SPEED +1600`?
-4. **Midboss bloom readability.** Three slow laned walls at arrival — fair, or
+4. **SPEED popups hide the number.** Show `SPEED +1600`?
+5. **Midboss bloom readability.** Three slow laned walls at arrival — fair, or
    a jump-scare that needs to be two?
-5. **Mid #4 exit timing** overlaps the midboss gate, contradicting its own
+6. **Mid #4 exit timing** overlaps the midboss gate, contradicting its own
    comment. Fix the timing or accept the overlap as content?
-6. **Chain as a scoreboard.** The HUD's most prominent number is the least
+7. **Chain as a scoreboard.** The HUD's most prominent number is the least
    valuable one. Keep it (it's the *speed-kill streak*, which is the identity)
    or demote it?
 
@@ -316,3 +342,41 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
 - 2026-08-27 — r9 midboss arrival bloom + speed-gated 100/bullet cancel.
   Decision: keep the full-screen detonation feel; source density from
   aggression, never from waiting. P3 parts: practice, not tuning, for now.
+- 2026-08-27 — r10 mid entry shot (age 65 aimed fan). Decision: make the mid a
+  race between closing and hanging back; never add hp. Referee red set moved from
+  {s6, s4, s7_robust} at HEAD to {s7_pressure 23.2<24, s7_clearable expert P3
+  timeout} — rng-stream drift, uncertified either way; recert pending.
+- 2026-08-29 — r11 cancel scoping: mids no wall, elite local (90px), midboss/
+  boss/S7/bomb walls unchanged; elite entry signature wall (age 70). Decision:
+  full-screen release is reserved for authored moments; relief is scoped to what
+  the dead enemy controlled. Referee: s7_pressure GREEN (23.2→32.2), s6/s7_
+  clearable green; red = s4_dynamic 1.47<1.6 (mechanical: fewer wipes narrow the
+  passive/aggressive bullet contrast — the check's bar encodes the old wipe-heavy
+  world; recert question, flagged in §8) and s7_robust (5eed42 P1+P2 timeouts,
+  stream drift).
+- 2026-08-29 — r12 MOCK (playtest pending): mid's own voice. Entry fan replaced
+  by an entry SPRAY (7 pink, lingering terrain); parked cycle = DOUBLE-TAP (two
+  narrow 2-needle prongs 12f apart, second re-aims — tracks the dodge) alternating
+  with a spray every 160f; leave-alive hose unchanged. Rationale: mid and turret
+  fired the same aimedFan sentence; reserved dialects (lance/led/spiral=boss,
+  bendy=midboss, laned wall=elite) forced a new voice from primitives. Measured:
+  section avg bullets 32.5 (was 59 — fewer, deadlier: the human-like bot now
+  loses a life in the section). Sprays draw rng → referee reshuffle expected.
+- 2026-08-29 — r13 ramp (playtest: r12 still cleanly speed-killable): sprays at
+  age 45 AND 85 (10 pinks, was one 7-spray at 65), parked cycle 160f→100f with
+  the double-tap ~0.2s after park. Section avg bullets 59.7 / max 160 (r12:
+  32.5/56); human-like bot loses a life. Speed kill still available, now earned
+  inside the scatter. BUILD tag added to footer (r12→r13, src/version.js).
+- 2026-08-29 — r14 midboss flip beat: phase B was hp-triggered but its patterns
+  clock-triggered — at point-blank DPS act two lasted ~0.5s and could not fire
+  (measured floor kill: 1.4s; bottom-lane 4.2s; window 11.7s). The 45% crossing
+  now fires the B ring immediately (boghog T2 phase-bleed, T1 hp-as-duration,
+  MSX expert bias). Verified: even the 1.4s kill meets the ring. Post-death
+  scare attack (boghog T2) noted as optional, unbuilt.
+- 2026-08-29 — r15 clear vacuum: boss killed → all items magnet to the ship at
+  8px/f from any distance during the 150f pre-tally window (verified: 12 coins
+  field-wide all collected). Cleared: homage L3 receipt, boghog loot-paid
+  breathers, Psikyo/Cave stage-end auto-collect; MSX no-pushback (threat dead →
+  no decision lost). Note: r15 coin-drops proposal (popcorn wave-end gold) is
+  cleared-but-parked pending r13/r14 playtest settling (boghog pass-cooldown);
+  this vacuum took the r15 build number.

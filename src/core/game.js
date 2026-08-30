@@ -249,11 +249,16 @@ function killEnemy(g, e, idx) {
     for (let i = 0; i < 8; i++) spawnItem(g, e.x + g.rng.range(-27, 27), e.y + g.rng.range(-7, 20), 800);
     g.gate = null;
   }
-  // elite/mid down: section relief — killing the space-controller clears its
-  // denial field (speed-kill = safety, pillar 2). This is the S4 dynamic
-  // lifecycle made physical: killers keep a clean screen, leavers drown.
+  // r11: relief is scoped to what the dead enemy actually controlled (playtest:
+  // six full wipes per stage flattened tension into all-release — the wall was
+  // relief from pressure that never had time to build).
+  //  - elite down: LOCAL cancel (r=90) — its denial field dies with it, but the
+  //    turrets'/popcorn's fire lives on (speed-kill = safety stays true locally).
+  //  - mid down: no wall at all — a mid holding one column is not a
+  //    space-controller, and its full wipe erased the next mid's entry fan
+  //    (r10), un-toothing the gauntlet the moment it grew teeth.
   // Garnish-priced like the S7 release wall so it can't out-earn the core (S6).
-  if (e.type === 3 || e.type === 1) bulletCancelWall(g, e.x, e.y, 30);
+  if (e.type === 3) bulletCancelWall(g, e.x, e.y, 30, 90);
   g.enemies.killAt(idx);
 }
 
@@ -289,8 +294,22 @@ function cancelAllBullets(g, perBullet = 100) {
   return n;
 }
 
-export function bulletCancelWall(g, x, y, perBullet = 100) { // release moment (S5)
-  const n = cancelAllBullets(g, perBullet);
+export function bulletCancelWall(g, x, y, perBullet = 100, radius = Infinity) { // release moment (S5)
+  // r11: finite radius = LOCAL relief (elite) — clears the dead enemy's own
+  // neighborhood, leaves the rest of the field's pressure standing.
+  let n = 0;
+  if (radius === Infinity) n = cancelAllBullets(g, perBullet);
+  else {
+    for (let i = g.eBullets.count - 1; i >= 0; i--) {
+      const b = g.eBullets.items[i];
+      const dx = b.x - x, dy = b.y - y;
+      if (dx * dx + dy * dy > radius * radius) continue;
+      if ((n & 3) === 0) burst(g, b.x, b.y, 1, FAM.CYAN, 0.6);
+      g.eBullets.killAt(i); n++;
+    }
+    g.score += n * perBullet;
+    if (n > 0) g.cancelFlash = Math.max(g.cancelFlash, 10);
+  }
   if (n > 0) { addPopup(g, x, y, 'CANCEL +' + (n * perBullet), 1); sfx(g, SFX.CANCEL); }
 }
 
@@ -448,11 +467,16 @@ export function update(g) {
   }
 
   // --- items (magnet + fall) ---
+  // r15 clear vacuum: boss down → every coin on screen is drawn to the ship
+  // from any distance, fast, so the tally never eats uncollected gold (homage
+  // L3 "receipt", boghog "breathers paid in loot"; Psikyo/Cave stage-end
+  // auto-collect). No decision is lost — the threat is already dead [MSX].
+  const vac = g.bossDown;
   for (let i = g.items.count - 1; i >= 0; i--) {
     const it = g.items.items[i];
     it.vy = Math.min(it.vy + 0.053, 1.6);
     const dxx = p.x - it.x, dyy = p.y - it.y, d2 = dxx * dxx + dyy * dyy;
-    if (d2 < 53 * 53) { const d = Math.sqrt(d2) || 1; it.x += (dxx / d) * 4; it.y += (dyy / d) * 4; }
+    if (vac || d2 < 53 * 53) { const d = Math.sqrt(d2) || 1; const spd = vac ? 8 : 4; it.x += (dxx / d) * spd; it.y += (dyy / d) * spd; }
     else it.y += it.vy;
     if (d2 < 12 * 12) { g.score += it.val; g.items.killAt(i); sfx(g, SFX.ITEM); continue; }
     if (it.y > H + 12) g.items.killAt(i);

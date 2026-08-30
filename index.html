@@ -8,13 +8,16 @@
   html, body { margin: 0; height: 100%; background: #05060a; display: grid; place-items: center; }
   canvas { height: min(100vh, 92vh); aspect-ratio: 320/427; image-rendering: pixelated;
            box-shadow: 0 0 60px rgba(255,79,163,.12), 0 0 120px rgba(55,214,224,.08); }
-  footer { position: fixed; bottom: 8px; width: 100%; text-align: center;
+  footer { position: fixed; bottom: 8px; left: 8px; right: 58px; text-align: center;
            font: 11px monospace; color: #444a60; }
+  #ver { position: fixed; bottom: 8px; right: 8px; font: 11px monospace;
+         color: #5a6480; }
 </style>
 </head>
 <body>
 <canvas id="game"></canvas>
 <footer>SPEEDHELL — arrows/WASD move · Z/space shot · shift focus · X bomb · R restart · P pause · M mute</footer>
+<div id="ver"></div>
 <script type="module" src="src/main.js"></script>
 </body>
 </html>
