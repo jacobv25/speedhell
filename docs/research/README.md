@@ -46,8 +46,9 @@ System Erasure podcast interview ("Episode XVIII: The Chosen One", SoundCloud) �
 Lazy Devs "The Design of ZeroRanger" video interview (Nov 2023, 1h37m) ·
 boghog SHMUP WORKSHOP 01 video (transcript IS local: ~/Dev/boghog-research) ·
 system11 threads t=45122 (hitbox design debate) and "Smallest Hitbox" (archive
-rate-limited, never fetched) · Electric Underground's ZeroRanger review video
-(only its description verified).
+rate-limited, never fetched) · Electric Underground's ZeroRanger review video (only its description verified).
+NOW MINED: the MSX × System Erasure interview podcast (2018-12-13) — transcript
+added to ~/Dev/mark-msx-research, key quotes in raw-zeroranger-local-findings.md.
 
 Local corpora on disk (primary sources): ~/Dev/mark-msx-research and
 ~/Dev/boghog-research transcripts; SPEEDHELL docs/homage/ film studies.
