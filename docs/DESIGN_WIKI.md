@@ -750,3 +750,8 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   Significant Bits "players were less likely to feel cheated if they came out
   on the positive end". Open: shrink bullet hit radius 3 → ~2 (balance +
   referee, Jacob's call, parked); boss art to match the families (§8.11 scope).
+  **Playtest verdict (Jacob, post-commit):** all four targets pass — "crossers
+  and popcorn look different. midboss doesn't teleport. warning music is good.
+  death feels earned." Overall: "feels OK" — the display/identity debts are
+  paid; the remaining gap to *feels great* is the open density/pacing work
+  (S1→S2 seam, crosser entry, D-pass), not polish. r20 settled.
