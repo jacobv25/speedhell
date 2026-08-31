@@ -30,6 +30,11 @@ folder — the repo copies here are canonical).
   playbook for SPEEDHELL. Key: free-first never devalued anyone; pure-shmup
   free-first caps at genre size (~1.6K reviews) — the story-game liberties are
   the payload that breaks the ceiling.
+- **game2-wrapper-genres.md** — which wrapper genre should carry game #2's
+  bullet-hell payload: Steam genre economics (Zukowski/GameDiscoverCo), eight
+  wrapper candidates ranked, three finalists (story-rich roguelite action;
+  Undertale-shape narrative RPG; contrarian deckbuilder×shooter), survivors-like
+  and pure-shmup wrappers explicitly not recommended.
 - **zeroranger.md** — ZeroRanger deep-dive: the 10-swatch hue=threat /
   value=identity palette, stage lengths (2:20→6:15 loop 1), the
   continues-as-currency economy and save wager, hidden rank, music state-cuts,
