@@ -19,6 +19,25 @@ let ac = null, master = null, sfxBus = null, musicBus = null, noiseBuf = null;
 let muted = false;
 try { muted = localStorage.getItem('speedhell.muted') === '1'; } catch (_) {}
 
+// r29 options: user volumes are 0..1 MULTIPLIERS on the tuned mix above
+// (1 = the mix as shipped), persisted; buses pick them up on unlock().
+const clamp01 = (v) => (Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 1);
+let musicVol = 1, sfxVol = 1;
+try { musicVol = clamp01(parseFloat(localStorage.getItem('speedhell.vol.music'))); } catch (_) {}
+try { sfxVol = clamp01(parseFloat(localStorage.getItem('speedhell.vol.sfx'))); } catch (_) {}
+export function getMusicVolume() { return musicVol; }
+export function getSfxVolume() { return sfxVol; }
+export function setMusicVolume(v) {
+  musicVol = clamp01(v);
+  try { localStorage.setItem('speedhell.vol.music', String(musicVol)); } catch (_) {}
+  if (musicBus) musicBus.gain.setTargetAtTime(MUSIC_VOL * musicVol, ac.currentTime, 0.02);
+}
+export function setSfxVolume(v) {
+  sfxVol = clamp01(v);
+  try { localStorage.setItem('speedhell.vol.sfx', String(sfxVol)); } catch (_) {}
+  if (sfxBus) sfxBus.gain.setTargetAtTime(SFX_VOL * sfxVol, ac.currentTime, 0.02);
+}
+
 const tracks = {}; // name -> { el, node, gain }
 let current = null; // name of the playing track
 
@@ -33,8 +52,8 @@ export function unlock() {
   const comp = ac.createDynamicsCompressor();
   comp.threshold.value = -12; comp.ratio.value = 6; comp.attack.value = 0.003; comp.release.value = 0.12;
   comp.connect(master);
-  sfxBus = ac.createGain(); sfxBus.gain.value = SFX_VOL; sfxBus.connect(comp);
-  musicBus = ac.createGain(); musicBus.gain.value = MUSIC_VOL; musicBus.connect(master);
+  sfxBus = ac.createGain(); sfxBus.gain.value = SFX_VOL * sfxVol; sfxBus.connect(comp);
+  musicBus = ac.createGain(); musicBus.gain.value = MUSIC_VOL * musicVol; musicBus.connect(master);
   noiseBuf = ac.createBuffer(1, ac.sampleRate * 1, ac.sampleRate);
   const d = noiseBuf.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;

@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-01 (r28: Booth recorder divergence root-caused — renderer shake leaked g.rng; fixed to fxRng. Reds = midboss bot-priority question only).
+Last updated: 2026-09-01 (r29: polish phase opens — options menu shipped. Reds = midboss bot-priority question only).
 
 ---
 
@@ -893,3 +893,19 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   phase) and restores the Booth's flag→replay→fix spine. Not a design change
   (no scoring/behavior/timeline delta); corpus clearance n/a — the fix
   IMPLEMENTS the existing fx-rng rule. BUILD r27 → r28.
+- 2026-09-01 — r29 POLISH PHASE opens: options menu (Jacob: "start the polish
+  phase with the options menu"). Esc opens a pause-overlay menu in the real
+  game: music + sfx sliders (0–100% MULTIPLIERS on the tuned mix — 100% = the
+  mix as shipped, so tuning and player preference never fight), mute, TATE
+  cycle (same persisted state as the T key), fullscreen toggle, and keyboard
+  rebinding for shot/focus/bomb (movement + R/P/M/T stay fixed and are
+  reserved; a rebind steals a key from any other action; footer controls line
+  re-renders from the live binds). Sim fully frozen while open; music pauses,
+  respecting an existing P-pause on close. All settings persist through a tiny
+  storage adapter in src/options.js (localStorage today, file-backed in a
+  future desktop/Steam shell — swap two functions). New browser-only module
+  src/options.js + gain plumbing in audio.js (musicBus/sfxBus multipliers);
+  index.html overlay markup. Core untouched, Booth untouched, referee
+  untouched. Shell UI, not a design change — no scoring/behavior/timeline
+  delta; corpus note: menu adds no automation of play (fire stays held, not
+  toggled — BOGHOG_CRAFT stands). BUILD r28 → r29.

@@ -17,11 +17,47 @@
            font: 11px monospace; color: #444a60; }
   #ver { position: fixed; bottom: 8px; right: 8px; font: 11px monospace;
          color: #5a6480; }
+  /* r29 options menu */
+  #opts { position: fixed; inset: 0; background: rgba(5,6,10,.82); display: grid;
+          place-items: center; z-index: 10; }
+  #opts.hide { display: none; }
+  #optsPanel { min-width: 300px; max-width: 92vw; padding: 18px 22px; background: #0a0c14;
+               border: 1px solid #2a3050; box-shadow: 0 0 40px rgba(255,79,163,.15);
+               font: 12px monospace; color: #c8cde4; }
+  #optsPanel h1 { margin: 0 0 14px; font: bold 14px monospace; letter-spacing: .25em;
+                  color: #ff4fa3; }
+  #optsPanel .row { display: flex; align-items: center; gap: 10px; margin: 9px 0; }
+  #optsPanel label { width: 84px; color: #8a8fa8; }
+  #optsPanel input[type=range] { flex: 1; accent-color: #ff4fa3; }
+  #optsPanel .val { width: 40px; text-align: right; color: #57e389; }
+  #optsPanel .btn { flex: 1; background: #11162a; color: #c8cde4; border: 1px solid #2a3050;
+                    font: 12px monospace; padding: 5px 8px; cursor: pointer; text-align: center; }
+  #optsPanel .btn:hover { border-color: #ff4fa3; }
+  #optsPanel .keys { border-top: 1px solid #1a2038; margin-top: 12px; padding-top: 6px; }
+  #optsPanel .note { margin-top: 10px; font-size: 10px; color: #5a6480; }
 </style>
 </head>
 <body>
 <canvas id="game"></canvas>
-<footer>SPEEDHELL — arrows/WASD move · Z/space shot · shift focus · X bomb · R restart · P pause · M mute · T rotate (TATE)</footer>
+<footer>SPEEDHELL — <span id="controls">arrows/WASD move · Z/space shot · shift focus · X bomb · R restart · P pause · M mute · T rotate · ESC options</span></footer>
+<div id="opts" class="hide">
+  <div id="optsPanel">
+    <h1>OPTIONS</h1>
+    <div class="row"><label>music</label><input id="optMusic" type="range" min="0" max="100" value="100"><span class="val" id="optMusicV">100%</span></div>
+    <div class="row"><label>sfx</label><input id="optSfx" type="range" min="0" max="100" value="100"><span class="val" id="optSfxV">100%</span></div>
+    <div class="row"><label>sound</label><button id="optMute" class="btn">sound on</button></div>
+    <div class="row"><label>TATE</label><button id="optTate" class="btn">off</button></div>
+    <div class="row"><label>display</label><button id="optFull" class="btn">enter fullscreen</button></div>
+    <div class="keys">
+      <div class="row"><label>shot</label><button class="btn bind" data-act="fire">Z / space</button></div>
+      <div class="row"><label>focus</label><button class="btn bind" data-act="focus">shift</button></div>
+      <div class="row"><label>bomb</label><button class="btn bind" data-act="bomb">X</button></div>
+      <div class="row"><label></label><button id="optReset" class="btn">reset keys</button></div>
+      <div class="note">fixed: arrows/WASD move · R restart · P pause · M mute · T rotate</div>
+    </div>
+    <div class="note" id="optMsg">Esc closes · settings save automatically</div>
+  </div>
+</div>
 <div id="ver"></div>
 <script type="module" src="src/main.js"></script>
 </body>

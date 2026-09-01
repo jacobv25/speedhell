@@ -3,6 +3,7 @@ import { makeGame, startRun, update, W, H } from './core/game.js';
 import { draw, resetHud } from './render/renderer.js';
 import * as audio from './audio.js';
 import { BUILD } from './version.js';
+import { initOptions, isOpen as optionsOpen, binds, isBoundKey, cycleTate } from './options.js';
 
 // build tag pinned bottom-right, its own element — never pushed off-screen by
 // the controls line on narrow windows; confirms which build the browser loaded
@@ -10,12 +11,12 @@ const ver = document.getElementById('ver');
 if (ver) ver.textContent = BUILD;
 
 const canvas = document.getElementById('game');
-try { const n = +(localStorage.getItem('tate') || 0); document.body.classList.toggle('tate', n === 1); document.body.classList.toggle('tate270', n === 2); } catch { /* ok */ }
 canvas.width = W; canvas.height = H;
 const ctx = canvas.getContext('2d');
 
 let g = makeGame((Math.random() * 0xffffffff) >>> 0);
 let paused = false, bgScroll = 0;
+initOptions({ isPaused: () => paused }); // r29: applies persisted TATE, wires the Esc menu
 
 function beginRun() { // every run-start path: new seed handled by callers
   audio.unlock(); startRun(g); resetHud(); audio.playMusic('stage');
@@ -23,7 +24,8 @@ function beginRun() { // every run-start path: new seed handled by callers
 
 const keys = {};
 addEventListener('keydown', (e) => {
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
+  if (optionsOpen()) return; // menu owns the keyboard (options.js capture listener)
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key) || isBoundKey(e.key.toLowerCase())) e.preventDefault();
   keys[e.key.toLowerCase()] = true;
   audio.unlock(); // any key is the user gesture the AudioContext needs
   if (e.key === 'Enter' && g.state === 'title') beginRun();
@@ -32,10 +34,7 @@ addEventListener('keydown', (e) => {
   }
   if (e.key.toLowerCase() === 'p') { paused = !paused; audio.pauseMusic(paused); }
   if (e.key.toLowerCase() === 'm') audio.toggleMute();
-  if (e.key.toLowerCase() === 't') { // TATE: rotate output for a rotated monitor; display-only, no input remap
-    let n = 0; try { n = ((+(localStorage.getItem('tate') || 0)) + 1) % 3; localStorage.setItem('tate', String(n)); } catch { /* ok */ }
-    document.body.classList.toggle('tate', n === 1); document.body.classList.toggle('tate270', n === 2);
-  }
+  if (e.key.toLowerCase() === 't') cycleTate(); // TATE: display-only rotation (options.js owns the state)
 });
 addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 
@@ -50,9 +49,10 @@ function pollInput() {
   const i = g.input;
   i.dx = (keys['arrowright'] || keys['d'] ? 1 : 0) - (keys['arrowleft'] || keys['a'] ? 1 : 0);
   i.dy = (keys['arrowdown'] || keys['s'] ? 1 : 0) - (keys['arrowup'] || keys['w'] ? 1 : 0);
-  i.focus = !!keys['shift'];
-  i.fire = !!(keys['z'] || keys[' ']);   // held, not automated [BOGHOG_CRAFT]
-  i.bomb = !!keys['x'];
+  const B = binds(); // r29 rebinds (options menu); held, not automated [BOGHOG_CRAFT]
+  i.focus = B.focus.some((k) => keys[k]);
+  i.fire = B.fire.some((k) => keys[k]);
+  i.bomb = B.bomb.some((k) => keys[k]);
   const pads = navigator.getGamepads ? navigator.getGamepads() : [];
   let gp = null;
   for (const p of pads || []) if (p && p.connected && p.buttons.length) { gp = p; break; }
@@ -83,7 +83,7 @@ function frame(now) {
   if (acc > 200) acc = 200; // avoid spiral after tab-out
   while (acc >= STEP_MS) {
     pollInput();
-    if (!paused) { update(g); audio.drain(g); bgScroll += 1.05; }
+    if (!paused && !optionsOpen()) { update(g); audio.drain(g); bgScroll += 1.05; } // frozen while the menu is up
     acc -= STEP_MS;
   }
   draw(g, ctx, bgScroll);

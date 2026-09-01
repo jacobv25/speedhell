@@ -54,7 +54,7 @@ first — they are the deep record; this file is the quick resume.*
    referee edit, (b) accept red until recert, (c) revisit hp. Blocks a green
    board; should be settled before the Mark/boghog consult.
 2. **POLISH PHASE** (Jacob's chosen next step; merge with his own list):
-   options menu (volume, TATE, rebinding, fullscreen) → onboarding (30s
+   ~~options menu~~ ✅ SHIPPED r29 (volume, TATE, rebinding, fullscreen) → onboarding (30s
    how-to teaching the display contract + speed-kill rule) → practice/section
    select (playerize the sandbox stage-jump) → local hi-score table + results
    "receipt" screen (homage L4) → `SPEED +1600` popup (wiki §2.6) → named
