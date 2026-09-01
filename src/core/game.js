@@ -350,7 +350,14 @@ export function update(g) {
     // each wave's telegraph space so arrivals never pop in unannounced.
     // r6: never fast-forward through the WARNING ritual — the emptied field IS
     // the telegraph (S3b arrival ritual needs its full >=1s on the clock).
-    if (g.enemies.count === 0 && !g.warn && !g.bossDown && g.tlIndex < g.timeline.length
+    // r24 (Booth flag: "if I don't kill all the popcorn I have to wait for
+    // them to fly off before the mids arrive"): stragglers the player can no
+    // longer possibly hit — anything at or below the ship, since shots only
+    // travel up — used to block the pull. Now only ENGAGEABLE enemies
+    // (strictly above the ship) hold the timeline. Deterministic, no rng.
+    let engageable = 0;
+    for (let i = 0; i < g.enemies.count; i++) if (g.enemies.items[i].y < g.player.y) { engageable = 1; break; }
+    if (!engageable && !g.warn && !g.bossDown && g.tlIndex < g.timeline.length
       && g.timeline[g.tlIndex].t - g.stageT > 30) g.stageT += 3;
   }
   const p = g.player, inp = g.input;

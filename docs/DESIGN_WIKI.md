@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-08-31 (r23 grave-shot fix + boss-kill bullet guarantee; r10–r23 committed).
+Last updated: 2026-08-31 (r24 engageable-only caravan pull; r10–r24 committed).
 
 ---
 
@@ -815,3 +815,13 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   four bots and all six robust seeds; red set unchanged {s4_dynamic}. The
   bots never hit the one-frame window — human-only timing bug, three sessions
   of Booth flags to pin. BUILD r22 → r23.
+- 2026-08-31 — r24 engageable-only caravan pull (Booth flag, r23 session: "if
+  I don't kill all the popcorn enemies, I have to wait for them to fly off the
+  screen before the mids arrive" — replay confirmed ~2.9s of waiting on
+  stragglers below the ship). The pull's empty-screen gate now counts only
+  ENGAGEABLE enemies — strictly above the ship, i.e. still hittable by
+  upward-travelling shots; anything at or below the player can never be killed
+  and no longer holds the timeline. §2.5 rule refined accordingly. Referee:
+  identical to r23 on every measured number across all bots and robust seeds
+  (bots kill everything above them, so certified paths never differed) — a
+  human-facing fix, like r23. Red set unchanged {s4_dynamic}. BUILD r23 → r24.
