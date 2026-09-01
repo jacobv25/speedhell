@@ -213,6 +213,7 @@ addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && g.state === 'title') beginRun();
   if (e.key.toLowerCase() === 'r' && (g.state === 'gameover' || g.state === 'clear' || g.state === 'play')) { uploadRecording('restart'); g.seed = (Math.random() * 0xffffffff) >>> 0; beginRun(); }
   if (e.key.toLowerCase() === 'p') { paused = !paused; audio.pauseMusic(paused); }
+  if (e.key.toLowerCase() === 't') setTate(((+(localStorage.getItem('boothTate') || 0)) + 1) % 3); // r26: T rotates here too, same as the main game
   if (e.key.toLowerCase() === 'm') audio.toggleMute();
 });
 addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
