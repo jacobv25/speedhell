@@ -714,7 +714,7 @@ export function advanceBossPhase(g, e, killed, fade = 1) {
   }
   // final phase resolved: scoring already granted by scoreBossPhase, so despawn
   // silently (dead=1) either way; gate opens, clear sequence begins.
-  if (e.phase >= 2) { e.dead = 1; g.gate = null; g.bossDown = true; return; }
+  if (e.phase >= 2) { e.dead = 1; g.gate = null; g.bossDown = true; g.bossKilled = killed; return; }
   e.phase++; e.fireT = 0;
   e.hp = BOSS_PHASE_HP[e.phase];
   e.prevHp = e.hp; e.campT = 0; e.latchX = -1e9; e.latchX2 = -1e9; e.latchN = 0;

@@ -56,7 +56,7 @@ export function makeGame(seed = 1) {
     },
     input: { dx: 0, dy: 0, focus: false, fire: false, bomb: false },
     score: 0, chain: 0, speedKills: 0, kills: 0,
-    stageT: 0, timeline: null, tlIndex: 0, gate: null, bossDown: false,
+    stageT: 0, timeline: null, tlIndex: 0, gate: null, bossDown: false, bossKilled: false,
     warn: 0, // r6 S3b arrival ritual: frames of WARNING remaining before the boss gate
 
     clearBonus: 0, clearAt: 0, endFrame: 0,
@@ -395,7 +395,12 @@ export function update(g) {
     // vulnerability: on-screen + 30f intro armor (S4); speed-kill clock starts here
     if (e.vulnAt < 0 && e.y > 16 && e.age > 30 && g.frame >= e.armorUntil) e.vulnAt = g.frame;
     if (e.flash > 0) e.flash--;
-    if (e.type === 5) updateBoss(g, e); else updateEnemy(g, e);
+    // r23 (Jacob: "I killed the boss and its blue laser stayed on screen and
+    // killed me"): dead enemies used to get ONE more update tick before the
+    // sweep below removed them — a killed P3 boss could fire a final lance
+    // volley AFTER its kill's full-screen cancel, from beyond the grave, with
+    // nothing left alive to ever cancel it. Dead enemies never update.
+    if (!e.dead) { if (e.type === 5) updateBoss(g, e); else updateEnemy(g, e); }
     // outro: off-screen enemies despawn silently, fire nothing (S4)
     if (e.dead || e.y > H + 40 || e.y < -80 || e.x < -60 || e.x > W + 60) {
       if (e.dead === 2) killEnemy(g, e, i); // marked killed by script (timeout phases use dead=1: no score)
@@ -438,6 +443,11 @@ export function update(g) {
       }
     }
   }
+
+  // r23 guarantee: once the boss is KILLED (not timed out — a timeout's
+  // bullets stay by the r6 law), no enemy bullet may exist. Belt over the
+  // root fix above: sweeps scorelessly every frame until the tally.
+  if (g.bossKilled && g.eBullets.count) cancelAllBullets(g, 0);
 
   // --- enemy bullets ---
   for (let i = g.eBullets.count - 1; i >= 0; i--) {

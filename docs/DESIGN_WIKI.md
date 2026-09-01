@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-08-31 (r22 flee telegraph; r10–r22 committed).
+Last updated: 2026-08-31 (r23 grave-shot fix + boss-kill bullet guarantee; r10–r23 committed).
 
 ---
 
@@ -802,3 +802,16 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   the flag button exists because unrecorded memories decode slowly — the
   recorded elite death (see r21 entry) was a different, real finding (elite
   local-cancel question, still open). BUILD r21 → r22.
+- 2026-08-31 — r23 grave-shot fix (Jacob, firmly: "I killed the boss and its
+  blue laser stayed on screen and killed me"). Root cause found in the enemy
+  loop: enemies UPDATE (fire) before the dead-sweep removes them, so a killed
+  P3 boss got one more update tick and could emit a final lance volley AFTER
+  its own kill's full-screen cancel — from beyond the grave, uncancellable
+  (r22's timeout theory was wrong; apologies are in the transcript). Fixes:
+  (1) dead enemies never update; (2) the guarantee Jacob asked for —
+  `g.bossKilled` set on a killed final phase, and update() scorelessly sweeps
+  any enemy bullet every frame until the tally (a TIMED-OUT boss's bullets
+  still stay, r6 law untouched). Referee: byte-identical to r22 across all
+  four bots and all six robust seeds; red set unchanged {s4_dynamic}. The
+  bots never hit the one-frame window — human-only timing bug, three sessions
+  of Booth flags to pin. BUILD r22 → r23.
