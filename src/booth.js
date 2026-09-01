@@ -46,8 +46,10 @@ async function api(path, data) {
 
 function beginRun() {
   audio.unlock(); startRun(g); resetHud(); audio.playMusic('stage');
+  activeVariant = applyVariants(g); // r26: variants land here, never mid-run
+  $('variantNow').textContent = 'active: ' + activeVariant;
   run++; tick = 0; inputs = [];
-  logLine(`run ${run} · seed ${g.seed.toString(16)}`);
+  logLine(`run ${run} · ${activeVariant} · seed ${g.seed.toString(16)}`);
 }
 
 // ---------------------------------------------------------------- recording
@@ -59,7 +61,7 @@ function packInput(i) { return (i.dx + 1) | ((i.dy + 1) << 2) | ((i.fire ? 1 : 0
 function inputsB64() { let s = ''; const a = Uint8Array.from(inputs); for (let i = 0; i < a.length; i += 0x8000) s += String.fromCharCode.apply(null, a.subarray(i, i + 0x8000)); return btoa(s); }
 async function uploadRecording(reason) {
   if (!session) return;
-  try { await api('/booth/recording', { session, run, seed: g.seed, build: BUILD, ticks: tick, frame: g.frame, state: g.state, reason, inputs: inputsB64() }); } catch { /* offline */ }
+  try { await api('/booth/recording', { session, run, seed: g.seed, build: BUILD, variant: activeVariant, tune: g.tune, ticks: tick, frame: g.frame, state: g.state, reason, inputs: inputsB64() }); } catch { /* offline */ }
 }
 
 // ---------------------------------------------------------------- snapshot
@@ -82,6 +84,36 @@ const chipsEl = $('chips');
 for (const w of TAGS) { const c = document.createElement('span'); c.className = 'chip tag'; c.textContent = w; c.onclick = () => c.classList.toggle('on'); chipsEl.appendChild(c); }
 for (const w of WORDS) { const c = document.createElement('span'); c.className = 'chip'; c.textContent = w; c.onclick = () => c.classList.toggle('on'); chipsEl.appendChild(c); }
 const chosen = () => [...chipsEl.querySelectorAll('.chip.on')].map((c) => c.textContent);
+// ---------------------------------------------------------------- variants (r26)
+// Picked in the panel, applied at the NEXT run (R) — never mid-run, so every
+// run is a fair, deterministic sample of exactly one configuration. Each run,
+// recording and flag is stamped with its variant label.
+const VARIANTS = [
+  { id: 'eliteHp220', label: 'elite HP 220', group: 'eliteHp', apply: (t) => { t.eliteHp = 220; } },
+  { id: 'eliteHp280', label: 'elite HP 280', group: 'eliteHp', apply: (t) => { t.eliteHp = 280; } },
+  { id: 'eliteHp340', label: 'elite HP 340', group: 'eliteHp', apply: (t) => { t.eliteHp = 340; } },
+  { id: 'eliteSide', label: 'elite side entry', apply: (t) => { t.eliteEntry = 'side'; } },
+  { id: 'eliteEscort', label: 'elite escort', apply: (t) => { t.eliteEscort = 1; } },
+  { id: 'midboss130', label: 'midboss HP 130', apply: (t) => { t.midbossHp = 130; } },
+];
+const varEl = $('variants');
+for (const v of VARIANTS) {
+  const c = document.createElement('span'); c.className = 'chip'; c.textContent = v.label; c.dataset.group = v.group || '';
+  c.onclick = () => {
+    if (v.group && !c.classList.contains('on'))
+      varEl.querySelectorAll(`.chip[data-group="${v.group}"].on`).forEach((o) => o.classList.remove('on'));
+    c.classList.toggle('on');
+    $('variantNow').textContent = 'next run: ' + (variantLabel() || 'baseline');
+  };
+  varEl.appendChild(c);
+}
+function variantLabel() { return [...varEl.querySelectorAll('.chip.on')].map((c) => c.textContent).join(' + '); }
+function applyVariants(g) {
+  let label = [];
+  for (const v of VARIANTS) { const c = [...varEl.children][VARIANTS.indexOf(v)]; if (c.classList.contains('on')) { v.apply(g.tune); label.push(v.label); } }
+  return label.join(' + ') || 'baseline';
+}
+let activeVariant = 'baseline';
 const clearChips = () => chipsEl.querySelectorAll('.chip.on').forEach((c) => c.classList.remove('on'));
 
 function openFlag() {
@@ -119,7 +151,7 @@ async function sendNote(dunno) {
   if (!currentFlag) return;
   const text = dunno ? "(I don't know)" : $('text').value.trim();
   if (!text && !chosen().length && !$('expected').value.trim()) { $('status').textContent = "say anything — or press “I don't know”"; return; }
-  const note = { kind: 'flag', session, run, flag: currentFlag.flag, turn: currentFlag.turn++, seed: g.seed, build: BUILD,
+  const note = { kind: 'flag', session, run, flag: currentFlag.flag, turn: currentFlag.turn++, seed: g.seed, build: BUILD, variant: activeVariant, tune: g.tune,
     text, words: chosen(), expected: $('expected').value.trim(), snap: currentFlag.turn === 1 ? currentFlag.snap : { frame: currentFlag.snap.frame, tick: currentFlag.snap.tick, section: currentFlag.snap.section } };
   card('you', [text, chosen().length ? `[${chosen().join(', ')}]` : '', note.expected ? `expected: ${note.expected}` : ''].filter(Boolean).join('\n'));
   $('text').value = ''; $('expected').value = ''; clearChips();

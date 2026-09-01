@@ -23,7 +23,7 @@ export const ENEMY_DEFS = [
   /*1 mid    */ { hp: 44,  value: 800,   window: 210, r: 14 },
   /*2 turret */ { hp: 24,  value: 500,   window: 150, r: 12 },
   /*3 elite  */ { hp: 134, value: 3000,  window: 380, r: 20 },
-  /*4 midboss*/ { hp: 130, value: 8000,  window: 700, r: 26 },
+  /*4 midboss*/ { hp: 400, value: 8000,  window: 700, r: 26 }, // r25 EXPERIMENT (Jacob's explicit hp override): 3x — phase B must get to exist; boghog T1: boss HP is a pattern-duration knob,
   /*5 boss   */ { hp: 130, value: 12000, window: 600, r: 30 }, // hp = P1 hp (spawn); value
   // r6: per-phase payout raised 9000→12000 — earned only by KILLING phases (late-kill
   // decay in scoreBossPhase melts it to ~0 at the timeout), so it widens the honest-vs-
@@ -231,6 +231,14 @@ export function updateEnemy(g, e) {
         e.x += Math.max(-1.5, Math.min(1.5, sx - e.x));
       }
       e.fireT++;
+      // r26 variant D (Booth): escort popcorn during elite #1 — the midboss
+      // escort formula; the speed kill stays possible but happens in traffic.
+      if (g.tune.eliteEscort && e.phase === 0 && e.vulnAt >= 0 && e.fireT % 150 === 60) {
+        const k = ((e.fireT / 150) | 0) % 2;
+        const a = spawnEnemy(g, 0, k ? W - 16 : 16, 36, { vx: k ? -1.7 : 1.7, vy: 0.3, side: k ? 1 : -1, holdT: 1 });
+        const b = spawnEnemy(g, 0, k ? 16 : W - 16, 52, { vx: k ? 1.7 : -1.7, vy: 0.3, side: k ? -1 : 1, holdT: 0 });
+        if (a) a.phase = 2; if (b) b.phase = 2;
+      }
       // rep 0 is grindable — a router who commits can finish it inside 2 cycles
       // (that's the ~2.4s range grind / ~1.2s point-blank kill, S1). Ring joins
       // at rep 1, hose at rep 2, then super-linear: only players who LEAVE it
@@ -265,7 +273,7 @@ export function updateEnemy(g, e) {
       const sx = W / 2 + Math.tanh(3.5 * Math.sin(e.age * 0.008)) / Math.tanh(3.5) * 70;
       e.x = W / 2 + (sx - W / 2) * Math.min(1, e.fireT / 60);
       e.fireT++;
-      const half = e.hp < ENEMY_DEFS[4].hp * 0.45;
+      const half = e.hp < (g.tune.midbossHp || ENEMY_DEFS[4].hp) * 0.45; // r26: 45% of the TUNED max
       if (mayFire(g, e)) {
         // r14 flip beat: phase B is hp-triggered but its patterns were
         // clock-triggered (%130) — at point-blank DPS the whole phase lasts
@@ -821,8 +829,19 @@ export function buildTimeline() {
   risers(2660, 4);
 
   // S6 elite pair — rep1 solo, rep2 + turrets (twist), never simultaneous elites
-  at(2900, (g) => spawnEnemy(g, 3, W / 2 - 53, -16, { side: -1 }));
-  at(3260, (g) => { spawnEnemy(g, 3, W / 2 + 53, -16, { side: 1 }); spawnEnemy(g, 2, 53, -16); spawnEnemy(g, 2, W - 53, -16); });
+  at(2900, (g) => { // r26 variant B: side arrival — spawns at the flank at
+    // combat height and glides centre-ward on its own tanh patrol clamp
+    if (g.tune.eliteEntry === 'side') spawnEnemy(g, 3, -22, 150, { side: -1 });
+    else spawnEnemy(g, 3, W / 2 - 53, -16, { side: -1 });
+  });
+  at(3260, (g) => {
+    // r25 fix (Booth flag: "slight lull" mid-S6): the elite case escalates per
+    // rep (ring at rep 1, hose at rep 2 — S4, wiki §3) but NOTHING ever set an
+    // elite's phase, so rep was always 0 and elite #2 was a copy of #1 with a
+    // 1.8s silent stretch per 210f cycle. Elite #2 is now genuinely rep 1.
+    const e3 = spawnEnemy(g, 3, W / 2 + 53, -16, { side: 1 }); if (e3) e3.phase = 1;
+    spawnEnemy(g, 2, 53, -16); spawnEnemy(g, 2, W - 53, -16);
+  });
   risers(3290, 4); // r19: rep-2 twist — the elite's grind lane is attacked from behind
 
   // S7 release — cancel wall + item shower + ~3s breather (WS05 tension-release)

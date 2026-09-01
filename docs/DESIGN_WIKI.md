@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-08-31 (r24 engageable-only caravan pull; r10–r24 committed).
+Last updated: 2026-09-01 (r25/r26 experiment round: midboss 400hp, elite rep fix, Booth variants; REFEREE RED pending bot-priority decision).
 
 ---
 
@@ -825,3 +825,27 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   identical to r23 on every measured number across all bots and robust seeds
   (bots kill everything above them, so certified paths never differed) — a
   human-facing fix, like r23. Red set unchanged {s4_dynamic}. BUILD r23 → r24.
+- 2026-09-01 — r25/r26 experiment round (Jacob's explicit hp override, Booth
+  session 2026-08-31): (1) MIDBOSS hp 130 → 400 — "adding the health to the
+  midboss felt great… good call, we'll leave it for now"; point-blank kill
+  ~1.1s → ~4–5s, phase B finally exists (boghog T1: boss HP is a
+  pattern-duration knob). (2) ELITE rep escalation BUG fixed — `rep = e.phase`
+  but nothing ever set an elite's phase, so the documented ring-at-rep-1 /
+  hose-at-rep-2 never ran and elite #2 was a copy of #1 with 1.8s of silence
+  per cycle (his "slight lull"). Elite #2 now genuinely rep 1. (3) Booth
+  VARIANTS panel (r26): deterministic tune knobs in core (eliteHp / eliteEntry
+  / eliteEscort / midbossHp, defaults = shipped values, referee never sets
+  them), chips applied at run start only, every run/recording/flag stamped
+  with its variant, replay honors the stamp — A/B/A comparisons are chip–R–
+  play. Elite experiment chips wired (HP 220/280/340, side entry, escort);
+  bottom-ambush deliberately not built (density-pass material). All knobs
+  verified applied + deterministic in a bot clear.
+  **REFEREE RED, decision needed (vs r24 control): the expert bot now TIMES
+  OUT the 400hp midboss on the certified seed and all six robust seeds** —
+  the bots chase escort popcorn (the r19 finding; 912f at 130hp) while Jacob
+  kills it in ~4–5s. s7_clearable FAIL, s7_robust FAIL (6× midboss, +2 boss
+  timeouts), s6_alignment 2.15 vs bar 3 FAIL; s4_dynamic 1.38 (chronic).
+  Options, Jacob's call: (a) referee edit — give the bots boss/midboss target
+  priority (the §4.3 option, now forced); (b) accept a red referee until the
+  recert round; (c) revisit the hp (contradicts his verdict). The experiment
+  stands as played; the referee question is now unavoidable. BUILD → r26.

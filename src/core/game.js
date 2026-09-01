@@ -57,6 +57,10 @@ export function makeGame(seed = 1) {
     input: { dx: 0, dy: 0, focus: false, fire: false, bomb: false },
     score: 0, chain: 0, speedKills: 0, kills: 0,
     stageT: 0, timeline: null, tlIndex: 0, gate: null, bossDown: false, bossKilled: false,
+    // r26 variant knobs (Booth experiments): deterministic — same knobs + seed
+    // + inputs = same run. 0 / 'top' = shipped ENEMY_DEFS values. The referee
+    // never sets these, so certified paths are untouched by construction.
+    tune: { eliteHp: 0, eliteEntry: 'top', eliteEscort: 0, midbossHp: 0 },
     warn: 0, // r6 S3b arrival ritual: frames of WARNING remaining before the boss gate
 
     clearBonus: 0, clearAt: 0, endFrame: 0,
@@ -199,8 +203,10 @@ export function spawnEnemy(g, type, x, y, opts = {}) {
   const d = ENEMY_DEFS[type];
   e.type = type; e.x = x; e.y = y; e.vx = opts.vx || 0; e.vy = opts.vy || 0;
   e.hp = d.hp; e.r = d.r; e.age = 0; e.phase = 0; e.fireT = 0; e.dead = 0;
+  if (type === 3 && g.tune.eliteHp) e.hp = g.tune.eliteHp;   // r26 variant knob
+  if (type === 4 && g.tune.midbossHp) e.hp = g.tune.midbossHp;
   e.side = opts.side || 1; e.holdT = opts.holdT || 0;
-  e.value = d.value; e.window = d.window; e.sweepOff = 0; e.campT = 0; e.prevHp = d.hp;
+  e.value = d.value; e.window = d.window; e.sweepOff = 0; e.campT = 0; e.prevHp = e.hp;
   e.latchX = -1e9; e.latchX2 = -1e9; e.latchN = 0; e.trackT = 0; e.pxEma = g.player.x;
   e.grazeT = 0; e.grindHp = 0; e.lastDir = 0; e.monoT = 0; e.latchT = 0; e.stillRun = 0; e.flash = 0; e.bloomed = 0;
   e.vulnAt = -1; e.armorUntil = 0; // vuln set once on-screen (top dead zone + intro armor)
