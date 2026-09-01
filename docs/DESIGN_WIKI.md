@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-01 (r25/r26 experiment round: midboss 400hp, elite rep fix, Booth variants; REFEREE RED pending bot-priority decision).
+Last updated: 2026-09-01 (r27: elite 220/side/escort shipped from the Booth verdict; reds = midboss bot-priority question only).
 
 ---
 
@@ -856,3 +856,16 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   monitor, so physical-up is already game-up: no input remap (arcade cabinets
   rotate the monitor, not the stick). Booth also gained a portrait-desktop
   layout toggle (panel below the canvas). Tooling only; core untouched.
+- 2026-09-01 — r27 elite verdict shipped (Booth variant testing, Jacob: "I like
+  elite HP at 220 w/ side entry with escorts"): ENEMY_DEFS elite hp 134 → 220
+  (range grind 2.4s → 3.9s, inside the 2.2–6s economy law), elite #1 enters
+  from the flank at combat height, escort crosser pair every 150f during its
+  fight. Booth chips flipped to ROLLBACKS (134 / top entry / no escort /
+  midboss 130) so comparisons stay one chip away. Also this session: TATE
+  mode + T binding, portrait layout. Referee vs r26: s5_edges 25f of side-entry
+  exposure (bar 60) PASS, s1_economy PASS, s6_alignment 2.15 → 2.43 (closer,
+  still under the 3 bar), expert lives 1 → 2, stray boss timeouts gone — every
+  remaining red is the ONE pending decision: the expert bot times out the
+  400hp midboss on all seeds (target-priority flaw; humans kill it in ~4–5s).
+  §4.3 options stand: (a) bot priority referee edit, (b) live red until
+  recert, (c) revisit hp. BUILD r26 → r27.

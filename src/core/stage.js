@@ -22,7 +22,7 @@ export const ENEMY_DEFS = [
   /*0 zako   */ { hp: 2,   value: 200,   window: 75,  r: 10 },
   /*1 mid    */ { hp: 44,  value: 800,   window: 210, r: 14 },
   /*2 turret */ { hp: 24,  value: 500,   window: 150, r: 12 },
-  /*3 elite  */ { hp: 134, value: 3000,  window: 380, r: 20 },
+  /*3 elite  */ { hp: 220, value: 3000,  window: 380, r: 20 }, // r27: Jacob's variant verdict — HP 220 + side entry + escort ship as defaults
   /*4 midboss*/ { hp: 400, value: 8000,  window: 700, r: 26 }, // r25 EXPERIMENT (Jacob's explicit hp override): 3x — phase B must get to exist; boghog T1: boss HP is a pattern-duration knob,
   /*5 boss   */ { hp: 130, value: 12000, window: 600, r: 30 }, // hp = P1 hp (spawn); value
   // r6: per-phase payout raised 9000→12000 — earned only by KILLING phases (late-kill

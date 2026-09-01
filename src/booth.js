@@ -88,13 +88,11 @@ const chosen = () => [...chipsEl.querySelectorAll('.chip.on')].map((c) => c.text
 // Picked in the panel, applied at the NEXT run (R) — never mid-run, so every
 // run is a fair, deterministic sample of exactly one configuration. Each run,
 // recording and flag is stamped with its variant label.
-const VARIANTS = [
-  { id: 'eliteHp220', label: 'elite HP 220', group: 'eliteHp', apply: (t) => { t.eliteHp = 220; } },
-  { id: 'eliteHp280', label: 'elite HP 280', group: 'eliteHp', apply: (t) => { t.eliteHp = 280; } },
-  { id: 'eliteHp340', label: 'elite HP 340', group: 'eliteHp', apply: (t) => { t.eliteHp = 340; } },
-  { id: 'eliteSide', label: 'elite side entry', apply: (t) => { t.eliteEntry = 'side'; } },
-  { id: 'eliteEscort', label: 'elite escort', apply: (t) => { t.eliteEscort = 1; } },
-  { id: 'midboss130', label: 'midboss HP 130', apply: (t) => { t.midbossHp = 130; } },
+const VARIANTS = [ // r27: the winners shipped (elite 220 / side / escort); chips are ROLLBACKS for comparison
+  { id: 'eliteHp134', label: 'elite HP 134 (old)', apply: (t) => { t.eliteHp = 134; } },
+  { id: 'eliteTop', label: 'elite top entry (old)', apply: (t) => { t.eliteEntry = 'top'; } },
+  { id: 'eliteNoEscort', label: 'no elite escort (old)', apply: (t) => { t.eliteEscort = 0; } },
+  { id: 'midboss130', label: 'midboss HP 130 (old)', apply: (t) => { t.midbossHp = 130; } },
 ];
 const varEl = $('variants');
 for (const v of VARIANTS) {
