@@ -63,13 +63,13 @@ first — they are the deep record; this file is the quick resume.*
 3. **Mark/boghog consult handout ready:** wiki §6.2 + §8, docs/research/, the
    canon-three-holes HTML page, plus decisions 1 above, elite-cancel width
    (r21 changelog), s4_dynamic recert bar (chronic, four flips).
-4. **Booth recorder divergence (OPEN):** session 20260831-184610 run2 replays
-   to a gameover at tick 2341 while the live run continued past 3735. Frame
-   parity holds to tick 2300 (verified); deaths accumulate identically until
-   the divergent death. Ruled out: dead-wait (unused), hitstop (0 everywhere).
-   Next suspects: input byte recorded pre- vs post-death-frame ordering, a
-   missed update during the flag-open frame, gamepad polling during `flagged`.
-   Deterministic replay is the Booth's spine — worth a focused hour.
+4. **Booth recorder divergence — RESOLVED r28 (2026-09-01).** Root cause: the
+   renderer's screen shake drew from g.rng (renderer.js:55) — browser-only, so
+   live runs consumed gameplay-rng the headless replay never saw. Fixed to
+   g.fxRng; proof + sweep evidence in the wiki changelog (r28). Pre-r28 tapes
+   are historical (inputs answered the leaked-rng world; will never replay
+   true) — booth-replay.mjs now warns. Recordings made from r28 on replay
+   byte-perfect; attract mode / practice replays are unblocked.
 5. Deferred design queue: density pass (compression vs multiplication — after
    the consult), loop 2 (Ketsui-style seal), bullet-radius leniency (parked),
    suicide-for-bombs meta (§8.8).
@@ -98,4 +98,4 @@ audio.js gain plumbing; TATE already has state to surface). Check
 ## State warnings
 
 - 22+ commits unpushed (deliberate). Two servers running (above). Referee red
-  (deliberate, decision 1). Recorder divergence open (item 4).
+  (deliberate, decision 1). Recorder divergence FIXED r28 (item 4).

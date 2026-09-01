@@ -52,7 +52,10 @@ export function draw(g, ctx, bgScroll) {
   ctx.save();
   if (g.shake > 0) { // r8-fx: squared decay — snaps hard, settles fast (no constant buzz)
     const k = g.shakeMax > 0 ? g.shake / g.shakeMax : 1, amp = (g.shakeMax || g.shake) * k * k;
-    ctx.translate((g.rng.next() - 0.5) * amp, (g.rng.next() - 0.5) * amp);
+    // r28: fxRng, NEVER g.rng — draw() only runs in the browser, so pulling the
+    // gameplay stream here desynced live runs from headless replay (the Booth
+    // recorder divergence). Renderer randomness must never touch g.rng.
+    ctx.translate((g.fxRng.next() - 0.5) * amp, (g.fxRng.next() - 0.5) * amp);
   }
 
   // background: deep indigo, faint slow stars — low value contrast (S2),

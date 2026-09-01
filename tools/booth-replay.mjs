@@ -7,6 +7,7 @@
 //   node tools/booth-replay.mjs <file> --note <i>      # tick taken from playtest/notes.jsonl line i
 import { readFileSync } from 'node:fs';
 import { makeGame, startRun, update, W, H } from '../src/core/game.js';
+import { BUILD } from '../src/version.js';
 
 const ENEMY = ['zako', 'mid', 'turret', 'elite', 'midboss', 'boss', 'boss-part'];
 const SEC_T = [0, 120, 720, 1700, 2400, 2460, 2900, 3700, 3900];
@@ -16,6 +17,8 @@ const sectionOf = (g) => { if (g.gate === 'midboss') return 'S4 midboss'; if (g.
 const [file, a, b] = process.argv.slice(2);
 if (!file) { console.error('usage: booth-replay <recording.json> <tick> [window] | <recording.json> --note <i>'); process.exit(2); }
 const rec = JSON.parse(readFileSync(file, 'utf8'));
+if (rec.build !== BUILD) console.error(`⚠ tape build ${rec.build} ≠ current ${BUILD} — cross-build replays can diverge legitimately (core changed between)`);
+if (parseInt(String(rec.build).slice(1)) < 28) console.error('⚠ pre-r28 tape: recorded while draw() leaked g.rng on screen shake — the live run drifted from clean replay after the first shake (bomb / elite / midboss kill / death). Historical tapes; do not debug their divergence. See wiki changelog r28.');
 let target = Number(a), win = Number(b) || 180;
 if (a === '--note') {
   const lines = readFileSync('playtest/notes.jsonl', 'utf8').split('\n').filter(Boolean);

@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-01 (r27: elite 220/side/escort shipped from the Booth verdict; reds = midboss bot-priority question only).
+Last updated: 2026-09-01 (r28: Booth recorder divergence root-caused — renderer shake leaked g.rng; fixed to fxRng. Reds = midboss bot-priority question only).
 
 ---
 
@@ -869,3 +869,27 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   400hp midboss on all seeds (target-priority flaw; humans kill it in ~4–5s).
   §4.3 options stand: (a) bot priority referee edit, (b) live red until
   recert, (c) revisit hp. BUILD r26 → r27.
+- 2026-09-01 — r28 Booth recorder divergence ROOT-CAUSED and fixed (handoff
+  item 4; Jacob: "fix the divergence bug first"). draw()'s screen shake pulled
+  TWO g.rng values per rendered frame (renderer.js:55, r8-era code — it predates
+  the renderer's own "no g.rng in draw" rule). draw() only runs in the browser,
+  so every live shake frame (bomb, elite/midboss kill, death) advanced the
+  gameplay stream past what headless replay sees: live and replay played
+  different games from the first shake on. Evidence: replay-sweep of all 119
+  tapes → 54 diverged, the replay ghost ALWAYS dying earlier than the live run
+  (the handicapped-ghost asymmetry was the tell); emulating the leak in the
+  replayer (2 g.rng draws per post-update shake frame) made ALL four divergent
+  r27 tapes and both tested r26 tapes replay byte-perfect to their recorded
+  endings (20260901-141640 runs 2/4/5/8 → exact end tick, frame, state). The
+  r25-exp tape (the original handoff exhibit) improves 2341 → 3573 but not to
+  parity — it also carries pre-r26 build skew (no tune stamp). Fix: shake
+  offsets now g.fxRng (the standing fx rule). Safety proof: draining fxRng
+  every shake tick leaves end state byte-identical (fxRng feeds no gameplay
+  branch); referee untouched (test/sim.mjs never imports the renderer;
+  evidence/ not rerun). tools/booth-replay.mjs now warns on build-mismatched
+  and pre-r28 tapes — pre-r28 recordings are HISTORICAL: their inputs answered
+  the leaked-rng world and will never replay true. Deterministic replay is now
+  trustworthy going forward — unblocks attract-mode / practice replays (polish
+  phase) and restores the Booth's flag→replay→fix spine. Not a design change
+  (no scoring/behavior/timeline delta); corpus clearance n/a — the fix
+  IMPLEMENTS the existing fx-rng rule. BUILD r27 → r28.
