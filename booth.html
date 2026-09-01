@@ -8,6 +8,18 @@
   :root { --bg:#05060a; --panel:#0b0e19; --ink:#e9edf7; --dim:#7c86a6; --line:#1c2236; --cyan:#37d6e0; --pink:#ff4fa3; --gold:#ffd24a; --violet:#c3a8ff; }
   html, body { margin:0; height:100%; background:var(--bg); color:var(--ink); font:13px/1.45 -apple-system, "Helvetica Neue", system-ui, sans-serif; }
   body { display:grid; grid-template-columns: 1fr 360px; height:100vh; }
+  body.vertical { grid-template-columns: 1fr; grid-template-rows: auto auto; height:auto; min-height:100vh; }
+  body.vertical #stage { padding: 4px 0; }
+  body.vertical canvas#game { height:auto; width:min(100vw, calc(96vh * 320 / 427)); }
+  body.vertical #panel { border-left:0; border-top:2px solid var(--line); }
+  /* TATE: rotate the game output 90 deg for a physically rotated monitor */
+  body.tate #stage, body.tate270 #stage { overflow:hidden; min-height:100vh; }
+  body.tate canvas#game, body.tate270 canvas#game {
+    position:absolute; top:50%; left:50%; height:auto;
+    width:min(96vh, calc(96vw * 320 / 427)); aspect-ratio:320/427;
+  }
+  body.tate canvas#game { transform: translate(-50%,-50%) rotate(90deg); }
+  body.tate270 canvas#game { transform: translate(-50%,-50%) rotate(-90deg); }
   #stage { display:grid; place-items:center; position:relative; }
   canvas { height:min(100vh, 94vh); aspect-ratio:320/427; image-rendering:pixelated; box-shadow:0 0 60px rgba(255,79,163,.12), 0 0 120px rgba(55,214,224,.08); }
   #badge { position:absolute; top:12px; left:12px; background:var(--violet); color:#0b0e19; font-weight:700; padding:4px 8px; border-radius:2px; display:none; }
@@ -45,6 +57,8 @@
 <aside id="panel">
   <h1>Playtest Booth</h1>
   <div class="meta" id="meta">connecting…</div>
+  <div class="row"><button class="ghost" id="layout">Layout: side panel · switch for vertical monitor</button>
+  <button class="ghost" id="tate">TATE: off</button></div>
   <div id="idle" class="card">Play. When a moment feels wrong — or right — press <b>Tab</b> (or <b>START</b> on the stick). The game freezes with the moment on screen; say what you were doing and what you felt. Claude reads the exact game state and answers here.</div>
   <div id="flag" class="hide">
     <div class="card"><div class="who" id="flagWho">Flag</div><div class="meta" id="flagMeta"></div></div>

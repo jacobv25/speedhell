@@ -10,6 +10,7 @@ const ver = document.getElementById('ver');
 if (ver) ver.textContent = BUILD;
 
 const canvas = document.getElementById('game');
+try { const n = +(localStorage.getItem('tate') || 0); document.body.classList.toggle('tate', n === 1); document.body.classList.toggle('tate270', n === 2); } catch { /* ok */ }
 canvas.width = W; canvas.height = H;
 const ctx = canvas.getContext('2d');
 
@@ -31,6 +32,10 @@ addEventListener('keydown', (e) => {
   }
   if (e.key.toLowerCase() === 'p') { paused = !paused; audio.pauseMusic(paused); }
   if (e.key.toLowerCase() === 'm') audio.toggleMute();
+  if (e.key.toLowerCase() === 't') { // TATE: rotate output for a rotated monitor; display-only, no input remap
+    let n = 0; try { n = ((+(localStorage.getItem('tate') || 0)) + 1) % 3; localStorage.setItem('tate', String(n)); } catch { /* ok */ }
+    document.body.classList.toggle('tate', n === 1); document.body.classList.toggle('tate270', n === 2);
+  }
 });
 addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 

@@ -133,7 +133,7 @@ function openFlag() {
   pendingCards = []; pendingReplies = 0;
   $('flagMeta').textContent = `${s.section} · stageT ${s.stageT} · frame ${s.frame} · lives ${s.lives} · chain ${s.chain} · ${s.enemies.length} enemies / ${s.bullets} bullets`;
   $('status').textContent = '';
-  setTimeout(() => $('text').focus(), 30);
+  setTimeout(() => { $('flag').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); $('text').focus(); }, 30);
   uploadRecording('flag');
   pollReplies(true);
 }
@@ -172,6 +172,28 @@ async function pollReplies(now) {
   } catch { /* offline */ }
 }
 setInterval(() => pollReplies(), 1500);
+
+// r26: vertical-monitor layout — panel drops below the canvas, game fills the
+// width. Persisted per browser; also settable with ?vertical in the URL.
+function setLayout(vertical) {
+  document.body.classList.toggle('vertical', vertical);
+  $('layout').textContent = vertical ? 'Layout: vertical monitor · switch for side panel' : 'Layout: side panel · switch for vertical monitor';
+  try { localStorage.setItem('boothLayout', vertical ? 'vertical' : 'side'); } catch { /* private mode */ }
+}
+$('layout').onclick = () => setLayout(!document.body.classList.contains('vertical'));
+// TATE: rotate the game output for a physically rotated monitor (arcade
+// convention). Pure display transform — the stick isn't bolted to the
+// monitor, so pushing "up" is already physical-up: no input remap.
+const TATE = ['off', '90°', '270°'];
+function setTate(n) {
+  document.body.classList.toggle('tate', n === 1);
+  document.body.classList.toggle('tate270', n === 2);
+  $('tate').textContent = 'TATE: ' + TATE[n];
+  try { localStorage.setItem('boothTate', String(n)); } catch { /* private mode */ }
+}
+$('tate').onclick = () => setTate(((+(localStorage.getItem('boothTate') || 0)) + 1) % 3);
+try { setTate(new URLSearchParams(location.search).has('tate') ? 1 : +(localStorage.getItem('boothTate') || 0)); } catch { setTate(0); }
+try { setLayout(new URLSearchParams(location.search).has('vertical') || localStorage.getItem('boothLayout') === 'vertical'); } catch { setLayout(false); }
 
 $('send').onclick = () => sendNote(false);
 $('dunno').onclick = () => sendNote(true);

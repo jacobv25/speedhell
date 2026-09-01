@@ -849,3 +849,10 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   priority (the §4.3 option, now forced); (b) accept a red referee until the
   recert round; (c) revisit the hp (contradicts his verdict). The experiment
   stands as played; the referee question is now unavoidable. BUILD → r26.
+- 2026-09-01 — TATE mode (Jacob: rotate the game output for a physically
+  rotated monitor, "like most any other vertical shmup"): 90°/270° display
+  rotation in the real game (T key cycles, persisted) and the Booth (panel
+  button or ?tate). Pure display transform — the stick isn't bolted to the
+  monitor, so physical-up is already game-up: no input remap (arcade cabinets
+  rotate the monitor, not the stick). Booth also gained a portrait-desktop
+  layout toggle (panel below the canvas). Tooling only; core untouched.
