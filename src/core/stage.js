@@ -768,13 +768,22 @@ export function buildTimeline() {
   zakoGroup(120, -1, 6); zakoGroup(240, 1, 6);
   zakoGroup(420, -1, 7, { spd: 0.27 }); zakoGroup(420, 1, 7, { spd: 0.27 });
 
+  // r21 seam bridge (Booth session 1, flag 1: a 2.5-3s empty screen between the
+  // intro's last kill and the turrets becoming vulnerable — "the bummer part is
+  // this lull where I am waiting for the next wave", Bored). Bridge with
+  // popcorn, do NOT move the turrets: their arrival "really starts jamming"
+  // with the music and that beat is protected. DDP's grammar — popcorn is
+  // mortar between bricks; their own chain's one gap was "the scarcity of
+  // enemies at the mid boss point" (docs/research/canon-three-holes.md).
+  zakoGroup(560, 1, 5); zakoGroup(645, -1, 4);
+
   // S2 turret alley — alternating columns, popcorn layered (WS05 top-lane flow)
   for (let r = 0; r < 2; r++) {
     const base = 720 + r * 420;
     at(base, (g) => { spawnEnemy(g, 2, 60, -16); spawnEnemy(g, 2, 133, -40); });
     at(base + 120, (g) => { spawnEnemy(g, 2, W - 60, -16); spawnEnemy(g, 2, W - 133, -40); });
     zakoGroup(base + 180, r === 0 ? 1 : -1, 6, r === 1 ? { diver: true } : {});
-    crossers(base + 60, r === 0 ? 1 : -1, 5, 38); // r19: traffic through the turret columns' top band
+    crossers(base + 60, r === 0 ? 1 : -1, 5, 88); // r21 (Booth flag: "the top sides doesn't feel right"): mid-side entry at Garegga side-tank height — they cross the lane you fight the turrets from. Mid-gauntlet crossers keep y 44 for the Booth to compare.
   }
 
   // S3 mid gauntlet — sequenced sides suggest the route (never simultaneous)

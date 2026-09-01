@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-08-30 (r20 art pass + display contract §6.2, uncommitted; r10–r19 committed).
+Last updated: 2026-08-30 (r21 seam pass, uncommitted; r10–r20 committed).
 
 ---
 
@@ -765,3 +765,27 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   (adopt for the boss-art ramps), pattern-over-quantity density counterweight
   to the canon numbers (weigh in the D-pass shape decision), boss timer and
   overkill scoring candidates, save-wager refused (steal the stake shape only).
+- 2026-08-30 — r21 seam pass (Booth session 1 flags, playtest pending): (1) the
+  S1→S2 lull bridged with popcorn (5 at stageT 560, 4 at 645) — the turrets and
+  their music-lift arrival are byte-identical (first vulnerability frame 690 in
+  both builds); DDP grammar, "popcorn is mortar between bricks", and the felt
+  problem was two parts: an empty gap the caravan pull only partly compresses
+  plus ~1.4s of armored turret crawl — the bridge now overlaps both. Measured
+  (expert bot, "nothing shootable" seconds across the seam): total 1.62s →
+  0.83s, remaining = the crawl, now with live targets alongside. (2) Alley
+  crossers enter mid-side at y 88 (Garegga side-tank height) instead of the top
+  corner ("the top sides doesn't feel right"); mid-gauntlet crossers keep y 44
+  so the Booth can compare heights. **Referee vs r20 control: s6_alignment
+  recovered to GREEN (2.81 → 3.02) and s7_robust fully green for the first
+  time since r18 (both midboss timeouts gone, facade 0L → 2L); s5_deadair
+  expert max streak 1.1 → 0.8s; s7_pressure 38.0. s4_dynamic RED again (1.82 →
+  1.49, bar 1.6)** — this bar has now flipped on four consecutive passes with
+  every timeline change; recert question §8.1 is overdue. BUILD r20 → r21.
+  **Playtest verdict (Jacob, 2026-08-31):** "feels ok enough. definitely very
+  little lulls and downtime." r21 settled. His one report — "after killing the
+  boss his laser kept flying at me and killed me" — replayed (run5, frame 3092)
+  and decoded: not the boss (all phases were speed-killed and full-screen
+  cancelled); it was the S6 ELITE kill — r11's LOCAL cancel leaves the elite's
+  laned wall downfield, and the rep-2 turrets/risers fired after it died. Open
+  question for Jacob: keep as the r11 price, or widen the elite cancel to its
+  own bullets screen-wide.
