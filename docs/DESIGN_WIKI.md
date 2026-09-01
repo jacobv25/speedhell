@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-08-30 (r21 seam pass, uncommitted; r10–r20 committed).
+Last updated: 2026-08-31 (r22 flee telegraph; r10–r22 committed).
 
 ---
 
@@ -789,3 +789,16 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   laned wall downfield, and the rep-2 turrets/risers fired after it died. Open
   question for Jacob: keep as the r11 price, or widen the elite cancel to its
   own bullets screen-wide.
+- 2026-08-31 — r22 flee telegraph (Jacob's report, from an UNRECORDED run:
+  "after killing the boss his laser kept flying at me and killed me"). Code
+  audit: sub-parts die with the boss and a killed phase cancels full-screen —
+  the only path leaving lances behind a vanished boss is the P3 TIMEOUT, whose
+  despawn was silent and indistinguishable from a kill. The r6 scoring law is
+  untouched ("pays nothing, cancels nothing, leaves its bullets"); the flee is
+  now LEGIBLE: "FLED +0" popup + a fixed fan of departure streaks (spawnFx,
+  zero rng) on boss-phase and midboss timeouts. addPopup exported for it.
+  Referee: byte-identical to r21 across all four bots (scores/kills/deaths/
+  timeouts equal); red set unchanged {s4_dynamic}. Booth lesson reinforced:
+  the flag button exists because unrecorded memories decode slowly — the
+  recorded elite death (see r21 entry) was a different, real finding (elite
+  local-cancel question, still open). BUILD r21 → r22.

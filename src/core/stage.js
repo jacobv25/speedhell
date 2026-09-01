@@ -2,7 +2,7 @@
 // Design rules in play: chunks escalate, no encounter repeats >2 [BOGHOG_CRAFT],
 // top-lane flow / no simultaneous elites [WS05], bottom no-shoot band [WS04],
 // no breather after midboss (gate resumes immediately) [BOGHOG_CRAFT/T2].
-import { sfx, SFX, spawnEnemy, spawnItem, bulletCancelWall, spawnFx, FX, FAM, W, H } from './game.js';
+import { sfx, SFX, spawnEnemy, spawnItem, bulletCancelWall, spawnFx, FX, FAM, addPopup, W, H } from './game.js';
 import { aimedFan, ring, arcWall, spray, bendyStream, twinSpiral, lanceVolley, ledFan } from './patterns.js';
 
 // HP retuned r3 (playtest 2: "easier, not better"). The r2 halving made range
@@ -83,6 +83,14 @@ function sealed(g, e) {
   const dx = e.x - g.player.x, dy = e.y - g.player.y;
   return dx * dx + dy * dy < SEAL_R2;
 }
+// r22: a timed-out boss/midboss FLEES — it must not look like a kill. Popup +
+// a fixed fan of departure streaks via spawnFx. Deterministic: draws no rng.
+function fleeTelegraph(g, e) {
+  addPopup(g, e.x, e.y, 'FLED +0', 1);
+  for (let k = -2; k <= 2; k++) spawnFx(g, FX.SMOKE, e.x + k * 9, e.y + 4, k * 0.5, -2.6, 34, 4, FAM.WHITE);
+  for (let k = -1; k <= 1; k++) spawnFx(g, FX.SPARK, e.x + k * 6, e.y, k * 0.9, -3.4, 22, 2, FAM.CYAN);
+}
+
 function mayFire(g, e) {
   if (e.vulnAt < 0 || e.y <= 20) return false;
   if (e.type === 5 || e.type === 4) return true; // r19: the midboss is a boss — never sealed (r18 let a hugger mute its whole fight, bloom included)
@@ -312,6 +320,7 @@ export function updateEnemy(g, e) {
       // timeout: flees, no score, gate opens — the stage does not wait (S6, T2)
       if (e.vulnAt >= 0 && g.frame - e.vulnAt > MIDBOSS_TIMEOUT) {
         e.dead = 1; g.stats.timeouts++; g.stats.timeoutLog.push('midboss'); g.gate = null;
+        fleeTelegraph(g, e); // r22: a silent despawn read as a kill — announce the flee
       }
       break;
     }
@@ -682,6 +691,12 @@ export function updateBoss(g, e) {
   // per-phase timeout: advance without reward, bullets stay (no milking, S6)
   if (e.vulnAt >= 0 && g.frame - e.vulnAt > BOSS_PHASE_TIMEOUT) {
     g.stats.timeouts++; g.stats.timeoutLog.push('boss-p' + (e.phase + 1));
+    fleeTelegraph(g, e); // r22 (Booth report: "after killing the boss his laser
+    // kept flying at me and killed me" — an unrecorded run's P3 TIMED OUT and
+    // the silent despawn read as a kill, leaving the lances as a betrayal).
+    // The scoring law is untouched: pays nothing, cancels nothing. The flee is
+    // now LEGIBLE: popup + deterministic departure fx, zero rng, zero gameplay
+    // delta — referee byte-identical.
     advanceBossPhase(g, e, false);
   }
 }

@@ -110,7 +110,7 @@ export function startRun(g) {
   return g;
 }
 
-function addPopup(g, x, y, text, big = 0) {
+export function addPopup(g, x, y, text, big = 0) { // exported r22: stage.js flee telegraph
   const p = g.popups.spawn(); if (!p) return;
   // De-conflict at spawn (r5 S6-legibility): no two live popups may share a
   // baseline. Keep on-field, below the HUD block, and nudge down 14px past any
