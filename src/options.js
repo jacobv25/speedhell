@@ -14,7 +14,7 @@ const store = {
 // Rebindable: the three gameplay buttons. Movement (arrows/WASD) and the
 // system keys (R/P/M/T/Esc) stay fixed — they're listed in the panel.
 const DEFAULT_BINDS = { fire: ['z', ' '], focus: ['shift'], bomb: ['x'] };
-const RESERVED = new Set(['r', 'p', 'm', 't', 'escape', 'enter', 'tab',
+const RESERVED = new Set(['r', 'p', 'm', 't', 'h', 'escape', 'enter', 'tab',
   'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd']);
 let bindMap = loadBinds();
 function loadBinds() {

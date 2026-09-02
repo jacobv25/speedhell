@@ -35,11 +35,37 @@
   #optsPanel .btn:hover { border-color: #ff4fa3; }
   #optsPanel .keys { border-top: 1px solid #1a2038; margin-top: 12px; padding-top: 6px; }
   #optsPanel .note { margin-top: 10px; font-size: 10px; color: #5a6480; }
+  /* r35 how-to card */
+  #howto { position: fixed; inset: 0; background: rgba(5,6,10,.86); display: grid;
+           place-items: center; z-index: 11; }
+  #howto.hide { display: none; }
+  #howtoCard { width: min(430px, 94vw); padding: 18px 22px; background: #0a0c14;
+               border: 1px solid #2a3050; box-shadow: 0 0 40px rgba(55,214,224,.15);
+               font: 12px monospace; color: #c8cde4; }
+  #howtoCard h1 { margin: 0 0 12px; font: bold 14px monospace; letter-spacing: .25em; color: #37d6e0; }
+  #howtoCard .hrow { display: flex; align-items: center; gap: 14px; margin: 12px 0; }
+  #howtoCard canvas { width: 96px; height: 96px; flex: none; background: #05060a; border: 1px solid #1a2038; image-rendering: pixelated; }
+  #howtoCard b { color: #ff4fa3; }
+  #howtoCard .speed { color: #ffd24a; font-weight: bold; }
+  #howtoCard .note { margin-top: 10px; font-size: 10px; color: #5a6480; text-align: center; }
 </style>
 </head>
 <body>
 <canvas id="game"></canvas>
 <footer>SPEEDHELL — <span id="controls">arrows/WASD move · Z/space shot · shift focus · X bomb · R restart · P pause · M mute · T rotate · ESC/Enter options</span></footer>
+<div id="howto" class="hide">
+  <div id="howtoCard">
+    <h1>HOW TO PLAY</h1>
+    <div class="hrow"><canvas id="howtoShip" width="96" height="96"></canvas>
+      <div>You are the <b>dot</b>. The ship is decoration — only the bright dot can be hit. Focus slows you for threading.</div></div>
+    <div class="hrow"><canvas id="howtoBullet" width="96" height="96"></canvas>
+      <div>Only the <b>white core</b> of a bullet kills. Rings and rims are graze — if the white never touched your dot, you're alive.</div></div>
+    <div class="hrow"><div class="speed" style="width:96px;flex:none;text-align:center;font-size:15px">SPEED</div>
+      <div>Every enemy runs a stopwatch. Kill it fast → <span class="speed">SPEED</span>: double points, chain +1. Slow kills pay base and break the chain. That's the whole scoring system.</div></div>
+    <div class="note" id="howtoKeys">arrows/WASD move · Z/space shot · shift focus · X bomb</div>
+    <div class="note"><button id="howtoClose" class="btn" style="width:100%">got it — Z / Enter</button></div>
+  </div>
+</div>
 <div id="opts" class="hide">
   <div id="optsPanel">
     <h1>OPTIONS</h1>

@@ -485,7 +485,7 @@ function drawHud(ctx, g) {
 
   ctx.textAlign = 'center';
   if (g.state === 'title') {
-    banner(ctx, 'SPEEDHELL', ['PRESS ENTER', 'Z/SPACE shot · SHIFT focus · X bomb']);
+    banner(ctx, 'SPEEDHELL', ['PRESS ENTER', 'Z/SPACE shot · SHIFT focus · X bomb', 'H how to play · ESC options']); // r35
   } else if (g.state === 'gameover') {
     banner(ctx, 'GAME OVER', ['SCORE ' + g.score + ' · SPEED ' + g.speedKills + '/' + g.kills, 'R to retry']);
   } else if (g.state === 'clear') {

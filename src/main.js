@@ -4,6 +4,7 @@ import { draw, resetHud } from './render/renderer.js';
 import * as audio from './audio.js';
 import { BUILD } from './version.js';
 import { initOptions, isOpen as optionsOpen, binds, isBoundKey, cycleTate } from './options.js';
+import { initHowTo, isHowToOpen, openHowTo } from './howto.js';
 
 // build tag pinned bottom-right, its own element — never pushed off-screen by
 // the controls line on narrow windows; confirms which build the browser loaded
@@ -16,6 +17,7 @@ const ctx = canvas.getContext('2d');
 
 let g = makeGame((Math.random() * 0xffffffff) >>> 0);
 let paused = false, bgScroll = 0;
+initHowTo(); // r35: one-card briefing, auto once ever (registered first so it wins the capture phase)
 initOptions({ isPaused: () => paused, isTitle: () => g.state === 'title' }); // persisted TATE + Esc/Enter menu (r34: Enter works in Safari fullscreen)
 
 function beginRun() { // every run-start path: new seed handled by callers
@@ -24,7 +26,7 @@ function beginRun() { // every run-start path: new seed handled by callers
 
 const keys = {};
 addEventListener('keydown', (e) => {
-  if (optionsOpen()) return; // menu owns the keyboard (options.js capture listener)
+  if (optionsOpen() || isHowToOpen()) return; // an overlay owns the keyboard
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key) || isBoundKey(e.key.toLowerCase())) e.preventDefault();
   keys[e.key.toLowerCase()] = true;
   audio.unlock(); // any key is the user gesture the AudioContext needs
@@ -35,6 +37,7 @@ addEventListener('keydown', (e) => {
   if (e.key.toLowerCase() === 'p') { paused = !paused; audio.pauseMusic(paused); }
   if (e.key.toLowerCase() === 'm') audio.toggleMute();
   if (e.key.toLowerCase() === 't') cycleTate(); // TATE: display-only rotation (options.js owns the state)
+  if (e.key.toLowerCase() === 'h' && g.state !== 'play') openHowTo(); // r35: the card never interrupts play
 });
 addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 

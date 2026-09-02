@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-02 (r34: Enter toggles the options menu — the fullscreen-proof key. Reds = midboss bot-priority question only).
+Last updated: 2026-09-02 (r35: one-card HOW TO briefing — display contract + speed-kill rule. Reds = midboss bot-priority question only).
 
 ---
 
@@ -957,3 +957,17 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   options.js stays state-blind). Menu + footer copy updated (ESC/Enter); when
   fullscreen without keyboard-lock the menu itself explains "Esc leaves
   fullscreen — Enter toggles this menu". BUILD r33 → r34.
+- 2026-09-02 — r35 onboarding: one-card HOW TO briefing (polish queue item 2).
+  Corpus shape: MSX legacy-skill forbids re-teaching the genre (no dodge/shoot
+  tutorial, nothing forced — a forced tutorial is beginner bias);
+  HOMAGE_STUDY's "one-card boss briefing at run start (Psikyo#9)" sanctions the
+  one-card form; Pillar 3 / WS05 leave deep teaching to game-overs and (later)
+  the receipt. The card teaches ONLY the two SPEEDHELL-specific truths: the
+  display contract (§6.2 — you are the 6px dot; only the white bullet core
+  kills; the card's canvases mirror the r20 renderer art pixel-for-pixel so it
+  can never lie about the contract) and the speed-kill rule (§2.1 — stopwatch,
+  SPEED = double + chain, binary). Live keybinds rendered from options state.
+  Auto-shows ONCE ever (localStorage), dismiss = shot key/Enter/Esc/click;
+  afterwards H from the title (H reserved from rebinding; never opens during
+  play). Title banner gains "H how to play · ESC options". New browser-only
+  src/howto.js; core/Booth/referee untouched. BUILD r34 → r35.
