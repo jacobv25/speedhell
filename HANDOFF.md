@@ -59,6 +59,8 @@ first — they are the deep record; this file is the quick resume.*
    select (playerize the sandbox stage-jump) → local hi-score table + results
    "receipt" screen (homage L4) → `SPEED +1600` popup (wiki §2.6) → named
    boss patterns (ZUN/Undertale trick) → boss art to families (§8.11) →
+   title/menu music (parked r32: title screen is silent today — asset +
+   direction decision, pairs with the attract-mode/title pass) →
    audio pass → cross-browser/perf pass → itch packaging.
 3. **Mark/boghog consult handout ready:** wiki §6.2 + §8, docs/research/, the
    canon-three-holes HTML page, plus decisions 1 above, elite-cancel width

@@ -116,9 +116,21 @@ export function duckMusic(v, secs = 0.3) { if (ac && current) fadeTo(tracks[curr
 // Pause = silence: the element pauses in place and resumes from the same spot.
 export function pauseMusic(on) {
   if (!ac || !current) return;
+  clearTimeout(burstT); // an explicit pause/resume always outlives a live burst
   const t = tracks[current];
   if (on) t.el.pause();
   else { const p = t.el.play(); if (p && p.catch) p.catch(() => {}); }
+}
+// r32: options-menu feedback — the menu pauses music (arcade pause = silence),
+// so the music slider speaks by playing ~1.5s of the current track from where
+// it sits, at the new volume, then re-pausing. Mirrors the sfx release-blip.
+let burstT = 0;
+export function musicBurst(ms = 1500) {
+  if (!ac || !current) return;
+  const t = tracks[current];
+  const p = t.el.play(); if (p && p.catch) p.catch(() => {});
+  clearTimeout(burstT);
+  burstT = setTimeout(() => t.el.pause(), ms);
 }
 
 // ---------- procedural SFX ----------

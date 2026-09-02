@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-02 (r31: sfx slider blips on release. Reds = midboss bot-priority question only).
+Last updated: 2026-09-02 (r32: menu pauses music; music slider bursts on release. Reds = midboss bot-priority question only).
 
 ---
 
@@ -930,3 +930,14 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   button; verdict: release-blip — cause/effect stays glued to the gesture, no
   extra panel row, re-tapping the handle is an implicit test button). Music
   needs neither: it plays continuously under the menu. BUILD r30 → r31.
+- 2026-09-02 — r32: the options menu pauses music again (Jacob: "I can't
+  think of a shmup that continues the in-game music in the options menu" —
+  correct, mid-run pause = silence is the arcade convention; r30's
+  keep-playing was a wrong trade for slider feedback). The music slider now
+  speaks like the sfx one: on release it plays ~1.5s of the CURRENT track from
+  where it sits at the new volume, then re-pauses (audio.musicBurst; an
+  explicit pause/resume always cancels a live burst so closing the menu
+  mid-burst can never pause music in-game). Menu close still respects an
+  existing P-pause. Jacob's alternative — dedicated options-menu music — was
+  parked as a title-screen item (title is currently silent; new asset + music
+  direction decision), added to the HANDOFF polish queue. BUILD r31 → r32.

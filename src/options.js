@@ -40,14 +40,15 @@ export function cycleTate() { const n = (tateN() + 1) % 3; applyTate(n); refresh
 
 // ---------------------------------------------------------------- menu
 const $ = (id) => document.getElementById(id);
-let open = false, capturing = null, escLocked = false;
+let open = false, capturing = null, escLocked = false, isPausedFn = () => false;
 export function isOpen() { return open; }
 
 function setOpen(v) {
   open = v; capturing = null;
   $('opts').classList.toggle('hide', !open);
-  // r30: music keeps playing under the menu — the sliders need to be audible
-  if (open) { audio.unlock(); refresh(); }
+  // r32: pause = silence (arcade convention); sliders speak on release instead
+  if (open) { audio.unlock(); audio.pauseMusic(true); refresh(); }
+  else if (!isPausedFn()) audio.pauseMusic(false); // stay silent if P-paused
 }
 
 function refresh() {
@@ -65,10 +66,12 @@ function refresh() {
     `arrows/WASD move · ${actLabel('fire')} shot · ${actLabel('focus')} focus · ${actLabel('bomb')} bomb · R restart · P pause · M mute · T rotate · ESC options`;
 }
 
-export function initOptions() {
+export function initOptions({ isPaused } = {}) {
+  if (isPaused) isPausedFn = isPaused;
   applyTate(tateN());
 
   $('optMusic').addEventListener('input', (e) => { audio.setMusicVolume(e.target.value / 100); refresh(); });
+  $('optMusic').addEventListener('change', () => audio.musicBurst()); // r32: ~1.5s of the current track at the new volume, then silence again
   $('optSfx').addEventListener('input', (e) => { audio.setSfxVolume(e.target.value / 100); refresh(); });
   $('optSfx').addEventListener('change', () => audio.sfxTest()); // r31: one blip at the final value, on release
   $('optMute').onclick = () => { audio.toggleMute(); refresh(); };

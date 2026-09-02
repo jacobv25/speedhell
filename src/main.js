@@ -16,7 +16,7 @@ const ctx = canvas.getContext('2d');
 
 let g = makeGame((Math.random() * 0xffffffff) >>> 0);
 let paused = false, bgScroll = 0;
-initOptions(); // applies persisted TATE, wires the Esc menu (r29; r30 music keeps playing under it)
+initOptions({ isPaused: () => paused }); // persisted TATE + Esc menu; r32: menu pauses music, close respects P-pause
 
 function beginRun() { // every run-start path: new seed handled by callers
   audio.unlock(); startRun(g); resetHud(); audio.playMusic('stage');
