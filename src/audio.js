@@ -118,13 +118,18 @@ export function pauseMusic(on) {
   if (!ac || !current) return;
   clearTimeout(burstT); // an explicit pause/resume always outlives a live burst
   const t = tracks[current];
-  if (on) t.el.pause();
-  else { const p = t.el.play(); if (p && p.catch) p.catch(() => {}); }
+  if (on) { pausedAt = t.el.currentTime; t.el.pause(); } // bookmark the run's position
+  else {
+    // r33: bursts play the SAME element forward, so restore the bookmark —
+    // slider auditions must never move where the run's music resumes.
+    if (pausedAt >= 0) { try { t.el.currentTime = pausedAt; } catch (_) { /* not seekable yet */ } pausedAt = -1; }
+    const p = t.el.play(); if (p && p.catch) p.catch(() => {});
+  }
 }
 // r32: options-menu feedback — the menu pauses music (arcade pause = silence),
 // so the music slider speaks by playing ~1.5s of the current track from where
 // it sits, at the new volume, then re-pausing. Mirrors the sfx release-blip.
-let burstT = 0;
+let burstT = 0, pausedAt = -1;
 export function musicBurst(ms = 1500) {
   if (!ac || !current) return;
   const t = tracks[current];

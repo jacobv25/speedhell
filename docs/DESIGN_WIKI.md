@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-02 (r32: menu pauses music; music slider bursts on release. Reds = midboss bot-priority question only).
+Last updated: 2026-09-02 (r33: slider bursts no longer advance the run's music position. Reds = midboss bot-priority question only).
 
 ---
 
@@ -941,3 +941,10 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   existing P-pause. Jacob's alternative — dedicated options-menu music — was
   parked as a title-screen item (title is currently silent; new asset + music
   direction decision), added to the HANDOFF polish queue. BUILD r31 → r32.
+- 2026-09-02 — r33: burst position fix (Jacob's catch: burst at 1:00, fiddle
+  for 10s, close menu → music resumed at 1:10, not 1:00 — the burst plays the
+  same element forward). pauseMusic(true) now bookmarks currentTime; resume
+  seeks back to the bookmark before playing, so slider auditions can wander
+  without moving where the run's music picks up. Works under P-pause + menu
+  combinations (the bookmark is taken at first pause, restored at the real
+  resume). BUILD r32 → r33.
