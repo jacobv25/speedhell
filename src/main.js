@@ -30,10 +30,15 @@ const SECTIONS = [
 ];
 let sectionSel = 0;
 initHowTo(); // r35: one-card briefing, auto once ever (registered first so it wins the capture phase)
-initOptions({ isPaused: () => paused, isTitle: () => g.state === 'title' }); // persisted TATE + Esc/Enter menu (r34: Enter works in Safari fullscreen)
+initOptions({ isPaused: () => paused, isTitle: () => g.state === 'title', onQuit: () => quitToTitle() }); // persisted TATE + Esc/Enter menu (r34: Enter works in Safari fullscreen)
 
 function beginRun() { // every run-start path: new seed handled by callers
   audio.unlock(); startRun(g, SECTIONS[sectionSel].t); resetHud(); audio.playMusic('stage');
+}
+
+function quitToTitle() { // r37: the way OUT of practice (and any run) — back to the picker
+  g = makeGame((Math.random() * 0xffffffff) >>> 0);
+  audio.stopMusic(0.4);
 }
 
 const keys = {};
@@ -48,6 +53,7 @@ addEventListener('keydown', (e) => {
   if (e.key.toLowerCase() === 'r' && (g.state === 'gameover' || g.state === 'clear' || g.state === 'play')) {
     g.seed = (Math.random() * 0xffffffff) >>> 0; beginRun(); // restart <2s (S7)
   }
+  if (e.key.toLowerCase() === 'q' && (g.state === 'gameover' || g.state === 'clear')) quitToTitle(); // r37
   if (e.key.toLowerCase() === 'p') { paused = !paused; audio.pauseMusic(paused); }
   if (e.key.toLowerCase() === 'm') audio.toggleMute();
   if (e.key.toLowerCase() === 't') cycleTate(); // TATE: display-only rotation (options.js owns the state)

@@ -14,7 +14,7 @@ const store = {
 // Rebindable: the three gameplay buttons. Movement (arrows/WASD) and the
 // system keys (R/P/M/T/Esc) stay fixed — they're listed in the panel.
 const DEFAULT_BINDS = { fire: ['z', ' '], focus: ['shift'], bomb: ['x'] };
-const RESERVED = new Set(['r', 'p', 'm', 't', 'h', 'escape', 'enter', 'tab',
+const RESERVED = new Set(['r', 'p', 'm', 't', 'h', 'q', 'escape', 'enter', 'tab',
   'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd']);
 let bindMap = loadBinds();
 function loadBinds() {
@@ -67,9 +67,10 @@ function refresh() {
     `arrows/WASD move · ${actLabel('fire')} shot · ${actLabel('focus')} focus · ${actLabel('bomb')} bomb · R restart · P pause · M mute · T rotate · ESC/Enter options`;
 }
 
-export function initOptions({ isPaused, isTitle } = {}) {
+export function initOptions({ isPaused, isTitle, onQuit } = {}) {
   if (isPaused) isPausedFn = isPaused;
   if (isTitle) isTitleFn = isTitle;
+  if (onQuit) $('optQuit').onclick = () => { setOpen(false); onQuit(); }; // r37: exit practice / any run
   applyTate(tateN());
 
   $('optMusic').addEventListener('input', (e) => { audio.setMusicVolume(e.target.value / 100); refresh(); });

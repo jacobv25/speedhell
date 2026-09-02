@@ -493,9 +493,9 @@ function drawHud(ctx, g) {
   if (g.state === 'title') {
     banner(ctx, 'SPEEDHELL', ['PRESS ENTER', 'Z/SPACE shot · SHIFT focus · X bomb', 'H how to play · ESC options']); // r35
   } else if (g.state === 'gameover') {
-    banner(ctx, 'GAME OVER', ['SCORE ' + g.score + ' · SPEED ' + g.speedKills + '/' + g.kills, 'R to retry']);
+    banner(ctx, 'GAME OVER', ['SCORE ' + g.score + ' · SPEED ' + g.speedKills + '/' + g.kills, 'R retry · Q title']); // r37
   } else if (g.state === 'clear') {
-    banner(ctx, 'STAGE CLEAR', ['SCORE ' + g.score + ' (STOCK +' + g.clearBonus + ')', 'SPEED ' + g.speedKills + '/' + g.kills + ' · R to retry']);
+    banner(ctx, 'STAGE CLEAR', ['SCORE ' + g.score + ' (STOCK +' + g.clearBonus + ')', 'SPEED ' + g.speedKills + '/' + g.kills + ' · R retry · Q title']); // r37
   }
 }
 

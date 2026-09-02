@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-02 (r36: practice/section select on the title. Reds = midboss bot-priority question only).
+Last updated: 2026-09-02 (r37: quit-to-title — the way out of practice. Reds = midboss bot-priority question only).
 
 ---
 
@@ -992,3 +992,10 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   MATCH tape still replays byte-perfect). Practice starts with fresh
   lives/bombs (drill convention). Music starts on the stage track; the boss
   WARNING swap works as in a full run. BUILD r35 → r36.
+- 2026-09-02 — r37: quit-to-title (Jacob: "how do I exit practice mode?" —
+  r36 shipped without a way back to the picker). Options menu gains a
+  "quit to title" row (works mid-run, deliberate two-step so a full run can't
+  be lost to one stray key); Q on the gameover/clear screens jumps straight to
+  the title; end-screen banners read "R retry · Q title"; q reserved from
+  rebinding. quitToTitle() re-rolls a fresh seed and fades the music. BUILD
+  r36 → r37.
