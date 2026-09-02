@@ -40,7 +40,7 @@ export function cycleTate() { const n = (tateN() + 1) % 3; applyTate(n); refresh
 
 // ---------------------------------------------------------------- menu
 const $ = (id) => document.getElementById(id);
-let open = false, capturing = null, escLocked = false, lastBlip = 0;
+let open = false, capturing = null, escLocked = false;
 export function isOpen() { return open; }
 
 function setOpen(v) {
@@ -69,11 +69,8 @@ export function initOptions() {
   applyTate(tateN());
 
   $('optMusic').addEventListener('input', (e) => { audio.setMusicVolume(e.target.value / 100); refresh(); });
-  $('optSfx').addEventListener('input', (e) => {
-    audio.setSfxVolume(e.target.value / 100);
-    const n = performance.now(); if (n - lastBlip > 150) { lastBlip = n; audio.sfxTest(); } // r30: audible feedback
-    refresh();
-  });
+  $('optSfx').addEventListener('input', (e) => { audio.setSfxVolume(e.target.value / 100); refresh(); });
+  $('optSfx').addEventListener('change', () => audio.sfxTest()); // r31: one blip at the final value, on release
   $('optMute').onclick = () => { audio.toggleMute(); refresh(); };
   $('optTate').onclick = () => cycleTate();
   // r30: in fullscreen the browser owns Esc (it exits fullscreen). Where the

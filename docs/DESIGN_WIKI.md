@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-02 (r30: options menu playtest fixes — music volume Safari-proofed onto element volume. Reds = midboss bot-priority question only).
+Last updated: 2026-09-02 (r31: sfx slider blips on release. Reds = midboss bot-priority question only).
 
 ---
 
@@ -925,3 +925,8 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   (Chrome/Edge: Esc works in fullscreen), elsewhere the first Esc exits
   fullscreen and the menu stays put. Browser-only files (audio.js, options.js,
   main.js call site); core/Booth/referee untouched. BUILD r29 → r30.
+- 2026-09-02 — r31: sfx slider feedback moved from throttled blips-while-
+  dragging to ONE blip at the final value on release (Jacob weighed a TEST
+  button; verdict: release-blip — cause/effect stays glued to the gesture, no
+  extra panel row, re-tapping the handle is an implicit test button). Music
+  needs neither: it plays continuously under the menu. BUILD r30 → r31.
