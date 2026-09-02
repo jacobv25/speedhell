@@ -15,7 +15,7 @@ const MUSIC = {
 };
 const MUSIC_VOL = 0.55, SFX_VOL = 0.5;
 
-let ac = null, master = null, sfxBus = null, musicBus = null, noiseBuf = null;
+let ac = null, master = null, sfxBus = null, noiseBuf = null;
 let muted = false;
 try { muted = localStorage.getItem('speedhell.muted') === '1'; } catch (_) {}
 
@@ -30,7 +30,7 @@ export function getSfxVolume() { return sfxVol; }
 export function setMusicVolume(v) {
   musicVol = clamp01(v);
   try { localStorage.setItem('speedhell.vol.music', String(musicVol)); } catch (_) {}
-  if (musicBus) musicBus.gain.setTargetAtTime(MUSIC_VOL * musicVol, ac.currentTime, 0.02);
+  applyMusicVolumes(); // instant — element volume, works everywhere incl. Safari
 }
 export function setSfxVolume(v) {
   sfxVol = clamp01(v);
@@ -38,7 +38,7 @@ export function setSfxVolume(v) {
   if (sfxBus) sfxBus.gain.setTargetAtTime(SFX_VOL * sfxVol, ac.currentTime, 0.02);
 }
 
-const tracks = {}; // name -> { el, node, gain }
+const tracks = {}; // name -> { el, level (current 0..1), target, tc (fade time-constant) }
 let current = null; // name of the playing track
 
 // AudioContext can only start from a user gesture; call from keydown/gamepad.
@@ -53,32 +53,46 @@ export function unlock() {
   comp.threshold.value = -12; comp.ratio.value = 6; comp.attack.value = 0.003; comp.release.value = 0.12;
   comp.connect(master);
   sfxBus = ac.createGain(); sfxBus.gain.value = SFX_VOL * sfxVol; sfxBus.connect(comp);
-  musicBus = ac.createGain(); musicBus.gain.value = MUSIC_VOL * musicVol; musicBus.connect(master);
   noiseBuf = ac.createBuffer(1, ac.sampleRate * 1, ac.sampleRate);
   const d = noiseBuf.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
   for (const k in MUSIC) {
-    const el = new Audio(MUSIC[k].src); el.preload = 'auto';
+    const el = new Audio(MUSIC[k].src); el.preload = 'auto'; el.volume = 0;
     // manual loop so the re-entry lands on the section, not the intro
     el.addEventListener('ended', () => { if (current === k) { el.currentTime = MUSIC[k].loopTo; el.play().catch(() => {}); } });
-    const node = ac.createMediaElementSource(el);
-    const gain = ac.createGain(); gain.gain.value = 0;
-    node.connect(gain); gain.connect(musicBus);
-    tracks[k] = { el, node, gain };
+    tracks[k] = { el, level: 0, target: 0, tc: 0.2 };
   }
+  setInterval(musicTick, 50);
 }
 export function ready() { return !!ac; }
 
 export function toggleMute() {
   muted = !muted;
   try { localStorage.setItem('speedhell.muted', muted ? '1' : '0'); } catch (_) {}
-  if (master) master.gain.setTargetAtTime(muted ? 0 : 1, ac.currentTime, 0.02);
+  if (master) master.gain.setTargetAtTime(muted ? 0 : 1, ac.currentTime, 0.02); // sfx
+  applyMusicVolumes(); // music (element volume)
   return muted;
 }
 export function isMuted() { return muted; }
 
 // ---------- music ----------
-function fadeTo(t, v, secs) { t.gain.gain.cancelScheduledValues(ac.currentTime); t.gain.gain.setTargetAtTime(v, ac.currentTime, secs / 3); }
+// r30: music volume rides HTMLMediaElement.volume, NOT a MediaElementSource
+// gain — Safari can leave a MediaElementSource-wired element playing straight
+// to the speakers, which made mute and the music slider silent no-ops in the
+// r29 playtest (sfx, pure WebAudio, was fine). A 50ms ticker eases each
+// track's level toward its target (crossfades, ducks); element volume is
+// always level x tuned mix x user slider x mute.
+const musicBase = () => (muted ? 0 : MUSIC_VOL * musicVol);
+function applyMusicVolumes() { for (const k in tracks) { const t = tracks[k]; t.el.volume = Math.min(1, musicBase() * t.level); } }
+function musicTick() {
+  for (const k in tracks) {
+    const t = tracks[k];
+    t.level += (t.target - t.level) * (1 - Math.exp(-0.05 / t.tc));
+    if (Math.abs(t.target - t.level) < 0.001) t.level = t.target;
+  }
+  applyMusicVolumes();
+}
+function fadeTo(t, v, secs) { t.target = v; t.tc = Math.max(0.02, secs / 3); }
 
 export function playMusic(name, { restart = true, fade = 0.6 } = {}) {
   if (!ac) return;
@@ -130,6 +144,7 @@ function explosion(size) { // size 1 = popcorn, 2 = elite, 3 = boss phase
   osc('sine', 160 * size, 30, 0.22 * size, 0.7);
   if (size >= 2) { osc('square', 90, 25, 0.35, 0.25); noise(0.5 * size, 0.35, { t0: 0.04, lp: 900, lpEnd: 60 }); }
 }
+export function sfxTest() { if (ac) explosion(1); } // r30: audible feedback for the options sfx slider
 function arp(notes, step, dur, type = 'square', vol = 0.25) { notes.forEach((f, i) => osc(type, f, f, dur, vol, { t0: i * step })); }
 
 let shotTick = 0;

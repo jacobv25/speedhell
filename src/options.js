@@ -40,14 +40,14 @@ export function cycleTate() { const n = (tateN() + 1) % 3; applyTate(n); refresh
 
 // ---------------------------------------------------------------- menu
 const $ = (id) => document.getElementById(id);
-let open = false, capturing = null, isPausedFn = () => false;
+let open = false, capturing = null, escLocked = false, lastBlip = 0;
 export function isOpen() { return open; }
 
 function setOpen(v) {
   open = v; capturing = null;
   $('opts').classList.toggle('hide', !open);
-  if (open) { audio.unlock(); audio.pauseMusic(true); refresh(); }
-  else if (!isPausedFn()) audio.pauseMusic(false); // stay silent if P-paused
+  // r30: music keeps playing under the menu — the sliders need to be audible
+  if (open) { audio.unlock(); refresh(); }
 }
 
 function refresh() {
@@ -65,19 +65,30 @@ function refresh() {
     `arrows/WASD move · ${actLabel('fire')} shot · ${actLabel('focus')} focus · ${actLabel('bomb')} bomb · R restart · P pause · M mute · T rotate · ESC options`;
 }
 
-export function initOptions({ isPaused } = {}) {
-  if (isPaused) isPausedFn = isPaused;
+export function initOptions() {
   applyTate(tateN());
 
   $('optMusic').addEventListener('input', (e) => { audio.setMusicVolume(e.target.value / 100); refresh(); });
-  $('optSfx').addEventListener('input', (e) => { audio.setSfxVolume(e.target.value / 100); refresh(); });
+  $('optSfx').addEventListener('input', (e) => {
+    audio.setSfxVolume(e.target.value / 100);
+    const n = performance.now(); if (n - lastBlip > 150) { lastBlip = n; audio.sfxTest(); } // r30: audible feedback
+    refresh();
+  });
   $('optMute').onclick = () => { audio.toggleMute(); refresh(); };
   $('optTate').onclick = () => cycleTate();
+  // r30: in fullscreen the browser owns Esc (it exits fullscreen). Where the
+  // Keyboard Lock API exists (Chrome/Edge) we lock Esc so the menu keeps
+  // working inside fullscreen; elsewhere (Safari/Firefox) the first Esc drops
+  // fullscreen and the menu simply stays as it was — press Esc again for it.
+  const lockEsc = async () => { try { if (navigator.keyboard && navigator.keyboard.lock) { await navigator.keyboard.lock(['Escape']); escLocked = true; } } catch { escLocked = false; } };
   $('optFull').onclick = () => {
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-    else document.documentElement.requestFullscreen().catch(() => {});
+    else document.documentElement.requestFullscreen().then(lockEsc).catch(() => {});
   };
-  document.addEventListener('fullscreenchange', refresh);
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement) { escLocked = false; try { navigator.keyboard && navigator.keyboard.unlock && navigator.keyboard.unlock(); } catch { /* ok */ } }
+    refresh();
+  });
   for (const b of document.querySelectorAll('.bind'))
     b.onclick = () => { capturing = capturing === b.dataset.act ? null : b.dataset.act; $('optMsg').textContent = capturing ? 'press the new key — Esc cancels' : 'Esc closes · settings save automatically'; refresh(); };
   $('optReset').onclick = () => { bindMap = structuredClone(DEFAULT_BINDS); saveBinds(); refresh(); };
@@ -99,7 +110,11 @@ export function initOptions({ isPaused } = {}) {
       $('optMsg').textContent = 'Esc closes · settings save automatically';
       refresh(); return;
     }
-    if (e.key === 'Escape') { e.preventDefault(); setOpen(!open); }
+    if (open && e.key.toLowerCase() === 'm') { audio.toggleMute(); refresh(); return; } // mute reachable inside the menu
+    if (e.key === 'Escape') {
+      if (document.fullscreenElement && !escLocked) return; // this Esc exits fullscreen (browser); menu untouched
+      e.preventDefault(); setOpen(!open);
+    }
   }, true);
 
   refresh();

@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-01 (r29: polish phase opens — options menu shipped. Reds = midboss bot-priority question only).
+Last updated: 2026-09-02 (r30: options menu playtest fixes — music volume Safari-proofed onto element volume. Reds = midboss bot-priority question only).
 
 ---
 
@@ -909,3 +909,19 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   untouched. Shell UI, not a design change — no scoring/behavior/timeline
   delta; corpus note: menu adds no automation of play (fire stays held, not
   toggled — BOGHOG_CRAFT stands). BUILD r28 → r29.
+- 2026-09-02 — r30 options menu playtest fixes (Jacob's r29 report: music
+  slider dead, mute dead, Esc-in-fullscreen drops fullscreen). ROOT CAUSE of
+  the first two, one bug: music ran through createMediaElementSource → gain →
+  master, and Safari (Jacob's browser — the reason the no-store server exists)
+  can leave such an element playing STRAIGHT to the speakers, bypassing the
+  whole WebAudio graph: music slider and mute (master gain) were silent no-ops
+  while the sfx slider (pure WebAudio) worked. Fix: music volume now rides
+  HTMLMediaElement.volume (level × tuned mix × slider × mute; 50ms ticker eases
+  crossfades/ducks) — no MediaElementSource at all, which also makes the boss
+  crossfade and death-duck real on Safari for the first time. Also: music keeps
+  playing under the open menu so the slider is audible (menu no longer pauses
+  it), sfx slider plays a throttled test blip, M toggles mute inside the menu,
+  and fullscreen Esc is handled — Keyboard Lock API where available
+  (Chrome/Edge: Esc works in fullscreen), elsewhere the first Esc exits
+  fullscreen and the menu stays put. Browser-only files (audio.js, options.js,
+  main.js call site); core/Booth/referee untouched. BUILD r29 → r30.
