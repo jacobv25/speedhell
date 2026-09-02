@@ -368,6 +368,12 @@ either exactly true or errs in the player's favour, never against:
 
 ![display contract](img/r20-display-contract.png)
 
+> **Sync rule (r35):** the HOW TO card (`src/howto.js`) hand-mirrors the ship
+> and bullet art to teach this contract. Any player-ship or bullet redesign
+> must update the card in the same commit — matching ⚠ notes sit on both
+> renderer art blocks. (Jacob, 2026-09-02: visual redesigns expected before
+> release.)
+
 - **The ship's dot is drawn at 6px — the full effective kill radius** (your 3 +
   the bullet's 3, foldable because bullet radius is uniform). Rule: *a bullet's
   centre touching your dot is a hit.* No smaller mark exists inside it. This

@@ -26,6 +26,11 @@ function closeHowTo() { open = false; markSeen(); $('howto').classList.add('hide
 
 function poly(ctx, pts) { ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.closePath(); ctx.fill(); }
 
+// ⚠ KEEP IN SYNC: these two draw functions are hand-copied from
+// src/render/renderer.js (drawPlayer + the enemy-bullet block). Jacob expects
+// ship/bullet redesigns before release — when the renderer art changes, THIS
+// CARD MUST CHANGE IN THE SAME COMMIT (matching notes sit on both renderer
+// blocks). A stale card teaches a false display contract.
 // The ship at 3x — the EXACT r20 art (renderer.js drawPlayer): big ship, 6px
 // effective dot. Mirroring the real pixels is the point: the card must never
 // lie about the contract it teaches.

@@ -134,6 +134,8 @@ export function draw(g, ctx, bgScroll) {
     ctx.fillRect(b.x - 1, b.y - 9, 2, 18);
   }
 
+  // ⚠ ART-CHANGE NOTE (r35): src/howto.js drawBulletCard mirrors both bullet
+  // castes pixel-for-pixel — redesign bullets → update the card, same commit.
   // enemy bullets — TOP layer; needles above rounds (faster ⇒ higher, S2)
   for (let pass = 0; pass < 2; pass++) {
     for (let i = 0; i < g.eBullets.count; i++) {
@@ -437,6 +439,9 @@ export function drawPlayer(ctx, g) {
   ctx.fillStyle = '#4a3f78';
   ctx.fillRect(-19 - (p.x - p.prevX) * 2, 6 - (p.y - p.prevY) * 2, 5, 5);
   ctx.fillRect(15 - (p.x - p.prevX) * 2, 6 - (p.y - p.prevY) * 2, 5, 5);
+  // ⚠ ART-CHANGE NOTE (r35): the HOW TO card (src/howto.js drawShipCard)
+  // mirrors this ship + dot pixel-for-pixel. Redesign the ship → update the
+  // card in the same commit, or the onboarding lies about the contract.
   // r20 (Booth flags): the ship is drawn BIG around a tiny core — 28px span on
   // a 3px hit radius (bullets add their own 3px: a bullet kills when its
   // centre is within 6px of the dot). boghog WS01: "small hitboxes, much
