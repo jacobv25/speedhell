@@ -40,7 +40,7 @@ export function cycleTate() { const n = (tateN() + 1) % 3; applyTate(n); refresh
 
 // ---------------------------------------------------------------- menu
 const $ = (id) => document.getElementById(id);
-let open = false, capturing = null, escLocked = false, isPausedFn = () => false;
+let open = false, capturing = null, escLocked = false, isPausedFn = () => false, isTitleFn = () => false;
 export function isOpen() { return open; }
 
 function setOpen(v) {
@@ -61,13 +61,15 @@ function refresh() {
   $('optFull').textContent = document.fullscreenElement ? 'exit fullscreen' : 'enter fullscreen';
   for (const b of document.querySelectorAll('.bind'))
     b.textContent = capturing === b.dataset.act ? 'press a key…' : actLabel(b.dataset.act);
+  if (document.fullscreenElement && !escLocked) $('optMsg').textContent = 'browser rule: Esc leaves fullscreen — Enter toggles this menu';
   const controls = $('controls');
   if (controls) controls.textContent =
-    `arrows/WASD move · ${actLabel('fire')} shot · ${actLabel('focus')} focus · ${actLabel('bomb')} bomb · R restart · P pause · M mute · T rotate · ESC options`;
+    `arrows/WASD move · ${actLabel('fire')} shot · ${actLabel('focus')} focus · ${actLabel('bomb')} bomb · R restart · P pause · M mute · T rotate · ESC/Enter options`;
 }
 
-export function initOptions({ isPaused } = {}) {
+export function initOptions({ isPaused, isTitle } = {}) {
   if (isPaused) isPausedFn = isPaused;
+  if (isTitle) isTitleFn = isTitle;
   applyTate(tateN());
 
   $('optMusic').addEventListener('input', (e) => { audio.setMusicVolume(e.target.value / 100); refresh(); });
@@ -90,7 +92,7 @@ export function initOptions({ isPaused } = {}) {
     refresh();
   });
   for (const b of document.querySelectorAll('.bind'))
-    b.onclick = () => { capturing = capturing === b.dataset.act ? null : b.dataset.act; $('optMsg').textContent = capturing ? 'press the new key — Esc cancels' : 'Esc closes · settings save automatically'; refresh(); };
+    b.onclick = () => { capturing = capturing === b.dataset.act ? null : b.dataset.act; $('optMsg').textContent = capturing ? 'press the new key — Esc cancels' : 'Esc or Enter closes · settings save automatically'; refresh(); };
   $('optReset').onclick = () => { bindMap = structuredClone(DEFAULT_BINDS); saveBinds(); refresh(); };
 
   // capture-phase so the menu owns the keyboard while open (main.js also
@@ -107,10 +109,15 @@ export function initOptions({ isPaused } = {}) {
         bindMap[capturing] = [k];
         capturing = null; saveBinds();
       }
-      $('optMsg').textContent = 'Esc closes · settings save automatically';
+      $('optMsg').textContent = 'Esc or Enter closes · settings save automatically';
       refresh(); return;
     }
     if (open && e.key.toLowerCase() === 'm') { audio.toggleMute(); refresh(); return; } // mute reachable inside the menu
+    // r34: Enter toggles the menu too (not on the title, where Enter starts a
+    // run). In Safari fullscreen Esc ALWAYS exits fullscreen — a browser rule
+    // no page can intercept (Keyboard Lock is Chromium-only) — so Enter is
+    // the menu key that works everywhere, fullscreen included.
+    if (e.key === 'Enter' && !isTitleFn()) { e.preventDefault(); setOpen(!open); return; }
     if (e.key === 'Escape') {
       if (document.fullscreenElement && !escLocked) return; // this Esc exits fullscreen (browser); menu untouched
       e.preventDefault(); setOpen(!open);

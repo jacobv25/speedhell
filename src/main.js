@@ -16,7 +16,7 @@ const ctx = canvas.getContext('2d');
 
 let g = makeGame((Math.random() * 0xffffffff) >>> 0);
 let paused = false, bgScroll = 0;
-initOptions({ isPaused: () => paused }); // persisted TATE + Esc menu; r32: menu pauses music, close respects P-pause
+initOptions({ isPaused: () => paused, isTitle: () => g.state === 'title' }); // persisted TATE + Esc/Enter menu (r34: Enter works in Safari fullscreen)
 
 function beginRun() { // every run-start path: new seed handled by callers
   audio.unlock(); startRun(g); resetHud(); audio.playMusic('stage');

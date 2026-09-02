@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-02 (r33: slider bursts no longer advance the run's music position. Reds = midboss bot-priority question only).
+Last updated: 2026-09-02 (r34: Enter toggles the options menu — the fullscreen-proof key. Reds = midboss bot-priority question only).
 
 ---
 
@@ -948,3 +948,12 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   without moving where the run's music picks up. Works under P-pause + menu
   combinations (the bookmark is taken at first pause, restored at the real
   resume). BUILD r32 → r33.
+- 2026-09-02 — r34: Enter toggles the options menu (Jacob: Esc still drops
+  fullscreen instead of closing the menu). In Safari fullscreen, Esc ALWAYS
+  exits fullscreen — a browser rule no page can intercept; the Keyboard Lock
+  API that lets Esc through is Chromium-only. So the menu gets a second toggle
+  that works everywhere including fullscreen: Enter (everywhere but the title
+  screen, where Enter starts the run — passed as an isTitle accessor so
+  options.js stays state-blind). Menu + footer copy updated (ESC/Enter); when
+  fullscreen without keyboard-lock the menu itself explains "Esc leaves
+  fullscreen — Enter toggles this menu". BUILD r33 → r34.
