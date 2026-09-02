@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-02 (r35: one-card HOW TO briefing — display contract + speed-kill rule. Reds = midboss bot-priority question only).
+Last updated: 2026-09-02 (r36: practice/section select on the title. Reds = midboss bot-priority question only).
 
 ---
 
@@ -977,3 +977,18 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   afterwards H from the title (H reserved from rebinding; never opens during
   play). Title banner gains "H how to play · ESC options". New browser-only
   src/howto.js; core/Booth/referee untouched. BUILD r34 → r35.
+- 2026-09-02 — r36 practice/section select (polish queue item 3): left/right
+  on the title picks where the run starts — FULL RUN or any of S1–S8; Enter
+  launches, R retries the SAME section (die at the midboss, retry it in two
+  seconds). Corpus: MSX expert bias + the mastery path (practice tools are
+  pro-player culture in arcade ports); Pillar 3/WS05 learning-across-runs is
+  exactly what section drilling serves; Pillar 4 (true failure) protected by
+  a hard rule — a practice run is REHEARSAL: gold PRACTICE tag on the HUD the
+  whole run, and g.practice must exclude the run from the hi-score table /
+  receipt when those land (noted on the HANDOFF item). Mechanism: the
+  sandbox's stage-jump moved into core as startRun(g, atT) — pure
+  stageT/tlIndex fast-forward, no rng consumed; the atT=0 path (full runs,
+  referee, Booth, replays) is byte-identical to pre-r36 (control: a known-
+  MATCH tape still replays byte-perfect). Practice starts with fresh
+  lives/bombs (drill convention). Music starts on the stage track; the boss
+  WARNING swap works as in a full run. BUILD r35 → r36.

@@ -17,11 +17,23 @@ const ctx = canvas.getContext('2d');
 
 let g = makeGame((Math.random() * 0xffffffff) >>> 0);
 let paused = false, bgScroll = 0;
+
+// r36 practice/section select — stageT anchors mirror renderer/booth SEC_T.
+// Left/right on the title picks where the run starts; R retries the SAME
+// section (die at the midboss, retry the midboss in two seconds).
+const SECTIONS = [
+  { t: 0, label: 'FULL RUN' },
+  { t: 120, label: 'S1 POPCORN' }, { t: 720, label: 'S2 TURRET ALLEY' },
+  { t: 1700, label: 'S3 MID GAUNTLET' }, { t: 2400, label: 'S4 MIDBOSS' },
+  { t: 2460, label: 'S5 RUSH' }, { t: 2900, label: 'S6 ELITE PAIR' },
+  { t: 3700, label: 'S7 RELEASE' }, { t: 3900, label: 'S8 BOSS' },
+];
+let sectionSel = 0;
 initHowTo(); // r35: one-card briefing, auto once ever (registered first so it wins the capture phase)
 initOptions({ isPaused: () => paused, isTitle: () => g.state === 'title' }); // persisted TATE + Esc/Enter menu (r34: Enter works in Safari fullscreen)
 
 function beginRun() { // every run-start path: new seed handled by callers
-  audio.unlock(); startRun(g); resetHud(); audio.playMusic('stage');
+  audio.unlock(); startRun(g, SECTIONS[sectionSel].t); resetHud(); audio.playMusic('stage');
 }
 
 const keys = {};
@@ -30,6 +42,8 @@ addEventListener('keydown', (e) => {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key) || isBoundKey(e.key.toLowerCase())) e.preventDefault();
   keys[e.key.toLowerCase()] = true;
   audio.unlock(); // any key is the user gesture the AudioContext needs
+  if (g.state === 'title' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight'))
+    sectionSel = (sectionSel + (e.key === 'ArrowRight' ? 1 : SECTIONS.length - 1)) % SECTIONS.length;
   if (e.key === 'Enter' && g.state === 'title') beginRun();
   if (e.key.toLowerCase() === 'r' && (g.state === 'gameover' || g.state === 'clear' || g.state === 'play')) {
     g.seed = (Math.random() * 0xffffffff) >>> 0; beginRun(); // restart <2s (S7)
@@ -94,6 +108,8 @@ function frame(now) {
     ctx.font = '9px monospace'; ctx.textAlign = 'center';
     ctx.fillStyle = padName ? '#57e389' : '#8a8fa8';
     ctx.fillText(padName ? ('PAD: ' + padName.slice(0, 44)) : 'no gamepad — press a button on the stick', W / 2, H / 2 + 62);
+    ctx.fillStyle = sectionSel ? '#ffd24a' : '#8a8fa8';
+    ctx.fillText('◀ ' + (sectionSel ? 'PRACTICE · ' : '') + SECTIONS[sectionSel].label + ' ▶', W / 2, H / 2 + 78);
   }
   if (audio.isMuted()) {
     ctx.font = '9px monospace'; ctx.textAlign = 'right'; ctx.fillStyle = '#8a8fa8';

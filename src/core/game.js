@@ -56,7 +56,7 @@ export function makeGame(seed = 1) {
     },
     input: { dx: 0, dy: 0, focus: false, fire: false, bomb: false },
     score: 0, chain: 0, speedKills: 0, kills: 0,
-    stageT: 0, timeline: null, tlIndex: 0, gate: null, bossDown: false, bossKilled: false,
+    stageT: 0, timeline: null, tlIndex: 0, gate: null, bossDown: false, bossKilled: false, practice: 0,
     // r26 variant knobs (Booth experiments): deterministic — same knobs + seed
     // + inputs = same run. 0 / 'top' = shipped ENEMY_DEFS values. The referee
     // never sets these, so certified paths are untouched by construction.
@@ -106,11 +106,21 @@ export function makeGame(seed = 1) {
   return g;
 }
 
-export function startRun(g) {
+export function startRun(g, atT = 0) {
   const seed = g.seed;
   Object.assign(g, makeGame(seed));
   g.state = 'play';
   g.timeline = buildTimeline();
+  // r36 practice/section select — the sandbox's stage-jump made player-facing.
+  // Pure stageT/tlIndex math, no rng consumed; atT=0 (every full run, the
+  // referee, the Booth, replays) is byte-identical to the pre-r36 path.
+  // g.practice marks the run for the renderer tag and for exclusion from real
+  // scores (hi-score table, when it lands).
+  if (atT > 0) {
+    g.stageT = atT;
+    while (g.tlIndex < g.timeline.length && g.timeline[g.tlIndex].t < atT) g.tlIndex++;
+    g.practice = atT;
+  }
   return g;
 }
 

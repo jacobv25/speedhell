@@ -484,6 +484,7 @@ function drawHud(ctx, g) {
   ctx.font = '11px monospace';
   ctx.fillStyle = '#8a8fa8';
   ctx.fillText('CHAIN ' + g.chain, 10, 36);
+  if (g.practice) { ctx.font = 'bold 9px monospace'; ctx.fillStyle = '#ffd24a'; ctx.fillText('PRACTICE', 6, H - 6); } // r36: always visible — this score is rehearsal
   // lives / bombs icons
   for (let i = 0; i < g.player.lives; i++) { ctx.fillStyle = '#e8f6ff'; ctx.beginPath(); ctx.moveTo(W - 16 - i * 16, 12); ctx.lineTo(W - 10 - i * 16, 24); ctx.lineTo(W - 22 - i * 16, 24); ctx.closePath(); ctx.fill(); }
   for (let i = 0; i < g.player.bombs; i++) { ctx.fillStyle = '#ffd24a'; ctx.beginPath(); ctx.arc(W - 14 - i * 16, 36, 5, 0, 7); ctx.fill(); }

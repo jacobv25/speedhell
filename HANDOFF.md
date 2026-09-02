@@ -56,8 +56,9 @@ first — they are the deep record; this file is the quick resume.*
 2. **POLISH PHASE** (Jacob's chosen next step; merge with his own list):
    ~~options menu~~ ✅ SHIPPED r29–r34 (volume, TATE, rebinding, fullscreen)
    → ~~onboarding~~ ✅ SHIPPED r35 (one-card HOW TO: display contract +
-   speed-kill rule, auto-once + H key) → practice/section
-   select (playerize the sandbox stage-jump) → local hi-score table + results
+   speed-kill rule, auto-once + H key) → ~~practice/section select~~ ✅ SHIPPED
+   r36 (title ◀▶ picker, R retries the section; g.practice runs MUST be
+   excluded from the hi-score/receipt when built) → local hi-score table + results
    "receipt" screen (homage L4) → `SPEED +1600` popup (wiki §2.6) → named
    boss patterns (ZUN/Undertale trick) → boss art to families (§8.11; NOTE any ship/bullet
    redesign must update the HOW TO card — src/howto.js mirrors the art,
