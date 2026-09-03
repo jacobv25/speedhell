@@ -79,6 +79,11 @@ function quitToTitle() { // r37: back to the picker
 }
 const atEnd = () => g.state === 'gameover' || g.state === 'clear';
 
+// r43: arm audio unlock on every REAL gesture (keyboard/mouse/touch — pads
+// don't count as gestures, per browser autoplay policy). Idempotent.
+for (const ev of ['pointerdown', 'keydown', 'touchstart'])
+  addEventListener(ev, () => audio.unlock(), true);
+
 const keys = {};
 addEventListener('keydown', (e) => {
   if (optionsOpen() || isHowToOpen()) return; // an overlay owns the keyboard (their own capture listeners)
@@ -197,6 +202,9 @@ function frame(now) {
   if (audio.isMuted()) {
     ctx.font = '9px monospace'; ctx.textAlign = 'right'; ctx.fillStyle = '#8a8fa8';
     ctx.fillText('MUTED', W - 6, H - 6);
+  } else if (audio.audioBlocked()) { // r43: never fail silently — say WHY there's no sound
+    ctx.font = 'bold 9px monospace'; ctx.textAlign = 'center'; ctx.fillStyle = '#ffd24a';
+    ctx.fillText('SOUND: press any key or click once (browser rule — pad alone can\'t start audio)', W / 2, H - 6);
   }
   requestAnimationFrame(frame);
 }

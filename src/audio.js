@@ -39,11 +39,27 @@ export function setSfxVolume(v) {
 }
 
 const tracks = {}; // name -> { el, level (current 0..1), target, tc (fade time-constant) }
+let musicShouldPlay = false; // r43: what the GAME wants, vs what the browser allowed
 let current = null; // name of the playing track
 
 // AudioContext can only start from a user gesture; call from keydown/gamepad.
+// r43: gamepad presses are NOT a browser "user gesture", so a stick-only
+// session never unlocks audio (Jacob: "on first startup the sound doesn't
+// work… retrying used to fix it" — R was a keyboard gesture; r38 removed it).
+// unlock() is now armed on every real gesture (main.js), is safe to call
+// repeatedly, and recovers a music track that failed to start while locked.
+export function audioBlocked() { return !ac || ac.state !== 'running'; }
+function recoverMusic() {
+  if (!current || !musicShouldPlay) return;
+  const t = tracks[current];
+  if (t && t.el.paused) { const p = t.el.play(); if (p && p.catch) p.catch(() => {}); }
+}
 export function unlock() {
-  if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
+  if (ac) {
+    if (ac.state === 'suspended') { const p = ac.resume(); if (p && p.then) p.then(recoverMusic); }
+    recoverMusic();
+    return;
+  }
   const AC = window.AudioContext || window.webkitAudioContext;
   if (!AC) return;
   ac = new AC();
@@ -101,12 +117,14 @@ export function playMusic(name, { restart = true, fade = 0.6 } = {}) {
     setTimeout(() => { if (current !== old) t.el.pause(); }, fade * 1000 + 100);
   }
   const t = tracks[name]; if (!t) return;
+  musicShouldPlay = true;
   if (restart) t.el.currentTime = MUSIC[name].start;
   const p = t.el.play(); if (p && p.catch) p.catch(() => {});
   fadeTo(t, 1, current === name ? 0.05 : fade);
   current = name;
 }
 export function stopMusic(fade = 0.8) {
+  musicShouldPlay = false;
   if (!ac || !current) return;
   const t = tracks[current]; fadeTo(t, 0, fade);
   setTimeout(() => { if (current === null) t.el.pause(); }, fade * 1000 + 100);
@@ -117,6 +135,7 @@ export function duckMusic(v, secs = 0.3) { if (ac && current) fadeTo(tracks[curr
 export function pauseMusic(on) {
   if (!ac || !current) return;
   clearTimeout(burstT); // an explicit pause/resume always outlives a live burst
+  musicShouldPlay = !on;
   const t = tracks[current];
   if (on) { pausedAt = t.el.currentTime; t.el.pause(); } // bookmark the run's position
   else {

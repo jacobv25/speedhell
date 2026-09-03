@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-02 (r42: real title menu, from the shell-parity audit. Reds = midboss bot-priority question only).
+Last updated: 2026-09-03 (r43: audio unlock survives stick-only sessions. Reds = midboss bot-priority question only).
 
 ---
 
@@ -1059,3 +1059,17 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   legibility sliders, practice resources. Open question for Jacob (flagged,
   not recommended): all three references ship autofire; our law is
   fire-is-held — stated stance or silence? BUILD r41 → r42.
+- 2026-09-03 — r43: audio unlock vs stick-only sessions (Jacob: "first
+  startup after hard refresh the sound doesn't work; retrying used to fix it;
+  now it doesn't"). Root cause: browsers only start audio after a real user
+  gesture — keyboard/mouse/touch, NOT gamepad — and r38's full pad parity made
+  gesture-free sessions possible (the old "retry fixes it" was the R key being
+  a gesture; r38 removed R). Fixes: (1) unlock armed on every pointerdown/
+  keydown/touchstart, capture-phase, idempotent; (2) a music track that
+  failed to start while locked now recovers on unlock (musicShouldPlay
+  tracks intent vs what the browser allowed — pause/stop clear it, so
+  recovery can never resurrect deliberately paused music); (3) never fail
+  silently — while audio is blocked and unmuted, the canvas shows "SOUND:
+  press any key or click once (browser rule)". Steam/Electron wrap has no
+  autoplay policy, so this whole class disappears there. Booth demo not
+  needed — cause fully determined from code. BUILD r42 → r43.
