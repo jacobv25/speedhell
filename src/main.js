@@ -75,6 +75,10 @@ addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 // B/Y bomb, any shoulder focus; d-pad or left stick moves. Shell actions run
 // on EDGES (padEdges) so menus never machine-gun.
 let padName = null, padPrev = [], axPrev = [0, 0];
+// r39: a pad press that operates an overlay must not leak into the game on
+// the same (or any later held) tick — B closed the menu AND dropped a bomb.
+// While latched, pad fire/bomb are ignored until buttons 0-3 are all released.
+let padLatch = false;
 export function activePad() { return padName; }
 
 function getPad() {
@@ -115,8 +119,11 @@ function pollInput(gp) { // held state only — edges are padEdges' job
     if (Math.abs(gp.axes[1] || 0) > 0.35) i.dy = Math.sign(gp.axes[1]);
     if (gp.buttons[14]?.pressed) i.dx = -1; if (gp.buttons[15]?.pressed) i.dx = 1;
     if (gp.buttons[12]?.pressed) i.dy = -1; if (gp.buttons[13]?.pressed) i.dy = 1;
-    i.fire = i.fire || gp.buttons[0]?.pressed || gp.buttons[2]?.pressed;
-    i.bomb = i.bomb || gp.buttons[1]?.pressed || gp.buttons[3]?.pressed;
+    if (padLatch && ![0, 1, 2, 3].some((n) => gp.buttons[n]?.pressed)) padLatch = false; // all action buttons released
+    if (!padLatch) {
+      i.fire = i.fire || gp.buttons[0]?.pressed || gp.buttons[2]?.pressed;
+      i.bomb = i.bomb || gp.buttons[1]?.pressed || gp.buttons[3]?.pressed;
+    }
     i.focus = i.focus || gp.buttons[4]?.pressed || gp.buttons[5]?.pressed
                        || gp.buttons[6]?.pressed || gp.buttons[7]?.pressed;
   }
@@ -131,11 +138,12 @@ function frame(now) {
     const gp = getPad(); padName = gp ? gp.id : null;
     const pe = padEdges(gp);
     if (isHowToOpen()) {
-      if (pe.a || pe.b || pe.start) closeHowTo();
+      if (pe.a || pe.b || pe.start) { closeHowTo(); padLatch = true; }
     } else if (optionsOpen()) {
       if (pe.up) menuNav('up'); if (pe.down) menuNav('down');
       if (pe.left) menuNav('left'); if (pe.right) menuNav('right');
       if (pe.a) menuNav('activate'); if (pe.b || pe.start) menuNav('close');
+      if (pe.a || pe.b || pe.start) padLatch = true; // never leak the press into the game (r39)
     } else if (g.state === 'title') {
       if (pe.left) cycleSection(-1); if (pe.right) cycleSection(1);
       if (pe.start || pe.a) beginRun();

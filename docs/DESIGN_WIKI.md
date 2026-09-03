@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-02 (r38: controller parity + hotkey removal — the menu is the shell. Reds = midboss bot-priority question only).
+Last updated: 2026-09-02 (r39: pad-latch + TATE CSS scoping fixes from the r38 playtest. Reds = midboss bot-priority question only).
 
 ---
 
@@ -1017,3 +1017,12 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   fullscreen toggle needs one keyboard/mouse press. Homage precedent: Blue
   Revolver's shell (HOMAGE_STUDY lineage); S7 honored. Browser-only files;
   core/Booth/referee untouched. BUILD r37 → r38.
+- 2026-09-02 — r39: two r38 playtest fixes (Jacob). (1) B closed the menu AND
+  dropped a bomb — the close edge and the held bomb poll fired on the same
+  tick; pad fire/bomb are now latched after any overlay-operating press until
+  buttons 0–3 all release. (2) The HOW TO card rendered broken under TATE —
+  the stylesheet's `canvas` and `body.tate canvas` rules predate any second
+  canvas and were rotating/absolutely-centering the card's mini-canvases; now
+  scoped to `#game`. Overlay UI (menu, card) deliberately never rotates with
+  TATE — the monitor is physically rotated, DOM text must stay readable.
+  BUILD r38 → r39.

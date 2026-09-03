@@ -6,12 +6,15 @@
 <title>SPEEDHELL</title>
 <style>
   html, body { margin: 0; height: 100%; background: #05060a; display: grid; place-items: center; }
-  canvas { height: min(100vh, 92vh); aspect-ratio: 320/427; image-rendering: pixelated;
+  /* r39: #game only — these rules once said `canvas` and captured the HOW TO
+     card's mini-canvases too (in TATE they got rotated + absolutely centered,
+     floating over the card text). Overlay UI never rotates with TATE. */
+  #game { height: min(100vh, 92vh); aspect-ratio: 320/427; image-rendering: pixelated;
            box-shadow: 0 0 60px rgba(255,79,163,.12), 0 0 120px rgba(55,214,224,.08); }
-  body.tate canvas, body.tate270 canvas { position:absolute; top:50%; left:50%; height:auto;
+  body.tate #game, body.tate270 #game { position:absolute; top:50%; left:50%; height:auto;
     width:min(96vh, calc(96vw * 320 / 427)); }
-  body.tate canvas { transform: translate(-50%,-50%) rotate(90deg); }
-  body.tate270 canvas { transform: translate(-50%,-50%) rotate(-90deg); }
+  body.tate #game { transform: translate(-50%,-50%) rotate(90deg); }
+  body.tate270 #game { transform: translate(-50%,-50%) rotate(-90deg); }
   body.tate, body.tate270 { overflow:hidden; }
   footer { position: fixed; bottom: 8px; left: 8px; right: 58px; text-align: center;
            font: 11px monospace; color: #444a60; }
