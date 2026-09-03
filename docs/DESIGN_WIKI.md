@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-02 (r39: pad-latch + TATE CSS scoping fixes from the r38 playtest. Reds = midboss bot-priority question only).
+Last updated: 2026-09-02 (r40: pad-button rebinding. Reds = midboss bot-priority question only).
 
 ---
 
@@ -1026,3 +1026,14 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   scoped to `#game`. Overlay UI (menu, card) deliberately never rotates with
   TATE — the monitor is physically rotated, DOM text must stay readable.
   BUILD r38 → r39.
+- 2026-09-02 — r40: pad-button rebinding (Jacob tried to rebind with the
+  arcade stick; capture only listened for keyboard — his earlier "success" was
+  B canceling the capture while B was already bomb by default). Each action now
+  carries keyboard keys AND pad buttons; an armed rebind takes whichever
+  arrives first. START/SELECT/d-pad (8, 9, 12–15) reserved for the shell;
+  START cancels a capture like Esc. Key-steal rule hardened both maps: an
+  emptied action refills from defaults MINUS the stolen input (no
+  resurrection). Bind rows display both ("Z / space · pad 0/2"); reset
+  restores both maps; pad binds persist as speedhell.padkeys. pollInput and
+  the r39 latch now run off the bound buttons, not hardcoded 0–3. BUILD
+  r39 → r40.

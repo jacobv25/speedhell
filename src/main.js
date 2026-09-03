@@ -8,7 +8,7 @@ import { makeGame, startRun, update, W, H } from './core/game.js';
 import { draw, resetHud } from './render/renderer.js';
 import * as audio from './audio.js';
 import { BUILD } from './version.js';
-import { initOptions, isOpen as optionsOpen, openOptions, menuNav, binds, isBoundKey } from './options.js';
+import { initOptions, isOpen as optionsOpen, openOptions, menuNav, binds, padBinds, isBoundKey, isCapturing, capturePad } from './options.js';
 import { initHowTo, isHowToOpen, openHowTo, closeHowTo } from './howto.js';
 
 // build tag pinned bottom-right, its own element — confirms which build loaded
@@ -87,13 +87,14 @@ function getPad() {
   return null;
 }
 function padEdges(gp) {
-  const e = { start: 0, sel: 0, a: 0, b: 0, up: 0, down: 0, left: 0, right: 0 };
+  const e = { start: 0, sel: 0, a: 0, b: 0, up: 0, down: 0, left: 0, right: 0, btns: [] };
   const cur = [];
   if (gp) {
     for (let i = 0; i < gp.buttons.length; i++) cur[i] = !!gp.buttons[i]?.pressed;
     const ed = (i) => cur[i] && !padPrev[i];
     e.start = ed(9); e.sel = ed(8); e.a = ed(0); e.b = ed(1);
     e.up = ed(12); e.down = ed(13); e.left = ed(14); e.right = ed(15);
+    e.btns = []; for (let i = 0; i < cur.length; i++) if (ed(i)) e.btns.push(i); // raw fresh presses (r40 rebind capture)
     const st = (v) => (v > 0.5 ? 1 : v < -0.5 ? -1 : 0);
     const sx = st(gp.axes[0] || 0), sy = st(gp.axes[1] || 0);
     if (sx === 1 && axPrev[0] !== 1) e.right = 1;
@@ -119,13 +120,13 @@ function pollInput(gp) { // held state only — edges are padEdges' job
     if (Math.abs(gp.axes[1] || 0) > 0.35) i.dy = Math.sign(gp.axes[1]);
     if (gp.buttons[14]?.pressed) i.dx = -1; if (gp.buttons[15]?.pressed) i.dx = 1;
     if (gp.buttons[12]?.pressed) i.dy = -1; if (gp.buttons[13]?.pressed) i.dy = 1;
-    if (padLatch && ![0, 1, 2, 3].some((n) => gp.buttons[n]?.pressed)) padLatch = false; // all action buttons released
+    const PB = padBinds(); // r40: rebindable pad buttons
+    if (padLatch && ![...PB.fire, ...PB.bomb].some((n) => gp.buttons[n]?.pressed)) padLatch = false; // all action buttons released
     if (!padLatch) {
-      i.fire = i.fire || gp.buttons[0]?.pressed || gp.buttons[2]?.pressed;
-      i.bomb = i.bomb || gp.buttons[1]?.pressed || gp.buttons[3]?.pressed;
+      i.fire = i.fire || PB.fire.some((n) => gp.buttons[n]?.pressed);
+      i.bomb = i.bomb || PB.bomb.some((n) => gp.buttons[n]?.pressed);
     }
-    i.focus = i.focus || gp.buttons[4]?.pressed || gp.buttons[5]?.pressed
-                       || gp.buttons[6]?.pressed || gp.buttons[7]?.pressed;
+    i.focus = i.focus || PB.focus.some((n) => gp.buttons[n]?.pressed);
   }
 }
 
@@ -140,10 +141,13 @@ function frame(now) {
     if (isHowToOpen()) {
       if (pe.a || pe.b || pe.start) { closeHowTo(); padLatch = true; }
     } else if (optionsOpen()) {
-      if (pe.up) menuNav('up'); if (pe.down) menuNav('down');
-      if (pe.left) menuNav('left'); if (pe.right) menuNav('right');
-      if (pe.a) menuNav('activate'); if (pe.b || pe.start) menuNav('close');
-      if (pe.a || pe.b || pe.start) padLatch = true; // never leak the press into the game (r39)
+      if (isCapturing() && pe.btns.length) { for (const b of pe.btns) capturePad(b); padLatch = true; } // r40: stick rebinding
+      else {
+        if (pe.up) menuNav('up'); if (pe.down) menuNav('down');
+        if (pe.left) menuNav('left'); if (pe.right) menuNav('right');
+        if (pe.a) menuNav('activate'); if (pe.b || pe.start) menuNav('close');
+        if (pe.a || pe.b || pe.start) padLatch = true; // never leak the press into the game (r39)
+      }
     } else if (g.state === 'title') {
       if (pe.left) cycleSection(-1); if (pe.right) cycleSection(1);
       if (pe.start || pe.a) beginRun();

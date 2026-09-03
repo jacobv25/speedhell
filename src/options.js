@@ -20,7 +20,31 @@ const store = {
 const DEFAULT_BINDS = { fire: ['z', ' '], focus: ['shift'], bomb: ['x'] };
 const RESERVED = new Set(['h', 'escape', 'enter', 'tab',
   'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd']);
+// r40: pad buttons are rebindable too (Jacob tried to rebind with the stick
+// and nothing happened). Shell buttons stay fixed: START/SELECT/d-pad
+// (8, 9, 12-15) are reserved; everything else can carry fire/focus/bomb.
+const DEFAULT_PAD = { fire: [0, 2], focus: [4, 5, 6, 7], bomb: [1, 3] };
+const PAD_RESERVED = new Set([8, 9, 12, 13, 14, 15]);
 let bindMap = loadBinds();
+let padMap = loadPadBinds();
+function loadPadBinds() {
+  try { const j = JSON.parse(store.get('speedhell.padkeys', 'null')); if (j && j.fire && j.focus && j.bomb) return j; } catch { /* bad json */ }
+  return structuredClone(DEFAULT_PAD);
+}
+function savePadBinds() { store.set('speedhell.padkeys', JSON.stringify(padMap)); }
+export function padBinds() { return padMap; }
+export function isCapturing() { return !!capturing; }
+export function capturePad(btn) { // main.js feeds fresh pad-button presses here while a rebind is armed
+  if (!capturing) return false;
+  if (btn === 9) { capturing = null; $('optMsg').textContent = MSG_DEFAULT; refresh(); return true; } // START cancels, like Esc
+  if (PAD_RESERVED.has(btn)) { $('optMsg').textContent = `pad button ${btn} is taken (menu/movement) — pick another`; return true; }
+  for (const a of Object.keys(padMap)) padMap[a] = padMap[a].filter((x) => x !== btn);
+  for (const a of Object.keys(padMap)) if (!padMap[a].length) padMap[a] = DEFAULT_PAD[a].filter((x) => x !== btn); // never unbound, never resurrect the stolen button
+  padMap[capturing] = [btn];
+  capturing = null; savePadBinds();
+  $('optMsg').textContent = MSG_DEFAULT; refresh();
+  return true;
+}
 function loadBinds() {
   try { const j = JSON.parse(store.get('speedhell.keys', 'null')); if (j && j.fire && j.focus && j.bomb) return j; } catch { /* bad json */ }
   return structuredClone(DEFAULT_BINDS);
@@ -107,7 +131,7 @@ function refresh() {
   $('optTate').textContent = TATE_NAME[tateN()];
   $('optFull').textContent = document.fullscreenElement ? 'exit fullscreen' : 'enter fullscreen';
   for (const b of document.querySelectorAll('.bind'))
-    b.textContent = capturing === b.dataset.act ? 'press a key…' : actLabel(b.dataset.act);
+    b.textContent = capturing === b.dataset.act ? 'press a key / pad button…' : `${actLabel(b.dataset.act)} · pad ${padMap[b.dataset.act].join('/')}`;
   if (document.fullscreenElement && !escLocked) $('optMsg').textContent = 'browser rule: Esc leaves fullscreen — Enter/START toggles this menu';
   const controls = $('controls');
   if (controls) controls.textContent =
@@ -141,8 +165,8 @@ export function initOptions({ enterToggles, onQuit, onRetry } = {}) {
     refresh();
   });
   for (const b of document.querySelectorAll('.bind'))
-    b.onclick = () => { capturing = capturing === b.dataset.act ? null : b.dataset.act; $('optMsg').textContent = capturing ? 'press the new key — Esc cancels' : MSG_DEFAULT; refresh(); };
-  $('optReset').onclick = () => { bindMap = structuredClone(DEFAULT_BINDS); saveBinds(); refresh(); };
+    b.onclick = () => { capturing = capturing === b.dataset.act ? null : b.dataset.act; $('optMsg').textContent = capturing ? 'press the new key or pad button — Esc/START cancels' : MSG_DEFAULT; refresh(); };
+  $('optReset').onclick = () => { bindMap = structuredClone(DEFAULT_BINDS); padMap = structuredClone(DEFAULT_PAD); saveBinds(); savePadBinds(); refresh(); };
 
   // capture-phase so the menu owns the keyboard while open (main.js also
   // early-returns on isOpen(), belt and suspenders)
@@ -154,7 +178,7 @@ export function initOptions({ enterToggles, onQuit, onRetry } = {}) {
       else if (RESERVED.has(k)) { $('optMsg').textContent = `“${keyLabel(k)}” is taken (movement/shell key) — pick another`; refresh(); return; }
       else {
         for (const a of Object.keys(bindMap)) bindMap[a] = bindMap[a].filter((x) => x !== k);
-        for (const a of Object.keys(bindMap)) if (!bindMap[a].length) bindMap[a] = structuredClone(DEFAULT_BINDS[a]); // never leave an action unbound
+        for (const a of Object.keys(bindMap)) if (!bindMap[a].length) bindMap[a] = DEFAULT_BINDS[a].filter((x) => x !== k); // never unbound, never resurrect the stolen key
         bindMap[capturing] = [k];
         capturing = null; saveBinds();
       }
