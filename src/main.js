@@ -1,13 +1,17 @@
 // Browser bootstrap: input, fixed 60Hz logic, render on RAF.
+// r38 (Jacob: "Blue Revolver doesn't have hotkeys — controller needs the same
+// support as keyboard"): gameplay hotkeys (R/P/M/T/Q) are GONE. The pause
+// menu is the shell — retry/quit/mute/TATE live there — and the gamepad is a
+// first-class citizen: START = menu, d-pad/stick navigates it, A activates,
+// B backs out; title picker on d-pad; death screen A/shot = retry, B = title.
 import { makeGame, startRun, update, W, H } from './core/game.js';
 import { draw, resetHud } from './render/renderer.js';
 import * as audio from './audio.js';
 import { BUILD } from './version.js';
-import { initOptions, isOpen as optionsOpen, binds, isBoundKey, cycleTate } from './options.js';
-import { initHowTo, isHowToOpen, openHowTo } from './howto.js';
+import { initOptions, isOpen as optionsOpen, openOptions, menuNav, binds, isBoundKey } from './options.js';
+import { initHowTo, isHowToOpen, openHowTo, closeHowTo } from './howto.js';
 
-// build tag pinned bottom-right, its own element — never pushed off-screen by
-// the controls line on narrow windows; confirms which build the browser loaded
+// build tag pinned bottom-right, its own element — confirms which build loaded
 const ver = document.getElementById('ver');
 if (ver) ver.textContent = BUILD;
 
@@ -16,11 +20,11 @@ canvas.width = W; canvas.height = H;
 const ctx = canvas.getContext('2d');
 
 let g = makeGame((Math.random() * 0xffffffff) >>> 0);
-let paused = false, bgScroll = 0;
+let bgScroll = 0;
 
 // r36 practice/section select — stageT anchors mirror renderer/booth SEC_T.
-// Left/right on the title picks where the run starts; R retries the SAME
-// section (die at the midboss, retry the midboss in two seconds).
+// Left/right on the title picks where the run starts; retry re-enters the
+// SAME section (die at the midboss, retry the midboss in two seconds).
 const SECTIONS = [
   { t: 0, label: 'FULL RUN' },
   { t: 120, label: 'S1 POPCORN' }, { t: 720, label: 'S2 TURRET ALLEY' },
@@ -29,57 +33,83 @@ const SECTIONS = [
   { t: 3700, label: 'S7 RELEASE' }, { t: 3900, label: 'S8 BOSS' },
 ];
 let sectionSel = 0;
-initHowTo(); // r35: one-card briefing, auto once ever (registered first so it wins the capture phase)
-initOptions({ isPaused: () => paused, isTitle: () => g.state === 'title', onQuit: () => quitToTitle() }); // persisted TATE + Esc/Enter menu (r34: Enter works in Safari fullscreen)
+const cycleSection = (dir) => { sectionSel = (sectionSel + dir + SECTIONS.length) % SECTIONS.length; };
 
-function beginRun() { // every run-start path: new seed handled by callers
+initHowTo(); // r35: one-card briefing, auto once ever (registered first so it wins the capture phase)
+initOptions({
+  enterToggles: () => g.state === 'play', // title Enter starts; end-screen Enter retries
+  onQuit: () => quitToTitle(),
+  onRetry: () => retryRun(),
+});
+
+function beginRun() { // every run-start path
   audio.unlock(); startRun(g, SECTIONS[sectionSel].t); resetHud(); audio.playMusic('stage');
 }
-
-function quitToTitle() { // r37: the way OUT of practice (and any run) — back to the picker
+function retryRun() { g.seed = (Math.random() * 0xffffffff) >>> 0; beginRun(); } // same section, fresh seed — restart <2s (S7)
+function quitToTitle() { // r37: back to the picker
   g = makeGame((Math.random() * 0xffffffff) >>> 0);
   audio.stopMusic(0.4);
 }
+const atEnd = () => g.state === 'gameover' || g.state === 'clear';
 
 const keys = {};
 addEventListener('keydown', (e) => {
-  if (optionsOpen() || isHowToOpen()) return; // an overlay owns the keyboard
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key) || isBoundKey(e.key.toLowerCase())) e.preventDefault();
-  keys[e.key.toLowerCase()] = true;
+  if (optionsOpen() || isHowToOpen()) return; // an overlay owns the keyboard (their own capture listeners)
+  const k = e.key.toLowerCase();
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key) || isBoundKey(k)) e.preventDefault();
+  keys[k] = true;
   audio.unlock(); // any key is the user gesture the AudioContext needs
-  if (g.state === 'title' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight'))
-    sectionSel = (sectionSel + (e.key === 'ArrowRight' ? 1 : SECTIONS.length - 1)) % SECTIONS.length;
-  if (e.key === 'Enter' && g.state === 'title') beginRun();
-  if (e.key.toLowerCase() === 'r' && (g.state === 'gameover' || g.state === 'clear' || g.state === 'play')) {
-    g.seed = (Math.random() * 0xffffffff) >>> 0; beginRun(); // restart <2s (S7)
+  if (g.state === 'title') {
+    if (e.key === 'ArrowLeft') cycleSection(-1);
+    if (e.key === 'ArrowRight') cycleSection(1);
+    if (e.key === 'Enter') beginRun();
+    if (k === 'h') openHowTo(); // title-only, labeled on screen — not a play hotkey
+  } else if (atEnd()) {
+    if (!e.repeat && (e.key === 'Enter' || binds().fire.includes(k))) retryRun(); // one press — S7 restart <2s
   }
-  if (e.key.toLowerCase() === 'q' && (g.state === 'gameover' || g.state === 'clear')) quitToTitle(); // r37
-  if (e.key.toLowerCase() === 'p') { paused = !paused; audio.pauseMusic(paused); }
-  if (e.key.toLowerCase() === 'm') audio.toggleMute();
-  if (e.key.toLowerCase() === 't') cycleTate(); // TATE: display-only rotation (options.js owns the state)
-  if (e.key.toLowerCase() === 'h' && g.state !== 'play') openHowTo(); // r35: the card never interrupts play
 });
 addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 
-// Arcade-stick friendly mapping (8BitDo Arcade Stick etc.):
-// on a stick all 8 "shoulder" positions are face buttons, so map generously —
-// A/X fire, B/Y bomb, any of L1/R1/L2/R2 focus. Works with the stick's toggle
-// in either D-pad (buttons 12-15) or Left-Analog (axes 0/1) mode.
-let padName = null, prevSelect = false;
+// ---------------------------------------------------------------- gamepad
+// Arcade-stick friendly held mapping (8BitDo Arcade Stick etc.): A/X fire,
+// B/Y bomb, any shoulder focus; d-pad or left stick moves. Shell actions run
+// on EDGES (padEdges) so menus never machine-gun.
+let padName = null, padPrev = [], axPrev = [0, 0];
 export function activePad() { return padName; }
 
-function pollInput() {
+function getPad() {
+  const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+  for (const p of pads || []) if (p && p.connected && p.buttons.length) return p;
+  return null;
+}
+function padEdges(gp) {
+  const e = { start: 0, sel: 0, a: 0, b: 0, up: 0, down: 0, left: 0, right: 0 };
+  const cur = [];
+  if (gp) {
+    for (let i = 0; i < gp.buttons.length; i++) cur[i] = !!gp.buttons[i]?.pressed;
+    const ed = (i) => cur[i] && !padPrev[i];
+    e.start = ed(9); e.sel = ed(8); e.a = ed(0); e.b = ed(1);
+    e.up = ed(12); e.down = ed(13); e.left = ed(14); e.right = ed(15);
+    const st = (v) => (v > 0.5 ? 1 : v < -0.5 ? -1 : 0);
+    const sx = st(gp.axes[0] || 0), sy = st(gp.axes[1] || 0);
+    if (sx === 1 && axPrev[0] !== 1) e.right = 1;
+    if (sx === -1 && axPrev[0] !== -1) e.left = 1;
+    if (sy === 1 && axPrev[1] !== 1) e.down = 1;
+    if (sy === -1 && axPrev[1] !== -1) e.up = 1;
+    axPrev = [sx, sy];
+  } else axPrev = [0, 0];
+  padPrev = cur;
+  return e;
+}
+
+function pollInput(gp) { // held state only — edges are padEdges' job
   const i = g.input;
   i.dx = (keys['arrowright'] || keys['d'] ? 1 : 0) - (keys['arrowleft'] || keys['a'] ? 1 : 0);
   i.dy = (keys['arrowdown'] || keys['s'] ? 1 : 0) - (keys['arrowup'] || keys['w'] ? 1 : 0);
-  const B = binds(); // r29 rebinds (options menu); held, not automated [BOGHOG_CRAFT]
+  const B = binds(); // r29 rebinds; held, not automated [BOGHOG_CRAFT]
   i.focus = B.focus.some((k) => keys[k]);
   i.fire = B.fire.some((k) => keys[k]);
   i.bomb = B.bomb.some((k) => keys[k]);
-  const pads = navigator.getGamepads ? navigator.getGamepads() : [];
-  let gp = null;
-  for (const p of pads || []) if (p && p.connected && p.buttons.length) { gp = p; break; }
-  padName = gp ? gp.id : null;
   if (gp) {
     if (Math.abs(gp.axes[0] || 0) > 0.35) i.dx = Math.sign(gp.axes[0]);
     if (Math.abs(gp.axes[1] || 0) > 0.35) i.dy = Math.sign(gp.axes[1]);
@@ -89,13 +119,6 @@ function pollInput() {
     i.bomb = i.bomb || gp.buttons[1]?.pressed || gp.buttons[3]?.pressed;
     i.focus = i.focus || gp.buttons[4]?.pressed || gp.buttons[5]?.pressed
                        || gp.buttons[6]?.pressed || gp.buttons[7]?.pressed;
-    if (gp.buttons[9]?.pressed && g.state === 'title') beginRun();
-    // select = instant restart (credit-feed feel; edge-triggered)
-    const sel = !!gp.buttons[8]?.pressed;
-    if (sel && !prevSelect && g.state !== 'title') {
-      g.seed = (Math.random() * 0xffffffff) >>> 0; beginRun();
-    }
-    prevSelect = sel;
   }
 }
 
@@ -105,12 +128,29 @@ function frame(now) {
   acc += now - last; last = now;
   if (acc > 200) acc = 200; // avoid spiral after tab-out
   while (acc >= STEP_MS) {
-    pollInput();
-    if (!paused && !optionsOpen()) { update(g); audio.drain(g); bgScroll += 1.05; } // frozen while the menu is up
+    const gp = getPad(); padName = gp ? gp.id : null;
+    const pe = padEdges(gp);
+    if (isHowToOpen()) {
+      if (pe.a || pe.b || pe.start) closeHowTo();
+    } else if (optionsOpen()) {
+      if (pe.up) menuNav('up'); if (pe.down) menuNav('down');
+      if (pe.left) menuNav('left'); if (pe.right) menuNav('right');
+      if (pe.a) menuNav('activate'); if (pe.b || pe.start) menuNav('close');
+    } else if (g.state === 'title') {
+      if (pe.left) cycleSection(-1); if (pe.right) cycleSection(1);
+      if (pe.start || pe.a) beginRun();
+    } else if (atEnd()) {
+      if (pe.a) retryRun();
+      else if (pe.start) openOptions();
+      else if (pe.b || pe.sel) quitToTitle();
+    } else { // play
+      if (pe.start) openOptions();
+    }
+    if (!optionsOpen() && !isHowToOpen()) { pollInput(gp); update(g); audio.drain(g); bgScroll += 1.05; }
     acc -= STEP_MS;
   }
   draw(g, ctx, bgScroll);
-  if (g.state === 'title') { // pad detection readout — press any button to wake it
+  if (g.state === 'title') { // pad readout + section picker
     ctx.font = '9px monospace'; ctx.textAlign = 'center';
     ctx.fillStyle = padName ? '#57e389' : '#8a8fa8';
     ctx.fillText(padName ? ('PAD: ' + padName.slice(0, 44)) : 'no gamepad — press a button on the stick', W / 2, H / 2 + 62);
@@ -119,7 +159,7 @@ function frame(now) {
   }
   if (audio.isMuted()) {
     ctx.font = '9px monospace'; ctx.textAlign = 'right'; ctx.fillStyle = '#8a8fa8';
-    ctx.fillText('MUTED (M)', W - 6, H - 6);
+    ctx.fillText('MUTED', W - 6, H - 6);
   }
   requestAnimationFrame(frame);
 }

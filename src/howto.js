@@ -22,7 +22,7 @@ export function openHowTo() {
     `arrows/WASD move · ${fmt('fire')} shot · ${fmt('focus')} focus · ${fmt('bomb')} bomb`;
   $('howto').classList.remove('hide');
 }
-function closeHowTo() { open = false; markSeen(); $('howto').classList.add('hide'); }
+export function closeHowTo() { open = false; markSeen(); $('howto').classList.add('hide'); } // exported r38: pad A/B/START dismisses
 
 function poly(ctx, pts) { ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.closePath(); ctx.fill(); }
 

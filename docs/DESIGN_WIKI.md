@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-02 (r37: quit-to-title — the way out of practice. Reds = midboss bot-priority question only).
+Last updated: 2026-09-02 (r38: controller parity + hotkey removal — the menu is the shell. Reds = midboss bot-priority question only).
 
 ---
 
@@ -999,3 +999,21 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   the title; end-screen banners read "R retry · Q title"; q reserved from
   rebinding. quitToTitle() re-rolls a fresh seed and fades the music. BUILD
   r36 → r37.
+- 2026-09-02 — r38 controller parity + hotkey removal (Jacob: "we NEED
+  controller to have the same support as keyboard… Blue Revolver doesn't have
+  hotkeys — there's usually an options menu; retry should be a menu option,
+  not a hotkey"). Gameplay hotkeys R/P/M/T/Q are GONE (their keys freed for
+  rebinding); the pause menu is the shell: resume / retry run / quit to title
+  at the top, mute + TATE inside, and the menu is fully navigable — keyboard
+  ↑↓←→ Enter Esc, gamepad d-pad/stick + A activate + B/START close (one
+  menuNav entry point; pad shell actions are edge-triggered so menus never
+  machine-gun). Pad parity everywhere: START = menu (play + end screens),
+  title picker on d-pad/stick with START/A to launch, death screen A/shot =
+  one-press retry (S7 restart<2s preserved — the death screen IS the fast
+  path; mid-run retry is the deliberate two-step through the menu), B/SELECT =
+  title, how-to card dismisses on A/B/START. Enter now opens the menu only
+  during play (title Enter starts, end-screen Enter retries). Known limit,
+  messaged in-menu: pad presses lack browser "user activation," so the
+  fullscreen toggle needs one keyboard/mouse press. Homage precedent: Blue
+  Revolver's shell (HOMAGE_STUDY lineage); S7 honored. Browser-only files;
+  core/Booth/referee untouched. BUILD r37 → r38.

@@ -35,6 +35,8 @@
   #optsPanel .btn:hover { border-color: #ff4fa3; }
   #optsPanel .keys { border-top: 1px solid #1a2038; margin-top: 12px; padding-top: 6px; }
   #optsPanel .note { margin-top: 10px; font-size: 10px; color: #5a6480; }
+  #optsPanel .row.sel { outline: 1px solid #ff4fa3; outline-offset: 2px; }
+  #optsPanel .row.sel label { color: #ff4fa3; }
   /* r35 how-to card */
   #howto { position: fixed; inset: 0; background: rgba(5,6,10,.86); display: grid;
            place-items: center; z-index: 11; }
@@ -52,7 +54,7 @@
 </head>
 <body>
 <canvas id="game"></canvas>
-<footer>SPEEDHELL — <span id="controls">arrows/WASD move · Z/space shot · shift focus · X bomb · R restart · P pause · M mute · T rotate · ESC/Enter options</span></footer>
+<footer>SPEEDHELL — <span id="controls">arrows/WASD move · Z/space shot · shift focus · X bomb · ESC or START: menu</span></footer>
 <div id="howto" class="hide">
   <div id="howtoCard">
     <h1>HOW TO PLAY</h1>
@@ -69,20 +71,22 @@
 <div id="opts" class="hide">
   <div id="optsPanel">
     <h1>OPTIONS</h1>
+    <div class="row"><label>run</label><button id="optResume" class="btn">resume</button></div>
+    <div class="row"><label></label><button id="optRetry" class="btn">retry run</button></div>
+    <div class="row"><label></label><button id="optQuit" class="btn">quit to title</button></div>
     <div class="row"><label>music</label><input id="optMusic" type="range" min="0" max="100" value="100"><span class="val" id="optMusicV">100%</span></div>
     <div class="row"><label>sfx</label><input id="optSfx" type="range" min="0" max="100" value="100"><span class="val" id="optSfxV">100%</span></div>
     <div class="row"><label>sound</label><button id="optMute" class="btn">sound on</button></div>
     <div class="row"><label>TATE</label><button id="optTate" class="btn">off</button></div>
     <div class="row"><label>display</label><button id="optFull" class="btn">enter fullscreen</button></div>
-    <div class="row"><label>run</label><button id="optQuit" class="btn">quit to title</button></div>
     <div class="keys">
       <div class="row"><label>shot</label><button class="btn bind" data-act="fire">Z / space</button></div>
       <div class="row"><label>focus</label><button class="btn bind" data-act="focus">shift</button></div>
       <div class="row"><label>bomb</label><button class="btn bind" data-act="bomb">X</button></div>
       <div class="row"><label></label><button id="optReset" class="btn">reset keys</button></div>
-      <div class="note">fixed: arrows/WASD move · R restart · P pause · M mute · T rotate</div>
+      <div class="note">fixed: arrows/WASD move · menu: Esc / Enter / START · H (title) how to play</div>
     </div>
-    <div class="note" id="optMsg">Esc or Enter closes · settings save automatically</div>
+    <div class="note" id="optMsg">↑↓ select · ←→ adjust · Enter/Ⓐ press · Esc/Ⓑ close</div>
   </div>
 </div>
 <div id="ver"></div>

@@ -491,11 +491,11 @@ function drawHud(ctx, g) {
 
   ctx.textAlign = 'center';
   if (g.state === 'title') {
-    banner(ctx, 'SPEEDHELL', ['PRESS ENTER', 'Z/SPACE shot · SHIFT focus · X bomb', 'H how to play · ESC options']); // r35
+    banner(ctx, 'SPEEDHELL', ['PRESS ENTER or START', 'H how to play · ESC menu']); // r38: no hotkeys — controls live in the menu/footer
   } else if (g.state === 'gameover') {
-    banner(ctx, 'GAME OVER', ['SCORE ' + g.score + ' · SPEED ' + g.speedKills + '/' + g.kills, 'R retry · Q title']); // r37
+    banner(ctx, 'GAME OVER', ['SCORE ' + g.score + ' · SPEED ' + g.speedKills + '/' + g.kills, 'SHOT retry · ESC/START menu']); // r38
   } else if (g.state === 'clear') {
-    banner(ctx, 'STAGE CLEAR', ['SCORE ' + g.score + ' (STOCK +' + g.clearBonus + ')', 'SPEED ' + g.speedKills + '/' + g.kills + ' · R retry · Q title']); // r37
+    banner(ctx, 'STAGE CLEAR', ['SCORE ' + g.score + ' (STOCK +' + g.clearBonus + ')', 'SPEED ' + g.speedKills + '/' + g.kills + ' · SHOT retry · ESC/START menu']); // r38
   }
 }
 

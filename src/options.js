@@ -1,8 +1,11 @@
-// Options menu (r29, polish phase) — browser-only shell UI; never touches
-// src/core. Esc opens/closes; the main loop freezes while open (main.js checks
-// isOpen()). Everything persists to localStorage through `store`, a tiny
-// adapter kept deliberately swappable: a future desktop (Steam) build replaces
-// these two functions with file-backed storage and nothing else changes.
+// Options / pause menu (r29–r38, polish phase) — browser-only shell UI; never
+// touches src/core. Esc / Enter / START opens it; the main loop freezes while
+// open. r38 (Jacob: "Blue Revolver doesn't have hotkeys"): this menu IS the
+// pause, and it is fully navigable by keyboard (↑↓←→ Enter) and gamepad
+// (main.js routes d-pad/A/B edges into menuNav) — retry, quit, mute, TATE all
+// live here, not on hotkeys. Mouse still works. Settings persist through
+// `store`, a tiny adapter kept deliberately swappable: a desktop (Steam)
+// build replaces its two functions with file-backed storage, nothing else.
 import * as audio from './audio.js';
 
 const store = {
@@ -11,10 +14,11 @@ const store = {
 };
 
 // ---------------------------------------------------------------- keybinds
-// Rebindable: the three gameplay buttons. Movement (arrows/WASD) and the
-// system keys (R/P/M/T/Esc) stay fixed — they're listed in the panel.
+// Rebindable: the three gameplay buttons. Movement and the shell keys stay
+// fixed. r38 freed r/p/m/t/q for binding (their hotkeys are gone); h stays
+// reserved (title how-to key).
 const DEFAULT_BINDS = { fire: ['z', ' '], focus: ['shift'], bomb: ['x'] };
-const RESERVED = new Set(['r', 'p', 'm', 't', 'h', 'q', 'escape', 'enter', 'tab',
+const RESERVED = new Set(['h', 'escape', 'enter', 'tab',
   'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd']);
 let bindMap = loadBinds();
 function loadBinds() {
@@ -28,7 +32,6 @@ const keyLabel = (k) => (k === ' ' ? 'space' : k === 'shift' ? 'shift' : k.lengt
 const actLabel = (act) => bindMap[act].map(keyLabel).join(' / ');
 
 // ---------------------------------------------------------------- TATE
-// Same 'tate' key main.js always used: 0 off, 1 = 90°, 2 = 270°.
 const TATE_NAME = ['off', '90°', '270°'];
 export function tateN() { return +store.get('tate', 0) || 0; }
 export function applyTate(n) {
@@ -40,60 +43,105 @@ export function cycleTate() { const n = (tateN() + 1) % 3; applyTate(n); refresh
 
 // ---------------------------------------------------------------- menu
 const $ = (id) => document.getElementById(id);
-let open = false, capturing = null, escLocked = false, isPausedFn = () => false, isTitleFn = () => false;
+let open = false, capturing = null, escLocked = false;
+let enterTogglesFn = () => true, onQuitFn = null, onRetryFn = null;
+let rows = [], selIdx = 0, auditionT = 0;
 export function isOpen() { return open; }
+export function openOptions() { if (!open) setOpen(true); }
 
 function setOpen(v) {
   open = v; capturing = null;
   $('opts').classList.toggle('hide', !open);
   // r32: pause = silence (arcade convention); sliders speak on release instead
-  if (open) { audio.unlock(); audio.pauseMusic(true); refresh(); }
-  else if (!isPausedFn()) audio.pauseMusic(false); // stay silent if P-paused
+  if (open) { audio.unlock(); audio.pauseMusic(true); collectRows(); setSel(0); refresh(); }
+  else { audio.pauseMusic(false); clearTimeout(auditionT); }
 }
+
+function collectRows() {
+  rows = [...document.querySelectorAll('#optsPanel .row')].filter((r) => r.querySelector('button, input'));
+}
+function setSel(i) {
+  rows[selIdx]?.classList.remove('sel');
+  selIdx = (i + rows.length) % rows.length;
+  rows[selIdx]?.classList.add('sel');
+}
+
+function adjustSlider(el, delta) {
+  el.value = Math.max(0, Math.min(100, +el.value + delta));
+  const music = el.id === 'optMusic';
+  (music ? audio.setMusicVolume : audio.setSfxVolume)(el.value / 100);
+  clearTimeout(auditionT); // audition ~release: after the taps stop
+  auditionT = setTimeout(() => (music ? audio.musicBurst() : audio.sfxTest()), 350);
+  refresh();
+}
+
+// r38: one nav entry point — keyboard (below) and gamepad (main.js) both feed
+// it. 'up'/'down' move, 'left'/'right' adjust, 'activate' presses, 'close'.
+export function menuNav(act) {
+  if (!open) return;
+  if (act === 'close') {
+    if (capturing) { capturing = null; $('optMsg').textContent = MSG_DEFAULT; refresh(); }
+    else setOpen(false);
+    return;
+  }
+  if (capturing) return; // rebind wants a keyboard key
+  if (act === 'up' || act === 'down') { setSel(selIdx + (act === 'down' ? 1 : -1)); return; }
+  const row = rows[selIdx]; if (!row) return;
+  const sl = row.querySelector('input[type=range]');
+  if (act === 'left' || act === 'right') {
+    if (sl) adjustSlider(sl, act === 'right' ? 5 : -5);
+    else if (row.contains($('optTate'))) cycleTate();
+    return;
+  }
+  if (act === 'activate' && !sl) row.querySelector('button')?.click();
+}
+
+const MSG_DEFAULT = '↑↓ select · ←→ adjust · Enter/Ⓐ press · Esc/Ⓑ close';
 
 function refresh() {
   $('optMusic').value = Math.round(audio.getMusicVolume() * 100);
   $('optSfx').value = Math.round(audio.getSfxVolume() * 100);
   $('optMusicV').textContent = $('optMusic').value + '%';
   $('optSfxV').textContent = $('optSfx').value + '%';
-  $('optMute').textContent = audio.isMuted() ? 'muted (M)' : 'sound on';
+  $('optMute').textContent = audio.isMuted() ? 'muted' : 'sound on';
   $('optTate').textContent = TATE_NAME[tateN()];
   $('optFull').textContent = document.fullscreenElement ? 'exit fullscreen' : 'enter fullscreen';
   for (const b of document.querySelectorAll('.bind'))
     b.textContent = capturing === b.dataset.act ? 'press a key…' : actLabel(b.dataset.act);
-  if (document.fullscreenElement && !escLocked) $('optMsg').textContent = 'browser rule: Esc leaves fullscreen — Enter toggles this menu';
+  if (document.fullscreenElement && !escLocked) $('optMsg').textContent = 'browser rule: Esc leaves fullscreen — Enter/START toggles this menu';
   const controls = $('controls');
   if (controls) controls.textContent =
-    `arrows/WASD move · ${actLabel('fire')} shot · ${actLabel('focus')} focus · ${actLabel('bomb')} bomb · R restart · P pause · M mute · T rotate · ESC/Enter options`;
+    `arrows/WASD move · ${actLabel('fire')} shot · ${actLabel('focus')} focus · ${actLabel('bomb')} bomb · ESC or START: menu`;
 }
 
-export function initOptions({ isPaused, isTitle, onQuit } = {}) {
-  if (isPaused) isPausedFn = isPaused;
-  if (isTitle) isTitleFn = isTitle;
-  if (onQuit) $('optQuit').onclick = () => { setOpen(false); onQuit(); }; // r37: exit practice / any run
+export function initOptions({ enterToggles, onQuit, onRetry } = {}) {
+  if (enterToggles) enterTogglesFn = enterToggles;
+  if (onQuit) { onQuitFn = onQuit; $('optQuit').onclick = () => { setOpen(false); onQuitFn(); }; }
+  if (onRetry) { onRetryFn = onRetry; $('optRetry').onclick = () => { setOpen(false); onRetryFn(); }; }
+  $('optResume').onclick = () => setOpen(false);
   applyTate(tateN());
 
   $('optMusic').addEventListener('input', (e) => { audio.setMusicVolume(e.target.value / 100); refresh(); });
-  $('optMusic').addEventListener('change', () => audio.musicBurst()); // r32: ~1.5s of the current track at the new volume, then silence again
+  $('optMusic').addEventListener('change', () => audio.musicBurst()); // r32: ~1.5s at the new volume, then silence again
   $('optSfx').addEventListener('input', (e) => { audio.setSfxVolume(e.target.value / 100); refresh(); });
   $('optSfx').addEventListener('change', () => audio.sfxTest()); // r31: one blip at the final value, on release
   $('optMute').onclick = () => { audio.toggleMute(); refresh(); };
   $('optTate').onclick = () => cycleTate();
-  // r30: in fullscreen the browser owns Esc (it exits fullscreen). Where the
-  // Keyboard Lock API exists (Chrome/Edge) we lock Esc so the menu keeps
-  // working inside fullscreen; elsewhere (Safari/Firefox) the first Esc drops
-  // fullscreen and the menu simply stays as it was — press Esc again for it.
+  // r30: in fullscreen the browser owns Esc. Where Keyboard Lock exists
+  // (Chrome/Edge) we lock Esc so the menu works inside fullscreen; elsewhere
+  // (Safari/Firefox) the first Esc drops fullscreen, the menu stays as it was.
   const lockEsc = async () => { try { if (navigator.keyboard && navigator.keyboard.lock) { await navigator.keyboard.lock(['Escape']); escLocked = true; } } catch { escLocked = false; } };
   $('optFull').onclick = () => {
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-    else document.documentElement.requestFullscreen().then(lockEsc).catch(() => {});
+    else document.documentElement.requestFullscreen().then(lockEsc)
+      .catch(() => { $('optMsg').textContent = 'browser rule: fullscreen needs a keyboard or mouse press'; }); // pad presses lack "user activation"
   };
   document.addEventListener('fullscreenchange', () => {
     if (!document.fullscreenElement) { escLocked = false; try { navigator.keyboard && navigator.keyboard.unlock && navigator.keyboard.unlock(); } catch { /* ok */ } }
     refresh();
   });
   for (const b of document.querySelectorAll('.bind'))
-    b.onclick = () => { capturing = capturing === b.dataset.act ? null : b.dataset.act; $('optMsg').textContent = capturing ? 'press the new key — Esc cancels' : 'Esc or Enter closes · settings save automatically'; refresh(); };
+    b.onclick = () => { capturing = capturing === b.dataset.act ? null : b.dataset.act; $('optMsg').textContent = capturing ? 'press the new key — Esc cancels' : MSG_DEFAULT; refresh(); };
   $('optReset').onclick = () => { bindMap = structuredClone(DEFAULT_BINDS); saveBinds(); refresh(); };
 
   // capture-phase so the menu owns the keyboard while open (main.js also
@@ -103,22 +151,24 @@ export function initOptions({ isPaused, isTitle, onQuit } = {}) {
       e.preventDefault(); e.stopPropagation();
       const k = e.key.toLowerCase();
       if (k === 'escape') { capturing = null; }
-      else if (RESERVED.has(k)) { $('optMsg').textContent = `“${keyLabel(k)}” is taken (movement/system key) — pick another`; refresh(); return; }
+      else if (RESERVED.has(k)) { $('optMsg').textContent = `“${keyLabel(k)}” is taken (movement/shell key) — pick another`; refresh(); return; }
       else {
         for (const a of Object.keys(bindMap)) bindMap[a] = bindMap[a].filter((x) => x !== k);
         for (const a of Object.keys(bindMap)) if (!bindMap[a].length) bindMap[a] = structuredClone(DEFAULT_BINDS[a]); // never leave an action unbound
         bindMap[capturing] = [k];
         capturing = null; saveBinds();
       }
-      $('optMsg').textContent = 'Esc or Enter closes · settings save automatically';
+      $('optMsg').textContent = MSG_DEFAULT;
       refresh(); return;
     }
-    if (open && e.key.toLowerCase() === 'm') { audio.toggleMute(); refresh(); return; } // mute reachable inside the menu
-    // r34: Enter toggles the menu too (not on the title, where Enter starts a
-    // run). In Safari fullscreen Esc ALWAYS exits fullscreen — a browser rule
-    // no page can intercept (Keyboard Lock is Chromium-only) — so Enter is
-    // the menu key that works everywhere, fullscreen included.
-    if (e.key === 'Enter' && !isTitleFn()) { e.preventDefault(); setOpen(!open); return; }
+    if (open) { // r38: keyboard menu navigation
+      const NAV = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', Enter: 'activate' };
+      if (NAV[e.key]) { e.preventDefault(); menuNav(NAV[e.key]); return; }
+    }
+    // r34: Enter opens the menu too — the key that works in Safari fullscreen
+    // (Esc there always exits fullscreen; Keyboard Lock is Chromium-only).
+    // r38: only during play — title Enter starts, end-screen Enter retries.
+    if (e.key === 'Enter' && !open && enterTogglesFn()) { e.preventDefault(); setOpen(true); return; }
     if (e.key === 'Escape') {
       if (document.fullscreenElement && !escLocked) return; // this Esc exits fullscreen (browser); menu untouched
       e.preventDefault(); setOpen(!open);
