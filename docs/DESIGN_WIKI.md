@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-02 (r41: SELECT opens options from the title (interim); shell-parity audit running. Reds = midboss bot-priority question only).
+Last updated: 2026-09-02 (r42: real title menu, from the shell-parity audit. Reds = midboss bot-priority question only).
 
 ---
 
@@ -1044,3 +1044,18 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   Revolver, Gunvein, and M2 ShotTriggers conventions against r28–r40; its
   prioritized gap list will drive the next shell rounds (a real title menu is
   the expected headline finding). BUILD r40 → r41.
+- 2026-09-02 — r42: REAL TITLE MENU (shell-parity audit MUST #1, now filed at
+  docs/research/shell-parity-audit-2026-09-02.md — Blue Revolver, Gunvein and
+  every M2 ShotTriggers port use list menus; our banner-with-hidden-keys was
+  the root of Jacob's "gaps keep surfacing" complaint). GAME START /
+  PRACTICE ◀section▶ / HOW TO PLAY / OPTIONS as DOM rows under the logo:
+  keyboard arrows+Enter, pad d-pad+A/START, mouse click — one input grammar
+  with the pause menu. Retires the r41 SELECT interim and the hidden H key
+  (h freed for rebinding); retry now re-enters whatever start the run used
+  (currentStart). Audit verdict recorded: shell MEETS standard on pause
+  structure, dual rebinding, TATE, volume UX, practice granularity, fast
+  retry, HOW TO; remaining MUSTs = hi-score+entry, receipt, title audio;
+  SHOULDs incl. replays/attract (r28 tapes), pillarbox gadgets, CRT toggle,
+  legibility sliders, practice resources. Open question for Jacob (flagged,
+  not recommended): all three references ship autofire; our law is
+  fire-is-held — stated stance or silence? BUILD r41 → r42.

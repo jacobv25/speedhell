@@ -18,7 +18,7 @@ const store = {
 // fixed. r38 freed r/p/m/t/q for binding (their hotkeys are gone); h stays
 // reserved (title how-to key).
 const DEFAULT_BINDS = { fire: ['z', ' '], focus: ['shift'], bomb: ['x'] };
-const RESERVED = new Set(['h', 'escape', 'enter', 'tab',
+const RESERVED = new Set(['escape', 'enter', 'tab',
   'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd']);
 // r40: pad buttons are rebindable too (Jacob tried to rebind with the stick
 // and nothing happened). Shell buttons stay fixed: START/SELECT/d-pad

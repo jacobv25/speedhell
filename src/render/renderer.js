@@ -491,7 +491,7 @@ function drawHud(ctx, g) {
 
   ctx.textAlign = 'center';
   if (g.state === 'title') {
-    banner(ctx, 'SPEEDHELL', ['PRESS ENTER or START', 'H how to play · options: ESC / SELECT']); // r41
+    banner(ctx, 'SPEEDHELL', []); // r42: the DOM title menu carries start/practice/how-to/options
   } else if (g.state === 'gameover') {
     banner(ctx, 'GAME OVER', ['SCORE ' + g.score + ' · SPEED ' + g.speedKills + '/' + g.kills, 'SHOT retry · ESC/START menu']); // r38
   } else if (g.state === 'clear') {

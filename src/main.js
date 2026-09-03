@@ -32,8 +32,34 @@ const SECTIONS = [
   { t: 2460, label: 'S5 RUSH' }, { t: 2900, label: 'S6 ELITE PAIR' },
   { t: 3700, label: 'S7 RELEASE' }, { t: 3900, label: 'S8 BOSS' },
 ];
-let sectionSel = 0;
-const cycleSection = (dir) => { sectionSel = (sectionSel + dir + SECTIONS.length) % SECTIONS.length; };
+let practiceSel = 1;   // SECTIONS[1..8] — the PRACTICE row's ◀▶ value
+let currentStart = 0;  // what retry re-enters (0 = full run)
+
+// r42 title menu (audit MUST #1 — BR/Gunvein/M2 all use list menus; the old
+// banner-with-hidden-keys was the root of the "gaps surfacing one at a time"
+// symptom). DOM rows; keyboard arrows+Enter, pad d-pad+A/START, mouse click.
+const titleEl = document.getElementById('title');
+const tRows = [...document.querySelectorAll('#titleMenu .trow')];
+let titleSel = 0;
+function titleRender() {
+  tRows.forEach((r, i) => r.classList.toggle('sel', i === titleSel));
+  document.getElementById('tPractice').textContent = '◀ ' + SECTIONS[practiceSel].label + ' ▶';
+}
+function titleNav(act) {
+  if (act === 'up' || act === 'down') { titleSel = (titleSel + (act === 'down' ? 1 : tRows.length - 1)) % tRows.length; titleRender(); return; }
+  const a = tRows[titleSel].dataset.act;
+  if (act === 'left' || act === 'right') {
+    if (a === 'practice') { practiceSel = ((practiceSel - 1 + (act === 'right' ? 1 : SECTIONS.length - 2)) % (SECTIONS.length - 1)) + 1; titleRender(); }
+    return;
+  }
+  if (act !== 'activate') return;
+  if (a === 'start') beginRun(0);
+  else if (a === 'practice') beginRun(SECTIONS[practiceSel].t);
+  else if (a === 'howto') openHowTo();
+  else if (a === 'options') openOptions();
+}
+tRows.forEach((r, i) => { r.onclick = () => { titleSel = i; titleRender(); titleNav('activate'); }; });
+titleRender();
 
 initHowTo(); // r35: one-card briefing, auto once ever (registered first so it wins the capture phase)
 initOptions({
@@ -42,10 +68,11 @@ initOptions({
   onRetry: () => retryRun(),
 });
 
-function beginRun() { // every run-start path
-  audio.unlock(); startRun(g, SECTIONS[sectionSel].t); resetHud(); audio.playMusic('stage');
+function beginRun(t = currentStart) { // every run-start path
+  currentStart = t;
+  audio.unlock(); startRun(g, t); resetHud(); audio.playMusic('stage');
 }
-function retryRun() { g.seed = (Math.random() * 0xffffffff) >>> 0; beginRun(); } // same section, fresh seed — restart <2s (S7)
+function retryRun() { g.seed = (Math.random() * 0xffffffff) >>> 0; beginRun(); } // same start, fresh seed — restart <2s (S7)
 function quitToTitle() { // r37: back to the picker
   g = makeGame((Math.random() * 0xffffffff) >>> 0);
   audio.stopMusic(0.4);
@@ -59,11 +86,9 @@ addEventListener('keydown', (e) => {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key) || isBoundKey(k)) e.preventDefault();
   keys[k] = true;
   audio.unlock(); // any key is the user gesture the AudioContext needs
-  if (g.state === 'title') {
-    if (e.key === 'ArrowLeft') cycleSection(-1);
-    if (e.key === 'ArrowRight') cycleSection(1);
-    if (e.key === 'Enter') beginRun();
-    if (k === 'h') openHowTo(); // title-only, labeled on screen — not a play hotkey
+  if (g.state === 'title') { // r42: the title menu owns these keys
+    const NAV = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', Enter: 'activate' };
+    if (NAV[e.key]) titleNav(NAV[e.key]);
   } else if (atEnd()) {
     if (!e.repeat && (e.key === 'Enter' || binds().fire.includes(k))) retryRun(); // one press — S7 restart <2s
   }
@@ -148,10 +173,10 @@ function frame(now) {
         if (pe.a) menuNav('activate'); if (pe.b || pe.start) menuNav('close');
         if (pe.a || pe.b || pe.start) padLatch = true; // never leak the press into the game (r39)
       }
-    } else if (g.state === 'title') {
-      if (pe.left) cycleSection(-1); if (pe.right) cycleSection(1);
-      if (pe.sel) openOptions(); // r41: SELECT = options from the title (START/A start the run)
-      else if (pe.start || pe.a) beginRun();
+    } else if (g.state === 'title') { // r42: pad drives the title menu
+      if (pe.up) titleNav('up'); if (pe.down) titleNav('down');
+      if (pe.left) titleNav('left'); if (pe.right) titleNav('right');
+      if (pe.a || pe.start) titleNav('activate');
     } else if (atEnd()) {
       if (pe.a) retryRun();
       else if (pe.start) openOptions();
@@ -163,12 +188,11 @@ function frame(now) {
     acc -= STEP_MS;
   }
   draw(g, ctx, bgScroll);
-  if (g.state === 'title') { // pad readout + section picker
+  titleEl.classList.toggle('hide', g.state !== 'title' || optionsOpen() || isHowToOpen()); // r42
+  if (g.state === 'title') { // pad readout (the menu itself is DOM)
     ctx.font = '9px monospace'; ctx.textAlign = 'center';
     ctx.fillStyle = padName ? '#57e389' : '#8a8fa8';
     ctx.fillText(padName ? ('PAD: ' + padName.slice(0, 44)) : 'no gamepad — press a button on the stick', W / 2, H / 2 + 62);
-    ctx.fillStyle = sectionSel ? '#ffd24a' : '#8a8fa8';
-    ctx.fillText('◀ ' + (sectionSel ? 'PRACTICE · ' : '') + SECTIONS[sectionSel].label + ' ▶', W / 2, H / 2 + 78);
   }
   if (audio.isMuted()) {
     ctx.font = '9px monospace'; ctx.textAlign = 'right'; ctx.fillStyle = '#8a8fa8';

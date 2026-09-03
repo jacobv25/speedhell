@@ -38,6 +38,17 @@
   #optsPanel .btn:hover { border-color: #ff4fa3; }
   #optsPanel .keys { border-top: 1px solid #1a2038; margin-top: 12px; padding-top: 6px; }
   #optsPanel .note { margin-top: 10px; font-size: 10px; color: #5a6480; }
+  /* r42 title menu (audit MUST #1) — DOM overlay; never rotates with TATE */
+  #title { position: fixed; inset: 0; display: grid; place-items: end center;
+           padding-bottom: 10vh; pointer-events: none; z-index: 5; }
+  #title.hide { display: none; }
+  #titleMenu { pointer-events: auto; font: 12px monospace; color: #8a8fa8; text-align: center;
+               background: rgba(6,8,14,.78); border: 1px solid #2a3050; padding: 10px 26px; }
+  #titleMenu .trow { padding: 4px 8px; cursor: pointer; letter-spacing: .12em; white-space: pre; }
+  #titleMenu .trow.sel { color: #ff4fa3; }
+  #titleMenu .trow.sel::before { content: '▶ '; }
+  #titleMenu .trow:not(.sel)::before { content: '  '; }
+  #tPractice { color: #ffd24a; margin-left: 6px; }
   #optsPanel .row.sel { outline: 1px solid #ff4fa3; outline-offset: 2px; }
   #optsPanel .row.sel label { color: #ff4fa3; }
   /* r35 how-to card */
@@ -58,6 +69,14 @@
 <body>
 <canvas id="game"></canvas>
 <footer>SPEEDHELL — <span id="controls">arrows/WASD move · Z/space shot · shift focus · X bomb · ESC or START: menu</span></footer>
+<div id="title" class="hide">
+  <div id="titleMenu">
+    <div class="trow" data-act="start">GAME START</div>
+    <div class="trow" data-act="practice">PRACTICE<span id="tPractice">◀ S1 POPCORN ▶</span></div>
+    <div class="trow" data-act="howto">HOW TO PLAY</div>
+    <div class="trow" data-act="options">OPTIONS</div>
+  </div>
+</div>
 <div id="howto" class="hide">
   <div id="howtoCard">
     <h1>HOW TO PLAY</h1>
@@ -87,7 +106,7 @@
       <div class="row"><label>focus</label><button class="btn bind" data-act="focus">shift</button></div>
       <div class="row"><label>bomb</label><button class="btn bind" data-act="bomb">X</button></div>
       <div class="row"><label></label><button id="optReset" class="btn">reset keys</button></div>
-      <div class="note">fixed: arrows/WASD move · menu: Esc / Enter / START · H (title) how to play</div>
+      <div class="note">fixed: arrows/WASD move · menu: Esc / START</div>
     </div>
     <div class="note" id="optMsg">↑↓ select · ←→ adjust · Enter/Ⓐ press · Esc/Ⓑ close</div>
   </div>

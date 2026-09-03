@@ -65,3 +65,5 @@ added to ~/Dev/mark-msx-research, key quotes in raw-zeroranger-local-findings.md
 
 Local corpora on disk (primary sources): ~/Dev/mark-msx-research and
 ~/Dev/boghog-research transcripts; SPEEDHELL docs/homage/ film studies.
+
+- **shell-parity-audit-2026-09-02.md** — shell audit vs Blue Revolver / Gunvein / M2 ShotTriggers; drives the r42+ shell rounds (top 5: title menu, hi-score, receipt, title music, attract).
