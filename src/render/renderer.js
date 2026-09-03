@@ -492,11 +492,7 @@ function drawHud(ctx, g) {
   ctx.textAlign = 'center';
   if (g.state === 'title') {
     banner(ctx, 'SPEEDHELL', []); // r42: the DOM title menu carries start/practice/how-to/options
-  } else if (g.state === 'gameover') {
-    banner(ctx, 'GAME OVER', ['SCORE ' + g.score + ' · SPEED ' + g.speedKills + '/' + g.kills, 'SHOT retry · ESC/START menu']); // r38
-  } else if (g.state === 'clear') {
-    banner(ctx, 'STAGE CLEAR', ['SCORE ' + g.score + ' (STOCK +' + g.clearBonus + ')', 'SPEED ' + g.speedKills + '/' + g.kills + ' · SHOT retry · ESC/START menu']); // r38
-  }
+  } // r44: gameover/clear banners retired — the DOM results receipt replaces them
 }
 
 // Field-relative type: sized for the 320-wide logical field (post-r4 rescale);

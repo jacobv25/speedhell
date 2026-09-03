@@ -101,6 +101,7 @@ export function makeGame(seed = 1) {
     stats: {
       maxEBullets: 0, deaths: [], killLog: [], bulletCurve: [],
       scoreCurve: [], bossPhaseFrames: [], timeouts: 0, timeoutLog: [],
+      maxChain: 0, bombsUsed: 0, // r44 receipt instrumentation — counters only, no rng, no behavior
     },
   };
   return g;
@@ -240,7 +241,7 @@ function killEnemy(g, e, idx) {
   const speed = e.vulnAt >= 0 && aliveFrames <= e.window;
   let v = e.value;
   if (speed) {
-    v *= 2; g.chain++; g.speedKills++;
+    v *= 2; g.chain++; g.speedKills++; if (g.chain > g.stats.maxChain) g.stats.maxChain = g.chain;
     addPopup(g, e.x, e.y, 'SPEED', 1); sfx(g, SFX.SPEED);
     if (g.chain % 5 === 0) { // rush shower: garnish, subordinate to core (S6)
       for (let k = 0; k < 6; k++) spawnItem(g, e.x + g.rng.range(-20, 20), e.y + g.rng.range(-13, 13), g.chain * 20);
@@ -290,7 +291,7 @@ function scoreBossPhase(g, e) {
   // grinding is never a payday and camp-luck can't spike a passive score (S6).
   const fade = Math.max(0, Math.min(1, (BOSS_PHASE_TIMEOUT - dur) / 250));
   let v = Math.round(ENEMY_DEFS[5].value * fade / 10) * 10;
-  if (speed) { v *= 2; g.chain++; g.speedKills++; addPopup(g, e.x, e.y, 'SPEED', 1); sfx(g, SFX.SPEED); }
+  if (speed) { v *= 2; g.chain++; g.speedKills++; if (g.chain > g.stats.maxChain) g.stats.maxChain = g.chain; addPopup(g, e.x, e.y, 'SPEED', 1); sfx(g, SFX.SPEED); }
   g.score += v; g.kills++;
   sfx(g, SFX.PHASE);
   g.stats.killLog.push({ t: 5, f: e.vulnAt >= 0 ? g.frame - e.vulnAt : -1, s: speed ? 1 : 0 });
@@ -345,6 +346,7 @@ function fireBomb(g) {
   const p = g.player;
   if (p.bombs <= 0 || p.bombCd > 0) return;
   p.bombs--; p.bombCd = 90; p.bombActive = 60; p.invuln = Math.max(p.invuln, 180);
+  g.stats.bombsUsed++; // r44 receipt
   // bomb-cancel points are a garnish, subordinate to speed-kill core (S6)
   const n = cancelAllBullets(g, 30);
   addPopup(g, p.x, p.y - 40, n > 0 ? 'BOMB +' + (n * 30) : 'BOMB', 1);

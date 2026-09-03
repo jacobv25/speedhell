@@ -38,6 +38,24 @@
   #optsPanel .btn:hover { border-color: #ff4fa3; }
   #optsPanel .keys { border-top: 1px solid #1a2038; margin-top: 12px; padding-top: 6px; }
   #optsPanel .note { margin-top: 10px; font-size: 10px; color: #5a6480; }
+  /* r44 results receipt + hi-score table */
+  #results, #scores { position: fixed; inset: 0; display: grid; place-items: center; z-index: 6; }
+  #results.hide, #scores.hide { display: none; }
+  #resultsCard, #scoresCard { min-width: 280px; max-width: 92vw; padding: 16px 22px; background: rgba(8,10,18,.94);
+    border: 1px solid #2a3050; font: 12px monospace; color: #c8cde4; text-align: center; }
+  #resultsCard h1, #scoresCard h1 { margin: 0 0 8px; font: bold 14px monospace; letter-spacing: .25em; color: #ff4fa3; }
+  #resultsCard .rtag { color: #ffd24a; font-size: 10px; margin-bottom: 6px; }
+  #resScore { font: bold 22px monospace; color: #e8ecf8; letter-spacing: .1em; margin: 6px 0; }
+  #resStats { line-height: 1.7; color: #8a8fa8; }
+  #resBadges { margin: 8px 0; color: #ffd24a; font-weight: bold; letter-spacing: .2em; min-height: 1em; }
+  #entry .elabel { color: #57e389; margin-bottom: 6px; }
+  #entry .eslots span { display: inline-block; width: 26px; font: bold 20px monospace; color: #e8ecf8;
+    border-bottom: 2px solid #2a3050; margin: 0 4px; }
+  #entry .eslots span.sel { color: #ff4fa3; border-color: #ff4fa3; }
+  #resultsCard .note, #scoresCard .note { margin-top: 8px; font-size: 10px; color: #5a6480; }
+  #scoresCard table { border-collapse: collapse; margin: 6px auto; }
+  #scoresCard th, #scoresCard td { padding: 2px 8px; font: 11px monospace; text-align: left; }
+  #scoresCard th { color: #5a6480; }
   /* r42 title menu (audit MUST #1) — DOM overlay; never rotates with TATE */
   #title { position: fixed; inset: 0; display: grid; place-items: end center;
            padding-bottom: 10vh; pointer-events: none; z-index: 5; }
@@ -73,8 +91,31 @@
   <div id="titleMenu">
     <div class="trow" data-act="start">GAME START</div>
     <div class="trow" data-act="practice">PRACTICE<span id="tPractice">◀ S1 POPCORN ▶</span></div>
+    <div class="trow" data-act="scores">HI-SCORES</div>
     <div class="trow" data-act="howto">HOW TO PLAY</div>
     <div class="trow" data-act="options">OPTIONS</div>
+  </div>
+</div>
+<div id="results" class="hide">
+  <div id="resultsCard">
+    <h1 id="resTitle">GAME OVER</h1>
+    <div id="resTag" class="rtag hide"></div>
+    <div id="resScore">000000000</div>
+    <div id="resStats"></div>
+    <div id="resBadges"></div>
+    <div id="entry" class="hide">
+      <div class="elabel">NEW HI-SCORE — enter your name</div>
+      <div class="eslots"><span>A</span><span>A</span><span>A</span></div>
+      <div class="note">type, or ↑↓ letter · ←→ slot · Enter/Ⓐ next · last slot saves</div>
+    </div>
+    <div class="note" id="resHint">SHOT retry · Ⓑ title · START menu</div>
+  </div>
+</div>
+<div id="scores" class="hide">
+  <div id="scoresCard">
+    <h1>HI-SCORES</h1>
+    <table id="scoreTable"></table>
+    <div class="note">full runs only · Esc/Enter/Ⓐ/Ⓑ close</div>
   </div>
 </div>
 <div id="howto" class="hide">

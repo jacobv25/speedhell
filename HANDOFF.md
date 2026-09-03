@@ -61,8 +61,8 @@ first — they are the deep record; this file is the quick resume.*
    excluded from the hi-score/receipt when built) → controller parity +
    hotkey removal ✅ r38 (menu = shell; retry/quit/mute/TATE menu-only; full
    pad nav) → shell-parity audit ✅ (docs/research/shell-parity-audit-2026-09-02.md;
-   real title menu ✅ r42) → local hi-score table + results
-   "receipt" screen (homage L4) → `SPEED +1600` popup (wiki §2.6) → named
+   real title menu ✅ r42) → ~~local hi-score table + results receipt~~ ✅ SHIPPED r44 (initials
+   entry, top-10, practice excluded; per-section R8 breakdown deferred) → `SPEED +1600` popup (wiki §2.6) → named
    boss patterns (ZUN/Undertale trick) → boss art to families (§8.11; NOTE any ship/bullet
    redesign must update the HOW TO card — src/howto.js mirrors the art,
    ⚠ notes in renderer.js) →

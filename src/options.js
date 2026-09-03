@@ -8,7 +8,7 @@
 // build replaces its two functions with file-backed storage, nothing else.
 import * as audio from './audio.js';
 
-const store = {
+export const store = { // exported r44: results.js shares the same swappable adapter
   get(k, fallback) { try { const v = localStorage.getItem(k); return v === null ? fallback : v; } catch { return fallback; } },
   set(k, v) { try { localStorage.setItem(k, String(v)); } catch { /* private mode */ } },
 };

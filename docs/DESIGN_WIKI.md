@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-03 (r43: audio unlock survives stick-only sessions. Reds = midboss bot-priority question only).
+Last updated: 2026-09-03 (r44: results receipt + local hi-score table with initials entry. Reds = midboss bot-priority question only).
 
 ---
 
@@ -1073,3 +1073,21 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   press any key or click once (browser rule)". Steam/Electron wrap has no
   autoplay policy, so this whole class disappears there. Booth demo not
   needed — cause fully determined from code. BUILD r42 → r43.
+- 2026-09-03 — r44: results receipt + hi-score table (audit MUSTs #2+#3;
+  HOMAGE L4/R8 "grade the run with an itemized receipt"; BR initials + local
+  table; Gunvein's launch complaint proved the expectation). Receipt (DOM,
+  replaces the canvas end banners): score, speed kills x/y (%), longest
+  chain, time, deaths, bombs used, NO MISS / NO BOMB badges, stock bonus on
+  clear; practice runs get the receipt tagged "score not saved" and never
+  touch the table (Pillar 4). Qualifying FULL RUNS flow into arcade 3-letter
+  initials entry (type directly, or ↑↓/←→ + Enter/Ⓐ; Esc/Ⓑ/START saves as
+  shown — nothing discards a run; initials remembered) then a top-10 table
+  ({name, score, speed, chain, cleared, date, build} in localStorage via the
+  shared store adapter — Steam file-backed later). HI-SCORES row added to the
+  title menu. Core gained two instrumentation counters (stats.maxChain,
+  stats.bombsUsed) — counters only, no rng, no behavior; control: known-MATCH
+  tape replays byte-identical with correct counter values. One-press retry
+  from the receipt preserved (S7): entry only intercepts input while a new
+  hi-score is actually being entered. Per-section speed-kill breakdown (full
+  R8) deferred — needs killLog to carry section, a separate instrumentation
+  round. BUILD r43 → r44.

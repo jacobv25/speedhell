@@ -10,6 +10,7 @@ import * as audio from './audio.js';
 import { BUILD } from './version.js';
 import { initOptions, isOpen as optionsOpen, openOptions, menuNav, binds, padBinds, isBoundKey, isCapturing, capturePad } from './options.js';
 import { initHowTo, isHowToOpen, openHowTo, closeHowTo } from './howto.js';
+import { initResults, syncReceipt, busy as resultsBusy, padNav as resultsPad, showScores } from './results.js';
 
 // build tag pinned bottom-right, its own element — confirms which build loaded
 const ver = document.getElementById('ver');
@@ -55,6 +56,7 @@ function titleNav(act) {
   if (act !== 'activate') return;
   if (a === 'start') beginRun(0);
   else if (a === 'practice') beginRun(SECTIONS[practiceSel].t);
+  else if (a === 'scores') showScores();
   else if (a === 'howto') openHowTo();
   else if (a === 'options') openOptions();
 }
@@ -62,6 +64,7 @@ tRows.forEach((r, i) => { r.onclick = () => { titleSel = i; titleRender(); title
 titleRender();
 
 initHowTo(); // r35: one-card briefing, auto once ever (registered first so it wins the capture phase)
+initResults(); // r44: receipt + hi-scores (capture listener registered before options)
 initOptions({
   enterToggles: () => g.state === 'play', // title Enter starts; end-screen Enter retries
   onQuit: () => quitToTitle(),
@@ -86,7 +89,7 @@ for (const ev of ['pointerdown', 'keydown', 'touchstart'])
 
 const keys = {};
 addEventListener('keydown', (e) => {
-  if (optionsOpen() || isHowToOpen()) return; // an overlay owns the keyboard (their own capture listeners)
+  if (optionsOpen() || isHowToOpen() || resultsBusy()) return; // an overlay owns the keyboard (their own capture listeners)
   const k = e.key.toLowerCase();
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key) || isBoundKey(k)) e.preventDefault();
   keys[k] = true;
@@ -178,6 +181,9 @@ function frame(now) {
         if (pe.a) menuNav('activate'); if (pe.b || pe.start) menuNav('close');
         if (pe.a || pe.b || pe.start) padLatch = true; // never leak the press into the game (r39)
       }
+    } else if (resultsBusy()) { // r44: initials entry / hi-score table own the pad
+      resultsPad(pe);
+      if (pe.a || pe.b || pe.start) padLatch = true;
     } else if (g.state === 'title') { // r42: pad drives the title menu
       if (pe.up) titleNav('up'); if (pe.down) titleNav('down');
       if (pe.left) titleNav('left'); if (pe.right) titleNav('right');
@@ -192,6 +198,7 @@ function frame(now) {
     if (!optionsOpen() && !isHowToOpen()) { pollInput(gp); update(g); audio.drain(g); bgScroll += 1.05; }
     acc -= STEP_MS;
   }
+  syncReceipt(g, SECTIONS.find((x) => x.t === currentStart)?.label || 'FULL RUN'); // r44
   draw(g, ctx, bgScroll);
   titleEl.classList.toggle('hide', g.state !== 'title' || optionsOpen() || isHowToOpen()); // r42
   if (g.state === 'title') { // pad readout (the menu itself is DOM)
