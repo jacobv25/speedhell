@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-02 (r40: pad-button rebinding. Reds = midboss bot-priority question only).
+Last updated: 2026-09-02 (r41: SELECT opens options from the title (interim); shell-parity audit running. Reds = midboss bot-priority question only).
 
 ---
 
@@ -1037,3 +1037,10 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   restores both maps; pad binds persist as speedhell.padkeys. pollInput and
   the r39 latch now run off the bound buttons, not hardcoded 0–3. BUILD
   r39 → r40.
+- 2026-09-02 — r41 (interim): options reachable from the title on pad —
+  SELECT opens the menu (START/A start the run); title banner advertises
+  "options: ESC / SELECT". Jacob's larger point stands: shell gaps keep
+  surfacing one at a time, so a shell-parity audit agent is researching Blue
+  Revolver, Gunvein, and M2 ShotTriggers conventions against r28–r40; its
+  prioritized gap list will drive the next shell rounds (a real title menu is
+  the expected headline finding). BUILD r40 → r41.

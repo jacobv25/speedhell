@@ -150,7 +150,8 @@ function frame(now) {
       }
     } else if (g.state === 'title') {
       if (pe.left) cycleSection(-1); if (pe.right) cycleSection(1);
-      if (pe.start || pe.a) beginRun();
+      if (pe.sel) openOptions(); // r41: SELECT = options from the title (START/A start the run)
+      else if (pe.start || pe.a) beginRun();
     } else if (atEnd()) {
       if (pe.a) retryRun();
       else if (pe.start) openOptions();
