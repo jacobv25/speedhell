@@ -12,11 +12,12 @@ const $ = (id) => document.getElementById(id);
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.';
 let onShown = null;
 let receiptShown = false, entryOpen = false, tableOpen = false;
-let slots = [0, 0, 0], slot = 0, pendingEntry = null, wasPractice = false;
+let slots = [0, 0, 0], slot = 0, pendingEntry = null;
 
 // r45: pure, testable — a run enters initials ONLY if it is a full run that
 // beats the board. Practice never qualifies, at any score (Jacob: no shmup
-// shows the initials card in practice). Exported for the headless check.
+// shows the initials card in practice). This is the ONLY practice gate (r47
+// removed the redundant r45 latch — the r45 bug was CSS, never JS).
 export function qualifies(state, practice, score, scores) {
   if (practice > 0) return false;
   if (state !== 'gameover' && state !== 'clear') return false;
@@ -46,14 +47,16 @@ export function syncReceipt(g, label) {
 function buildReceipt(g, label) {
   const clear = g.state === 'clear';
   const practice = g.practice > 0;
-  // r46: practice is a visibly DIFFERENT card — gold accent, PRACTICE heading,
-  // section subtitle, "not saved" note, and NO score-submission chrome at all.
+  // r46: practice is a visibly DIFFERENT card — gold accent, PRACTICE subtitle,
+  // "not saved" note, and NO score-submission chrome at all. r47: the heading
+  // keeps the OUTCOME (a death in practice still reads GAME OVER); the
+  // subtitle carries the mode + section.
   $('resultsCard').classList.toggle('practice', practice);
-  $('resTitle').textContent = practice ? 'PRACTICE' : (clear ? 'STAGE CLEAR' : 'GAME OVER');
+  $('resTitle').textContent = clear ? 'STAGE CLEAR' : 'GAME OVER';
   $('resSub').classList.toggle('hide', !practice);
-  if (practice) $('resSub').textContent = label + (clear ? ' · CLEARED' : '');
+  $('resSub').textContent = practice ? 'PRACTICE · ' + label : '';
   $('resTag').classList.toggle('hide', !practice);
-  if (practice) $('resTag').textContent = 'practice run — not saved to hi-scores';
+  $('resTag').textContent = practice ? 'practice run — not saved to hi-scores' : '';
   $('resScore').textContent = pad9(g.score);
   const st = g.stats, pct = g.kills ? Math.round((100 * g.speedKills) / g.kills) : 0;
   $('resStats').innerHTML =
@@ -66,7 +69,7 @@ function buildReceipt(g, label) {
   if (!st.bombsUsed) badges.push('NO BOMB');
   $('resBadges').textContent = badges.join('  ·  ');
   // qualification: FULL RUNS only, top 10 (pure gate, practice can never pass)
-  entryOpen = false; pendingEntry = null; wasPractice = practice;
+  entryOpen = false; pendingEntry = null;
   if (qualifies(g.state, g.practice, g.score, loadScores())) {
     pendingEntry = { score: g.score, speedKills: g.speedKills, kills: g.kills, maxChain: st.maxChain, cleared: clear, date: new Date().toISOString().slice(0, 10), build: BUILD };
     const init = (store.get('speedhell.initials', 'AAA') + 'AAA').slice(0, 3);
@@ -78,9 +81,8 @@ function buildReceipt(g, label) {
 }
 
 function renderEntry() {
-  const show = entryOpen && !wasPractice; // r45: entry can never render for a practice run
-  $('entry').classList.toggle('hide', !show);
-  if (!show) return;
+  $('entry').classList.toggle('hide', !entryOpen); // needs the generic .hide rule (r46) — test/shell.mjs guards it
+  if (!entryOpen) return;
   $('entry').querySelectorAll('.eslots span').forEach((sp, i) => {
     sp.textContent = CHARS[slots[i]]; sp.classList.toggle('sel', i === slot);
   });
@@ -99,7 +101,7 @@ function confirmEntry() {
 }
 
 function entryNav(act) {
-  if (!entryOpen || wasPractice) return;
+  if (!entryOpen) return;
   if (act === 'up') slots[slot] = (slots[slot] + CHARS.length - 1) % CHARS.length;
   else if (act === 'down') slots[slot] = (slots[slot] + 1) % CHARS.length;
   else if (act === 'left') slot = (slot + 2) % 3;

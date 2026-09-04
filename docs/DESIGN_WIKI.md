@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-03 (r46: the .hide CSS bug fixed; practice gets a distinct receipt. Reds = midboss bot-priority question only).
+Last updated: 2026-09-03 (r47: r45 latch removed, practice heading keeps the outcome, browser shell check. Reds = midboss bot-priority question only).
 
 ---
 
@@ -1101,6 +1101,11 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   no-ops entryNav for a practice receipt regardless of prior state. Headless
   check: a practice game object never qualifies even with an empty board and a
   huge score; a full run at the same score does. BUILD r44 → r45.
+  **[r47 correction: wrong cause. There was no state-leak — the JS gate was
+  already correct at r44; the card showed because index.html had no generic
+  `.hide` CSS rule (see r46). The headless check here exercised only the JS
+  gate and could not see the stylesheet, so "fixed" was claimed without
+  loading the page. Latch removed in r47.]**
 - 2026-09-03 — r46: THE actual practice-entry bug + a proper practice card
   (Jacob: "it STILL asks for a name… shows AAA… use best UI/UX practices, this
   is sloppy"). Root cause the r45 gate couldn't have caught: there was no
@@ -1117,3 +1122,17 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   initials entry belongs to qualifying full runs only. Verified: g.practice
   survives to gameover in core (headless), entry gate proven pure (r45).
   BUILD r45 → r46.
+- 2026-09-03 — r47: cleanup after the r45/r46 post-mortem (Jacob: "there were
+  some serious errors"). (1) The r45 wasPractice latch is gone — qualifies()
+  is the single practice gate; the latch guarded against a JS bug that never
+  existed. (2) Practice heading keeps the OUTCOME: r46's "PRACTICE" h1 meant a
+  death in practice showed no GAME OVER anywhere; now h1 = GAME OVER / STAGE
+  CLEAR as always and the gold subtitle reads "PRACTICE · S4 MIDBOSS". (3)
+  resSub/resTag text is cleared on full-run receipts (the r44 tag text
+  persisted across runs). (4) New `test/shell.mjs`: zero-dep headless-Chrome
+  check (same CDP pattern as shots.mjs) that loads index.html and asserts
+  every `.hide` element computes to display:none, plus the results overlay's
+  known ids — the regression guard r44–r45 lacked. Lesson recorded: a
+  headless gate test cannot see a missing stylesheet rule; shell/DOM changes
+  are verified in a browser before being called fixed. No core/sim/rng
+  change. BUILD r46 → r47.
