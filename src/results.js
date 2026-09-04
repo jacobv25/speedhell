@@ -46,9 +46,14 @@ export function syncReceipt(g, label) {
 function buildReceipt(g, label) {
   const clear = g.state === 'clear';
   const practice = g.practice > 0;
-  $('resTitle').textContent = clear ? 'STAGE CLEAR' : 'GAME OVER';
+  // r46: practice is a visibly DIFFERENT card — gold accent, PRACTICE heading,
+  // section subtitle, "not saved" note, and NO score-submission chrome at all.
+  $('resultsCard').classList.toggle('practice', practice);
+  $('resTitle').textContent = practice ? 'PRACTICE' : (clear ? 'STAGE CLEAR' : 'GAME OVER');
+  $('resSub').classList.toggle('hide', !practice);
+  if (practice) $('resSub').textContent = label + (clear ? ' · CLEARED' : '');
   $('resTag').classList.toggle('hide', !practice);
-  if (practice) $('resTag').textContent = 'PRACTICE · ' + label + ' — score not saved';
+  if (practice) $('resTag').textContent = 'practice run — not saved to hi-scores';
   $('resScore').textContent = pad9(g.score);
   const st = g.stats, pct = g.kills ? Math.round((100 * g.speedKills) / g.kills) : 0;
   $('resStats').innerHTML =
@@ -69,7 +74,7 @@ function buildReceipt(g, label) {
     slot = 0; entryOpen = true;
   }
   renderEntry();
-  $('resHint').textContent = entryOpen ? '' : 'SHOT retry · Ⓑ title · START menu';
+  $('resHint').textContent = entryOpen ? '' : (practice ? 'SHOT retry section · Ⓑ title · START menu' : 'SHOT retry · Ⓑ title · START menu');
 }
 
 function renderEntry() {

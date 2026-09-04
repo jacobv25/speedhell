@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-03 (r45: initials entry never appears in practice. Reds = midboss bot-priority question only).
+Last updated: 2026-09-03 (r46: the .hide CSS bug fixed; practice gets a distinct receipt. Reds = midboss bot-priority question only).
 
 ---
 
@@ -1101,3 +1101,19 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   no-ops entryNav for a practice receipt regardless of prior state. Headless
   check: a practice game object never qualifies even with an empty board and a
   huge score; a full run at the same score does. BUILD r44 → r45.
+- 2026-09-03 — r46: THE actual practice-entry bug + a proper practice card
+  (Jacob: "it STILL asks for a name… shows AAA… use best UI/UX practices, this
+  is sloppy"). Root cause the r45 gate couldn't have caught: there was no
+  generic `.hide` CSS rule — every overlay hid via an id-scoped rule
+  (#opts.hide, #results.hide…), but #entry and #resTag were inner elements
+  toggled with a bare `hide` class that NOTHING styled, so the initials card
+  (and "not saved" tag) were never hidden on any receipt. The r44/r45 gate set
+  entryOpen=false correctly; CSS ignored it. Fix: `.hide { display:none
+  !important }` global (lesson: toggling a class only hides if a rule matches —
+  a headless gate test can't see a missing stylesheet rule). UX pass on top:
+  practice now renders a visibly different card — gold accent + border,
+  "PRACTICE" heading, section subtitle, "practice run — not saved to
+  hi-scores" note, retry-section hint, and zero score-submission chrome; the
+  initials entry belongs to qualifying full runs only. Verified: g.practice
+  survives to gameover in core (headless), entry gate proven pure (r45).
+  BUILD r45 → r46.

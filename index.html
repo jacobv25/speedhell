@@ -38,13 +38,22 @@
   #optsPanel .btn:hover { border-color: #ff4fa3; }
   #optsPanel .keys { border-top: 1px solid #1a2038; margin-top: 12px; padding-top: 6px; }
   #optsPanel .note { margin-top: 10px; font-size: 10px; color: #5a6480; }
-  /* r44 results receipt + hi-score table */
+  /* r46 ROOT FIX: a generic .hide actually hides. Before, only id-scoped
+     rules (#opts.hide, #results.hide…) existed, so inner elements toggled with
+     a bare `hide` class — #entry, #resTag — were NEVER hidden: the initials
+     card showed on every receipt, practice included. */
+  .hide { display: none !important; }
+
+  /* r44 results receipt + hi-score table (r46: practice gets a distinct card) */
   #results, #scores { position: fixed; inset: 0; display: grid; place-items: center; z-index: 6; }
   #results.hide, #scores.hide { display: none; }
   #resultsCard, #scoresCard { min-width: 280px; max-width: 92vw; padding: 16px 22px; background: rgba(8,10,18,.94);
     border: 1px solid #2a3050; font: 12px monospace; color: #c8cde4; text-align: center; }
   #resultsCard h1, #scoresCard h1 { margin: 0 0 8px; font: bold 14px monospace; letter-spacing: .25em; color: #ff4fa3; }
-  #resultsCard .rtag { color: #ffd24a; font-size: 10px; margin-bottom: 6px; }
+  #resultsCard.practice { border-color: #ffd24a; }               /* r46: practice reads as a different mode at a glance */
+  #resultsCard.practice h1 { color: #ffd24a; }
+  #resultsCard .rsub { font-size: 10px; letter-spacing: .15em; color: #8a8fa8; margin-bottom: 6px; }
+  #resultsCard .rtag { color: #ffd24a; font-size: 10px; margin: 6px 0; }
   #resScore { font: bold 22px monospace; color: #e8ecf8; letter-spacing: .1em; margin: 6px 0; }
   #resStats { line-height: 1.7; color: #8a8fa8; }
   #resBadges { margin: 8px 0; color: #ffd24a; font-weight: bold; letter-spacing: .2em; min-height: 1em; }
@@ -99,10 +108,11 @@
 <div id="results" class="hide">
   <div id="resultsCard">
     <h1 id="resTitle">GAME OVER</h1>
-    <div id="resTag" class="rtag hide"></div>
+    <div id="resSub" class="rsub hide"></div>
     <div id="resScore">000000000</div>
     <div id="resStats"></div>
     <div id="resBadges"></div>
+    <div id="resTag" class="rtag hide"></div>
     <div id="entry" class="hide">
       <div class="elabel">NEW HI-SCORE — enter your name</div>
       <div class="eslots"><span>A</span><span>A</span><span>A</span></div>
