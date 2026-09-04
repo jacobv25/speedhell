@@ -32,7 +32,7 @@ The sandbox never touches `src/core/` — it is not part of the game or the refe
 
 ```
 node test/sim.mjs    # bots + stress + determinism → evidence/metrics.json
-node test/shell.mjs  # headless Chrome: every .hide overlay element really computes to display:none
+node test/shell.mjs  # headless Chrome: overlays really hide; the ?lab experiment rows appear only with the flag
 ```
 
 `test/sim.mjs` and `docs/CRITIC_RUBRIC.md` are the referee: **builder agents must
@@ -50,4 +50,6 @@ never edit them** — that's grading your own homework.
   determinism check, rubric metric checks.
 - `test/shell.mjs` — browser check of the DOM shell (overlays hide for real). Run it
   after any index.html / overlay change — a JS-only test can't see a missing CSS rule.
+- `src/lab.js` — playtest experiment switches (wiki §10). Open the game with `?lab`
+  to get the rows in OPTIONS; `?lab=speedPopup:num` is a shareable configuration.
 - `evidence/` — metrics + screenshots consumed by gauntlet critics.

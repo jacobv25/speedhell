@@ -93,7 +93,6 @@ const VARIANTS = [ // r27: the winners shipped (elite 220 / side / escort); chip
   { id: 'eliteTop', label: 'elite top entry (old)', apply: (t) => { t.eliteEntry = 'top'; } },
   { id: 'eliteNoEscort', label: 'no elite escort (old)', apply: (t) => { t.eliteEscort = 0; } },
   { id: 'midboss130', label: 'midboss HP 130 (old)', apply: (t) => { t.midbossHp = 130; } },
-  { id: 'speedWord', label: 'SPEED word only (old)', apply: (t) => { t.speedNum = 0; } }, // r49 experiment rollback
 ];
 const varEl = $('variants');
 for (const v of VARIANTS) {

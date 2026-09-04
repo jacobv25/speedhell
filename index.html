@@ -38,6 +38,11 @@
   #optsPanel .btn:hover { border-color: #ff4fa3; }
   #optsPanel .keys { border-top: 1px solid #1a2038; margin-top: 12px; padding-top: 6px; }
   #optsPanel .note { margin-top: 10px; font-size: 10px; color: #5a6480; }
+  /* r50 lab: playtest experiment rows, only injected when the URL has ?lab */
+  #optsPanel .lab { border-top: 1px solid #1a2038; margin-top: 12px; padding-top: 6px; }
+  #optsPanel .lab .title { font-size: 10px; letter-spacing: .2em; color: #ffd24a; margin-bottom: 4px; }
+  #optsPanel .lab .btn { border-color: #3a3520; }
+  #optsPanel .lab #labStamp { color: #ffd24a; }
   /* r46 ROOT FIX: a generic .hide actually hides. Before, only id-scoped
      rules (#opts.hide, #results.hide…) existed, so inner elements toggled with
      a bare `hide` class — #entry, #resTag — were NEVER hidden: the initials
@@ -55,6 +60,8 @@
   #resultsCard.practice .rsub { color: #ffd24a; }             /* r47: mode line reads in the accent too */
   #resultsCard .rsub { font-size: 10px; letter-spacing: .15em; color: #8a8fa8; margin-bottom: 6px; }
   #resultsCard .rtag { color: #ffd24a; font-size: 10px; margin: 6px 0; }
+  #resultsCard .rlab { color: #8a8fa8; font-size: 10px; margin: 4px 0; }   /* r50: lab stamp */
+  #scoresCard .labnote { color: #5a6480; font-size: 10px; }
   #resScore { font: bold 22px monospace; color: #e8ecf8; letter-spacing: .1em; margin: 6px 0; }
   #resStats { line-height: 1.7; color: #8a8fa8; }
   #resBadges { margin: 8px 0; color: #ffd24a; font-weight: bold; letter-spacing: .2em; min-height: 1em; }
@@ -115,6 +122,7 @@
     <div id="resStats"></div>
     <div id="resBadges"></div>
     <div id="resTag" class="rtag hide"></div>
+    <div id="resLab" class="rlab hide"></div>
     <div id="entry" class="hide">
       <div class="elabel">NEW HI-SCORE — enter your name</div>
       <div class="eslots"><span>A</span><span>A</span><span>A</span></div>
@@ -161,6 +169,7 @@
       <div class="row"><label></label><button id="optReset" class="btn">reset keys</button></div>
       <div class="note">fixed: arrows/WASD move · menu: Esc / START</div>
     </div>
+    <div id="lab" class="lab hide"></div>
     <div class="note" id="optMsg">↑↓ select · ←→ adjust · Enter/Ⓐ press · Esc/Ⓑ close</div>
   </div>
 </div>

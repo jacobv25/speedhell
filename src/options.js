@@ -115,6 +115,7 @@ export function menuNav(act) {
   if (act === 'left' || act === 'right') {
     if (sl) adjustSlider(sl, act === 'right' ? 5 : -5);
     else if (row.contains($('optTate'))) cycleTate();
+    else { const lb = row.querySelector('[data-lab]'); if (lb) lb.dispatchEvent(new CustomEvent('cycle', { detail: act === 'right' ? 1 : -1 })); } // r50 lab rows
     return;
   }
   if (act === 'activate' && !sl) row.querySelector('button')?.click();

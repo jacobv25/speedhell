@@ -7,6 +7,7 @@
 // (g.practice / Pillar 4: practice is rehearsal).
 import { store } from './options.js';
 import { BUILD } from './version.js';
+import { labStamp } from './lab.js';
 
 const $ = (id) => document.getElementById(id);
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.';
@@ -68,6 +69,9 @@ function buildReceipt(g, label) {
   $('resSub').textContent = practice ? 'PRACTICE · ' + label : '';
   $('resTag').classList.toggle('hide', !practice);
   $('resTag').textContent = practice ? 'practice run — not saved to hi-scores' : '';
+  const lab = labStamp(); // r50: which experiments this run played under ('' = all defaults)
+  $('resLab').classList.toggle('hide', !lab);
+  $('resLab').textContent = lab ? 'lab: ' + lab : '';
   $('resScore').textContent = pad9(g.score);
   const st = g.stats, pct = g.kills ? Math.round((100 * g.speedKills) / g.kills) : 0;
   $('resStats').innerHTML =
@@ -82,7 +86,7 @@ function buildReceipt(g, label) {
   // qualification: FULL RUNS only, top 10 (pure gate, practice can never pass)
   entryOpen = false; pendingEntry = null;
   if (qualifies(g.state, g.practice, g.score, loadScores())) {
-    pendingEntry = { score: g.score, speedKills: g.speedKills, kills: g.kills, maxChain: st.maxChain, cleared: clear, date: new Date().toISOString().slice(0, 10), build: BUILD };
+    pendingEntry = { score: g.score, speedKills: g.speedKills, kills: g.kills, maxChain: st.maxChain, cleared: clear, date: new Date().toISOString().slice(0, 10), build: BUILD, ...(lab ? { lab } : {}) };
     const init = (store.get('speedhell.initials', 'AAA') + 'AAA').slice(0, 3);
     slots = [...init].map((c) => Math.max(0, CHARS.indexOf(c)));
     slot = 0; entryOpen = true;
@@ -128,7 +132,8 @@ export function showScores() {
     '<tr><th>#</th><th>name</th><th>score</th><th>speed</th><th>chain</th><th></th></tr>' +
     scores.map((s, i) => s.seed
       ? `<tr class="seed"><td>${i + 1}</td><td>${s.name}</td><td>${pad9(s.score)}</td><td>—</td><td>—</td><td></td></tr>`
-      : `<tr><td>${i + 1}</td><td>${s.name}</td><td>${pad9(s.score)}</td><td>${s.speedKills}/${s.kills}</td><td>${s.maxChain}</td><td>${s.cleared ? 'CLEAR' : ''}</td></tr>`).join('');
+      : `<tr${s.lab ? ` title="lab: ${s.lab}"` : ''}><td>${i + 1}</td><td>${s.name}</td><td>${pad9(s.score)}</td><td>${s.speedKills}/${s.kills}</td><td>${s.maxChain}</td><td>${s.cleared ? 'CLEAR' : ''}${s.lab ? ' ⚗' : ''}</td></tr>`).join('')
+    + (scores.some((s) => s.lab) ? '<tr><td colspan="6" class="labnote">⚗ run played under lab experiments</td></tr>' : '');
   tableOpen = true; $('scores').classList.remove('hide');
 }
 function closeScores() { tableOpen = false; $('scores').classList.add('hide'); }

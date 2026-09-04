@@ -11,6 +11,7 @@ import { BUILD } from './version.js';
 import { initOptions, isOpen as optionsOpen, openOptions, menuNav, binds, padBinds, isBoundKey, isCapturing, capturePad } from './options.js';
 import { initHowTo, isHowToOpen, openHowTo, closeHowTo } from './howto.js';
 import { initResults, syncReceipt, busy as resultsBusy, padNav as resultsPad, showScores } from './results.js';
+import { initLab } from './lab.js';
 
 // build tag pinned bottom-right, its own element — confirms which build loaded
 const ver = document.getElementById('ver');
@@ -65,6 +66,7 @@ titleRender();
 
 initHowTo(); // r35: one-card briefing, auto once ever (registered first so it wins the capture phase)
 initResults(); // r44: receipt + hi-scores (capture listener registered before options)
+initLab(); // r50: playtest experiment rows (only with ?lab in the URL)
 initOptions({
   enterToggles: () => g.state === 'play', // title Enter starts; end-screen Enter retries
   onQuit: () => quitToTitle(),

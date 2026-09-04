@@ -3,6 +3,11 @@
 // (pink rounds = static/random, cyan needles = aimed); bullets on top.
 import { W, H, PLAYER, FX } from '../core/game.js';
 
+// r50 lab: presentation prefs the shell may switch live (src/lab.js writes
+// them). The renderer stays DOM-free; headless harnesses get the defaults.
+// speedPopup: 'both' = SPEED +1600 · 'num' = +1600 · 'word' = SPEED · 'off'
+export const prefs = { speedPopup: 'both' };
+
 // r8-fx explosion palette, indexed [family][heat stop 0=hot … 3=cool] by the
 // particle's remaining life. Lookup tables: no string building in the hot loop (S8).
 const FX_RAMP = [
@@ -166,10 +171,16 @@ export function draw(g, ctx, bgScroll) {
   ctx.textAlign = 'center';
   for (let i = 0; i < g.popups.count; i++) {
     const q = g.popups.items[i];
+    let text = q.text;
+    if (q.val) { // speed-kill popup: the lab picks how the value shows (wiki §2.6)
+      const m = prefs.speedPopup;
+      if (m === 'off') continue;
+      text = m === 'num' ? '+' + q.val : m === 'word' ? 'SPEED' : 'SPEED +' + q.val;
+    }
     ctx.globalAlpha = Math.min(1, q.life / 18);
     ctx.font = q.big ? 'bold 15px monospace' : '11px monospace';
     ctx.fillStyle = q.big ? '#ffd24a' : '#cdd3e8';
-    ctx.fillText(q.text, q.x, q.y);
+    ctx.fillText(text, q.x, q.y);
   }
   ctx.globalAlpha = 1;
 

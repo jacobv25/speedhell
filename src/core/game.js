@@ -60,7 +60,7 @@ export function makeGame(seed = 1) {
     // r26 variant knobs (Booth experiments): deterministic — same knobs + seed
     // + inputs = same run. 0 / 'top' = shipped ENEMY_DEFS values. The referee
     // never sets these, so certified paths are untouched by construction.
-    tune: { eliteHp: 0, eliteEntry: 'side', eliteEscort: 1, midbossHp: 0, speedNum: 1 }, // r27: side entry + escort are the shipped defaults (Booth verdict); chips roll back. r49: speedNum = SPEED popup shows the doubled value (experiment)
+    tune: { eliteHp: 0, eliteEntry: 'side', eliteEscort: 1, midbossHp: 0 }, // r27: side entry + escort are the shipped defaults (Booth verdict); chips roll back
     warn: 0, // r6 S3b arrival ritual: frames of WARNING remaining before the boss gate
 
     clearBonus: 0, clearAt: 0, endFrame: 0,
@@ -93,7 +93,7 @@ export function makeGame(seed = 1) {
       x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 0, hue: 0,
       kind: 0, size: 0, rot: 0, vrot: 0, delay: 0, grav: 0, // r8-fx typed particle
     })),
-    popups: makePool(32, () => ({ x: 0, y: 0, life: 0, text: '', big: 0 })),
+    popups: makePool(32, () => ({ x: 0, y: 0, life: 0, text: '', big: 0, val: 0 })), // val: paid value (speed kills) — the renderer formats it (r50 lab)
     shake: 0, shakeMax: 0, flash: 0, cancelFlash: 0,
     hitstop: 0, fxHitstop: 0, // r8-fx: frames of world-freeze remaining; fxHitstop = frames granted per BIG/PHASE kill (0 = off)
     sfx: new Array(SFX_CAP).fill(0), sfxN: 0, // sound-event ring, drained per frame
@@ -125,14 +125,10 @@ export function startRun(g, atT = 0) {
   return g;
 }
 
-// r49 EXPERIMENT (wiki §2.6): the speed-kill popup carries its doubled value —
-// `SPEED +1600` beside the `+800` a slow kill already shows, so the biggest
-// scoring lever is visible at the moment it pays (Pillar 2 / BH WS06: binary
-// visible state stays the word; MSX: no hidden math). g.tune.speedNum=0 rolls
-// back to the bare word (Booth chip). Text only — no rng, no score change.
-const speedText = (g, v) => (g.tune.speedNum ? 'SPEED +' + v : 'SPEED');
-
-export function addPopup(g, x, y, text, big = 0) { // exported r22: stage.js flee telegraph
+// r50: `val` carries the paid value on speed-kill popups; core never formats
+// presentation — renderer.js decides how (or whether) the number shows, per
+// the lab experiment (wiki §2.6). Core text stays the binary state 'SPEED'.
+export function addPopup(g, x, y, text, big = 0, val = 0) { // exported r22: stage.js flee telegraph
   const p = g.popups.spawn(); if (!p) return;
   // De-conflict at spawn (r5 S6-legibility): no two live popups may share a
   // baseline. Keep on-field, below the HUD block, and nudge down 14px past any
@@ -150,7 +146,7 @@ export function addPopup(g, x, y, text, big = 0) { // exported r22: stage.js fle
     if (!hit) break;
     y += 14;
   }
-  p.x = x; p.y = y; p.life = 50; p.text = text; p.big = big;
+  p.x = x; p.y = y; p.life = 50; p.text = text; p.big = big; p.val = val;
 }
 
 // r8-fx: single particle spawn. `delay` frames dormant before it lives (how a
@@ -249,7 +245,7 @@ function killEnemy(g, e, idx) {
   let v = e.value;
   if (speed) {
     v *= 2; g.chain++; g.speedKills++; if (g.chain > g.stats.maxChain) g.stats.maxChain = g.chain;
-    addPopup(g, e.x, e.y, speedText(g, v), 1); sfx(g, SFX.SPEED);
+    addPopup(g, e.x, e.y, 'SPEED', 1, v); sfx(g, SFX.SPEED);
     if (g.chain % 5 === 0) { // rush shower: garnish, subordinate to core (S6)
       for (let k = 0; k < 6; k++) spawnItem(g, e.x + g.rng.range(-20, 20), e.y + g.rng.range(-13, 13), g.chain * 20);
       addPopup(g, e.x, e.y - 24, 'RUSH x' + g.chain, 1); sfx(g, SFX.RUSH);
@@ -298,7 +294,7 @@ function scoreBossPhase(g, e) {
   // grinding is never a payday and camp-luck can't spike a passive score (S6).
   const fade = Math.max(0, Math.min(1, (BOSS_PHASE_TIMEOUT - dur) / 250));
   let v = Math.round(ENEMY_DEFS[5].value * fade / 10) * 10;
-  if (speed) { v *= 2; g.chain++; g.speedKills++; if (g.chain > g.stats.maxChain) g.stats.maxChain = g.chain; addPopup(g, e.x, e.y, speedText(g, v), 1); sfx(g, SFX.SPEED); }
+  if (speed) { v *= 2; g.chain++; g.speedKills++; if (g.chain > g.stats.maxChain) g.stats.maxChain = g.chain; addPopup(g, e.x, e.y, 'SPEED', 1, v); sfx(g, SFX.SPEED); }
   g.score += v; g.kills++;
   sfx(g, SFX.PHASE);
   g.stats.killLog.push({ t: 5, f: e.vulnAt >= 0 ? g.frame - e.vulnAt : -1, s: speed ? 1 : 0 });

@@ -61,30 +61,48 @@ try {
   ws.onmessage = (ev) => { const m = JSON.parse(ev.data); if (m.id && pending.has(m.id)) { const { res, rej } = pending.get(m.id); pending.delete(m.id); m.error ? rej(new Error(m.error.message)) : res(m.result); } };
   await new Promise((res, rej) => { ws.onopen = res; ws.onerror = () => rej(new Error('ws error')); });
   const send = (method, params = {}, sessionId) => new Promise((res, rej) => { const msg = { id: ++id, method, params }; if (sessionId) msg.sessionId = sessionId; pending.set(msg.id, { res, rej }); ws.send(JSON.stringify(msg)); });
-  const { targetId } = await send('Target.createTarget', { url: `http://127.0.0.1:${port}/index.html` });
-  const { sessionId } = await send('Target.attachToTarget', { targetId, flatten: true });
-  await send('Runtime.enable', {}, sessionId);
-  // wait for the module to boot (footer build tag renders from src/version.js)
-  for (let i = 0; ; i++) {
-    const r = await send('Runtime.evaluate', { expression: '/r\\d+/.test(document.body.innerText)', returnByValue: true }, sessionId);
-    if (r.result.value) break;
-    if (i > 100) throw new Error('index.html never rendered a build tag');
-    await new Promise((r2) => setTimeout(r2, 100));
+  async function page(path) {
+    const { targetId } = await send('Target.createTarget', { url: `http://127.0.0.1:${port}${path}` });
+    const { sessionId } = await send('Target.attachToTarget', { targetId, flatten: true });
+    await send('Runtime.enable', {}, sessionId);
+    // wait for the module to boot (footer build tag renders from src/version.js)
+    for (let i = 0; ; i++) {
+      const r = await send('Runtime.evaluate', { expression: '/r\\d+/.test(document.body.innerText)', returnByValue: true }, sessionId);
+      if (r.result.value) break;
+      if (i > 100) throw new Error(path + ' never rendered a build tag');
+      await new Promise((r2) => setTimeout(r2, 100));
+    }
+    const r = await send('Runtime.evaluate', {
+      expression: `JSON.stringify({
+        build: (document.body.innerText.match(/r\\d+/) || [])[0],
+        leaks: [...document.querySelectorAll('.hide')].filter((el) => getComputedStyle(el).display !== 'none').map((el) => el.id || el.className),
+        ids: Object.fromEntries(['results', 'entry', 'resTag', 'resSub', 'resLab', 'scores', 'title', 'howto', 'opts', 'lab'].map((i) => [i, document.getElementById(i) ? getComputedStyle(document.getElementById(i)).display : 'MISSING'])),
+        labRows: [...document.querySelectorAll('[data-lab]')].map((b) => b.dataset.lab + '=' + b.textContent),
+        labHidden: document.getElementById('lab')?.classList.contains('hide'),
+        search: location.search,
+      })`, returnByValue: true,
+    }, sessionId);
+    await send('Target.closeTarget', { targetId });
+    return JSON.parse(r.result.value);
   }
-  const r = await send('Runtime.evaluate', {
-    expression: `JSON.stringify({
-      build: (document.body.innerText.match(/r\\d+/) || [])[0],
-      leaks: [...document.querySelectorAll('.hide')].filter((el) => getComputedStyle(el).display !== 'none').map((el) => el.id || el.className),
-      ids: Object.fromEntries(['results', 'entry', 'resTag', 'resSub', 'scores', 'title', 'howto', 'opts'].map((i) => [i, document.getElementById(i) ? getComputedStyle(document.getElementById(i)).display : 'MISSING'])),
-    })`, returnByValue: true,
-  }, sessionId);
-  const out = JSON.parse(r.result.value);
-  console.log('build', out.build);
-  for (const [k, v] of Object.entries(out.ids)) console.log(`  #${k.padEnd(8)} ${v}`);
-  const missing = Object.entries(out.ids).filter(([, v]) => v === 'MISSING').map(([k]) => k);
-  if (out.leaks.length) console.log('FAIL: .hide elements still visible:', out.leaks.join(', '));
-  else if (missing.length) console.log('FAIL: missing overlay ids:', missing.join(', '));
-  else { console.log('PASS: every .hide element computes to display:none'); exitCode = 0; }
+
+  const fails = [];
+  // 1. plain page: every .hide element hidden, no lab rows exist at all
+  const plain = await page('/index.html');
+  console.log('build', plain.build);
+  for (const [k, v] of Object.entries(plain.ids)) console.log(`  #${k.padEnd(8)} ${v}`);
+  if (plain.leaks.length) fails.push('.hide elements still visible: ' + plain.leaks.join(', '));
+  const missing = Object.entries(plain.ids).filter(([, v]) => v === 'MISSING').map(([k]) => k);
+  if (missing.length) fails.push('missing overlay ids: ' + missing.join(', '));
+  if (plain.labRows.length || !plain.labHidden) fails.push('lab rows present WITHOUT ?lab: ' + JSON.stringify(plain.labRows));
+  // 2. ?lab page: rows injected, the link's config applied, address bar rewritten to the share link
+  const lab = await page('/index.html?lab=speedPopup:num');
+  console.log('lab rows', lab.labRows.join(' | ') || '(none)', '· search', lab.search);
+  if (!lab.labRows.length || lab.labHidden) fails.push('?lab did not inject lab rows');
+  if (!lab.labRows.some((r) => r.startsWith('speedPopup=+1600'))) fails.push('?lab=speedPopup:num not applied: ' + JSON.stringify(lab.labRows));
+  if (!lab.search.includes('lab=speedPopup:num')) fails.push('address bar not rewritten to the share link: ' + lab.search);
+  if (fails.length) for (const f of fails) console.log('FAIL:', f);
+  else { console.log('PASS: overlays hide; lab absent without ?lab, present + applied with it'); exitCode = 0; }
   ws.close();
 } finally {
   srv.close();

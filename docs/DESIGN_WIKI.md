@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-04 (r49 EXPERIMENT: SPEED popup shows +value. Reds = midboss bot-priority question only).
+Last updated: 2026-09-04 (r50: the Lab — playtest experiment switches, speedPopup first. Reds = midboss bot-priority question only).
 
 ---
 
@@ -103,17 +103,18 @@ If the screen is empty, no gate is holding, and the next timeline event is >30
 frames away, the stage clock runs 4×. Speed-killing a wave pulls the next one in
 sooner (WS06 lineage). Never fast-forwards through the WARNING ritual.
 
-### 2.6 Speed-kill popup shows its value (r49 EXPERIMENT)
+### 2.6 Speed-kill popup shows its value (EXPERIMENT — lab, open Q4)
 
 Until r48 speed-kill popups said `SPEED` while slow kills said `+800` — the
-biggest scoring lever was the one the player never saw a number for. r49 makes
-the popup `SPEED +1600` (`speedText`, `game.js` above `addPopup`; both
-`killEnemy` and `scoreBossPhase`). Text only: no rng, no score change, popup
-stays gold/15px/big with the word first so the binary state (Pillar 2, BH
-WS06) still reads before the number. Rollback: Booth chip "SPEED word only
-(old)" sets `g.tune.speedNum = 0`. **Jacob: experimental — may be dropped or
-replaced.** Watch for: popup width ~2× (S2 readable-chaos), edge clipping at
-x<50 (addPopup clamps at 40).
+biggest scoring lever was the one the player never saw a number for. r49
+showed `SPEED +1600`; r50 moved the choice into the Lab (§10) so testers pick:
+`SPEED +1600` (default) · `+1600` · `SPEED` (old) · none. Core carries the
+paid value on the popup (`addPopup(…, val)`, `killEnemy` + `scoreBossPhase`)
+and never formats it; `renderer.js` formats per `prefs.speedPopup`. Text
+only: no rng, no score change; popup stays gold/15px/big with the word first
+so the binary state (Pillar 2, BH WS06) still reads before the number.
+**Jacob: experimental — may be dropped or replaced.** Watch for: popup width
+~2× (S2 readable-chaos), edge clipping at x<50 (addPopup clamps at 40).
 
 ## 3. Enemy lifecycles — "dynamic lifecycle" (S4)
 
@@ -541,6 +542,41 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   counts that as engagement.
 - Think stopwatches, not run time. Engage the instant something appears.
 - Never leave items. Don't die, don't bomb unless it saves a life.
+
+## 10. The Lab (playtest experiment switches, r50)
+
+`src/lab.js` is ONE registry of presentation experiments for Mark, boghog and
+playtesters — the answer to "how do we offer options, then delete them"
+(Jacob, 2026-09-04). It exists only until decisions land; at release the file
+and the `#lab` panel go.
+
+- **Reach:** hidden unless the URL carries `?lab`. Then an extra block appears
+  at the bottom of the OPTIONS menu (Esc/Enter/START), one ◀▶ row per
+  experiment, pad-navigable like every other row. Ordinary players never see
+  it; `test/shell.mjs` asserts no lab rows exist without the flag.
+- **Links are configurations:** `?lab=speedPopup:num` opens the game with that
+  choice; every change rewrites the address bar, and "copy link with these
+  settings" copies it. Send a tester three links, get back "the second one".
+- **Stamped:** the receipt shows `lab: SPEED popup = +1600` when anything is
+  off-default; hi-score rows carry the stamp (⚗ marker + tooltip). Practice
+  exclusion and scoring are untouched — presentation knobs cannot move a score.
+- **Live:** presentation knobs write renderer `prefs` and switch mid-run, so a
+  tester can flip looks while dodging the same pattern. They never touch
+  `g.rng`, the referee (the sim runs defaults; the renderer is not imported
+  by sim.mjs) or replays.
+- **Kinds:** presentation (renderer/fx prefs, live) vs tune (core knobs, run
+  start — the Booth VARIANTS chips; keep those in the Booth, not here).
+- **Lifecycle rule:** each experiment cites its wiki open-question number.
+  When Jacob decides: winner → constant, losers deleted in the same commit,
+  verdict + tester quotes in this changelog. Cap ~5 live experiments.
+- **Corpus constraints for the queued experiments:** explosions (bigger/
+  better) must keep rendering below bullets and never mask the 3px cores /
+  6px kill dot (§6.2 display contract, S2); ship/boss art changes must update
+  the HOW TO card (`src/howto.js` mirrors the art); fx particle counts stay on
+  `g.fxRng`.
+
+Live experiments: **speedPopup** (§2.6, open Q4). Queued: explosions, player
+ship, boss art.
 
 ## Changelog of decisions recorded here
 
@@ -1168,3 +1204,18 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   scoring change (values, windows, chain untouched); text only, no rng —
   referee run byte-identical to r48 as control. Booth rollback chip "SPEED
   word only (old)" for A/B. BUILD r48 → r49.
+- 2026-09-04 — r50: THE LAB (wiki §10). Jacob: "give Mark the option to turn
+  on SPEED +1600, turn off the +1600, turn off SPEED… think of a best-practice
+  way to offer Mark and Boghog and playtesters options; eventually we decide
+  and remove them." One registry (`src/lab.js`) → rows in OPTIONS (only with
+  `?lab` in the URL), shareable config links (`?lab=id:choice`, address bar
+  always holds the current one), receipt + hi-score stamping, persistence via
+  the options store. First entry: speedPopup with four choices (SPEED +1600 /
+  +1600 / SPEED / none). Plumbing change under it: core popups carry `val`
+  (the paid value) and never format text — renderer formats per `prefs`
+  (renderer stays DOM-free; sim never imports it). r49's `g.tune.speedNum` and
+  the Booth chip are gone (superseded). Not a design change to scoring or
+  behaviour; referee run byte-identical to r48/r49 controls. `test/shell.mjs`
+  now also loads `?lab=speedPopup:num` and asserts rows inject, the choice
+  applies, and the address bar is rewritten; and asserts zero lab rows on the
+  plain page. BUILD r49 → r50.
