@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-03 (r44: results receipt + local hi-score table with initials entry. Reds = midboss bot-priority question only).
+Last updated: 2026-09-03 (r45: initials entry never appears in practice. Reds = midboss bot-priority question only).
 
 ---
 
@@ -1091,3 +1091,13 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   hi-score is actually being entered. Per-section speed-kill breakdown (full
   R8) deferred — needs killLog to carry section, a separate instrumentation
   round. BUILD r43 → r44.
+- 2026-09-03 — r45: initials entry never appears in practice (Jacob: "practice
+  shouldn't even show the input-initials card — no shmup does that"). r44
+  already excluded practice from the SAVE, but a state-leak could still surface
+  the entry overlay; couldn't be pinned by inspection, so the fix is
+  belt-and-suspenders rather than clever: the qualify decision is now a pure,
+  exported qualifies(state, practice, score, scores) — practice > 0 returns
+  false at any score — and a module latch wasPractice hard-hides the entry and
+  no-ops entryNav for a practice receipt regardless of prior state. Headless
+  check: a practice game object never qualifies even with an empty board and a
+  huge score; a full run at the same score does. BUILD r44 → r45.

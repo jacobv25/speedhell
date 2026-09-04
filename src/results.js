@@ -12,7 +12,16 @@ const $ = (id) => document.getElementById(id);
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.';
 let onShown = null;
 let receiptShown = false, entryOpen = false, tableOpen = false;
-let slots = [0, 0, 0], slot = 0, pendingEntry = null;
+let slots = [0, 0, 0], slot = 0, pendingEntry = null, wasPractice = false;
+
+// r45: pure, testable — a run enters initials ONLY if it is a full run that
+// beats the board. Practice never qualifies, at any score (Jacob: no shmup
+// shows the initials card in practice). Exported for the headless check.
+export function qualifies(state, practice, score, scores) {
+  if (practice > 0) return false;
+  if (state !== 'gameover' && state !== 'clear') return false;
+  return scores.length < 10 || score > scores[scores.length - 1].score;
+}
 
 export function busy() { return entryOpen || tableOpen; } // an overlay that owns input
 const fmtTime = (f) => { const s = Math.floor(f / 60); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
@@ -51,24 +60,22 @@ function buildReceipt(g, label) {
   if (!st.deaths.length) badges.push('NO MISS');
   if (!st.bombsUsed) badges.push('NO BOMB');
   $('resBadges').textContent = badges.join('  ·  ');
-  // qualification: FULL RUNS only, top 10
-  entryOpen = false; pendingEntry = null;
-  if (!practice) {
-    const scores = loadScores();
-    if (scores.length < 10 || g.score > scores[scores.length - 1].score) {
-      pendingEntry = { score: g.score, speedKills: g.speedKills, kills: g.kills, maxChain: st.maxChain, cleared: clear, date: new Date().toISOString().slice(0, 10), build: BUILD };
-      const init = (store.get('speedhell.initials', 'AAA') + 'AAA').slice(0, 3);
-      slots = [...init].map((c) => Math.max(0, CHARS.indexOf(c)));
-      slot = 0; entryOpen = true;
-    }
+  // qualification: FULL RUNS only, top 10 (pure gate, practice can never pass)
+  entryOpen = false; pendingEntry = null; wasPractice = practice;
+  if (qualifies(g.state, g.practice, g.score, loadScores())) {
+    pendingEntry = { score: g.score, speedKills: g.speedKills, kills: g.kills, maxChain: st.maxChain, cleared: clear, date: new Date().toISOString().slice(0, 10), build: BUILD };
+    const init = (store.get('speedhell.initials', 'AAA') + 'AAA').slice(0, 3);
+    slots = [...init].map((c) => Math.max(0, CHARS.indexOf(c)));
+    slot = 0; entryOpen = true;
   }
   renderEntry();
   $('resHint').textContent = entryOpen ? '' : 'SHOT retry · Ⓑ title · START menu';
 }
 
 function renderEntry() {
-  $('entry').classList.toggle('hide', !entryOpen);
-  if (!entryOpen) return;
+  const show = entryOpen && !wasPractice; // r45: entry can never render for a practice run
+  $('entry').classList.toggle('hide', !show);
+  if (!show) return;
   $('entry').querySelectorAll('.eslots span').forEach((sp, i) => {
     sp.textContent = CHARS[slots[i]]; sp.classList.toggle('sel', i === slot);
   });
@@ -87,7 +94,7 @@ function confirmEntry() {
 }
 
 function entryNav(act) {
-  if (!entryOpen) return;
+  if (!entryOpen || wasPractice) return;
   if (act === 'up') slots[slot] = (slots[slot] + CHARS.length - 1) % CHARS.length;
   else if (act === 'down') slots[slot] = (slots[slot] + 1) % CHARS.length;
   else if (act === 'left') slot = (slot + 2) % 3;
