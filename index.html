@@ -51,10 +51,11 @@
 
   /* r44 results receipt + hi-score table (r46: practice gets a distinct card) */
   #results, #scores { position: fixed; inset: 0; display: grid; place-items: center; z-index: 6; }
+  #sounds { position: fixed; inset: 0; display: grid; place-items: center; z-index: 8; } /* r55: above the options menu */
   #results.hide, #scores.hide { display: none; }
-  #resultsCard, #scoresCard { min-width: 280px; max-width: 92vw; padding: 16px 22px; background: rgba(8,10,18,.94);
+  #resultsCard, #scoresCard, #soundsCard { min-width: 280px; max-width: 92vw; padding: 16px 22px; background: rgba(8,10,18,.94);
     border: 1px solid #2a3050; font: 12px monospace; color: #c8cde4; text-align: center; }
-  #resultsCard h1, #scoresCard h1 { margin: 0 0 8px; font: bold 14px monospace; letter-spacing: .25em; color: #ff4fa3; }
+  #resultsCard h1, #scoresCard h1, #soundsCard h1 { margin: 0 0 8px; font: bold 14px monospace; letter-spacing: .25em; color: #ff4fa3; }
   #resultsCard.practice { border-color: #ffd24a; }               /* r46: practice reads as a different mode at a glance */
   #resultsCard.practice h1 { color: #ffd24a; }
   #resultsCard.practice .rsub { color: #ffd24a; }             /* r47: mode line reads in the accent too */
@@ -69,11 +70,14 @@
   #entry .eslots span { display: inline-block; width: 26px; font: bold 20px monospace; color: #e8ecf8;
     border-bottom: 2px solid #2a3050; margin: 0 4px; }
   #entry .eslots span.sel { color: #ff4fa3; border-color: #ff4fa3; }
-  #resultsCard .note, #scoresCard .note { margin-top: 8px; font-size: 10px; color: #5a6480; }
+  #resultsCard .note, #scoresCard .note, #soundsCard .note { margin-top: 8px; font-size: 10px; color: #5a6480; }
   #scoresCard table { border-collapse: collapse; margin: 6px auto; }
   #scoresCard th, #scoresCard td { padding: 2px 8px; font: 11px monospace; text-align: left; }
   #scoresCard tr.seed td { color: #5a6480; }                     /* r48: default (house) rows read as placeholders */
   #scoresCard th { color: #5a6480; }
+  #soundList { text-align: left; columns: 2; column-gap: 18px; }          /* r55 sound test rows */
+  #soundList .srow { padding: 2px 8px; font: 11px monospace; color: #8a8fa8; cursor: pointer; break-inside: avoid; }
+  #soundList .srow.sel { color: #ff4fa3; outline: 1px solid #ff4fa3; outline-offset: 1px; }
   /* r42 title menu (audit MUST #1) — DOM overlay; never rotates with TATE */
   #title { position: fixed; inset: 0; display: grid; place-items: end center;
            padding-bottom: 10vh; pointer-events: none; z-index: 5; }
@@ -138,6 +142,13 @@
     <div class="note">full runs only · Esc/Enter/Ⓐ/Ⓑ close</div>
   </div>
 </div>
+<div id="sounds" class="hide">
+  <div id="soundsCard">
+    <h1>SOUND TEST</h1>
+    <div id="soundList"></div>
+    <div class="note">↑↓ select · Enter/Ⓐ play (♪ toggles) · Esc/Ⓑ close · plays dry, lab settings apply</div>
+  </div>
+</div>
 <div id="howto" class="hide">
   <div id="howtoCard">
     <h1>HOW TO PLAY</h1>
@@ -162,6 +173,7 @@
     <div class="row"><label>sound</label><button id="optMute" class="btn">sound on</button></div>
     <div class="row"><label>TATE</label><button id="optTate" class="btn">off</button></div>
     <div class="row"><label>display</label><button id="optFull" class="btn">enter fullscreen</button></div>
+    <div class="row"><label>audio</label><button id="optSound" class="btn">sound test</button></div>
     <div class="keys">
       <div class="row"><label>shot</label><button class="btn bind" data-act="fire">Z / space</button></div>
       <div class="row"><label>focus</label><button class="btn bind" data-act="focus">shift</button></div>

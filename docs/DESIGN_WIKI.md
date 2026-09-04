@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-04 (r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-04 (r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -1406,3 +1406,18 @@ is placement, not authoring time. Not scheduled.
   driving-forward layer); no pushback found beyond taste — the compressor
   keeps it under the music. Browser-only: core, sim, rng untouched. BUILD
   r53 → r54.
+- 2026-09-04 — r55: SOUND TEST (Jacob, after hearing r54's thump: "thoughts on a
+  music demo room? to demo each sfx?"). Shell, not Lab: a sound test is arcade
+  canon (every M2 ShotTriggers port, CAVE option menus — shell-parity audit
+  lineage), so it is permanent. OPTIONS gains an "audio: sound test" row; the
+  card opens ON TOP of the menu (menu + pause stay underneath), lists all 16
+  sfx by plain name plus both music tracks (♪ toggles play/stop from the
+  track's musical entry point), ↑↓ / Enter / Ⓐ / Esc / Ⓑ, mouse click, pad.
+  Effects play DRY: `audio.playSfx` suppresses the music cut/duck/switch that
+  DIE / WARNING / BOSS / CLEAR / GAMEOVER carry, so you audition the sound,
+  not the transition. Music preview never touches the run's music
+  bookkeeping (`current` / pause bookmark), so closing the card resumes
+  exactly what was playing. Live lab settings apply (r54 killAudio), which
+  makes this the A/B tool for the audio pass and lets Mark hear one sound at
+  a time. `test/shell.mjs` opens the card headlessly and asserts 18 rows.
+  Browser-only; core, sim, rng untouched. BUILD r54 → r55.

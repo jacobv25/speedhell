@@ -68,7 +68,7 @@ export function cycleTate() { const n = (tateN() + 1) % 3; applyTate(n); refresh
 // ---------------------------------------------------------------- menu
 const $ = (id) => document.getElementById(id);
 let open = false, capturing = null, escLocked = false;
-let enterTogglesFn = () => true, onQuitFn = null, onRetryFn = null;
+let enterTogglesFn = () => true, onQuitFn = null, onRetryFn = null, onSoundTestFn = null;
 let rows = [], selIdx = 0, auditionT = 0;
 export function isOpen() { return open; }
 export function openOptions() { if (!open) setOpen(true); }
@@ -139,8 +139,9 @@ function refresh() {
     `arrows/WASD move · ${actLabel('fire')} shot · ${actLabel('focus')} focus · ${actLabel('bomb')} bomb · ESC or START: menu`;
 }
 
-export function initOptions({ enterToggles, onQuit, onRetry } = {}) {
+export function initOptions({ enterToggles, onQuit, onRetry, onSoundTest } = {}) {
   if (enterToggles) enterTogglesFn = enterToggles;
+  if (onSoundTest) { onSoundTestFn = onSoundTest; $('optSound').onclick = () => onSoundTestFn(); } // r55: card opens ON TOP; menu (and the pause) stay
   if (onQuit) { onQuitFn = onQuit; $('optQuit').onclick = () => { setOpen(false); onQuitFn(); }; }
   if (onRetry) { onRetryFn = onRetry; $('optRetry').onclick = () => { setOpen(false); onRetryFn(); }; }
   $('optResume').onclick = () => setOpen(false);

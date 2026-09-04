@@ -76,10 +76,11 @@ try {
       expression: `JSON.stringify({
         build: (document.body.innerText.match(/r\\d+/) || [])[0],
         leaks: [...document.querySelectorAll('.hide')].filter((el) => getComputedStyle(el).display !== 'none').map((el) => el.id || el.className),
-        ids: Object.fromEntries(['results', 'entry', 'resTag', 'resSub', 'resLab', 'scores', 'title', 'howto', 'opts', 'lab'].map((i) => [i, document.getElementById(i) ? getComputedStyle(document.getElementById(i)).display : 'MISSING'])),
+        ids: Object.fromEntries(['results', 'entry', 'resTag', 'resSub', 'resLab', 'scores', 'sounds', 'title', 'howto', 'opts', 'lab'].map((i) => [i, document.getElementById(i) ? getComputedStyle(document.getElementById(i)).display : 'MISSING'])),
         labRows: [...document.querySelectorAll('[data-lab]')].map((b) => b.dataset.lab + '=' + b.textContent),
         labHidden: document.getElementById('lab')?.classList.contains('hide'),
         search: location.search,
+        soundTest: (() => { document.getElementById('optSound').click(); const s = document.getElementById('sounds'); const r = { display: getComputedStyle(s).display, rows: s.querySelectorAll('.srow').length }; s.classList.add('hide'); return r; })(),
       })`, returnByValue: true,
     }, sessionId);
     await send('Target.closeTarget', { targetId });
@@ -95,6 +96,8 @@ try {
   const missing = Object.entries(plain.ids).filter(([, v]) => v === 'MISSING').map(([k]) => k);
   if (missing.length) fails.push('missing overlay ids: ' + missing.join(', '));
   if (plain.labRows.length || !plain.labHidden) fails.push('lab rows present WITHOUT ?lab: ' + JSON.stringify(plain.labRows));
+  console.log('sound test', JSON.stringify(plain.soundTest));
+  if (plain.soundTest.display !== 'grid' || plain.soundTest.rows < 18) fails.push('sound test did not open with 18 rows: ' + JSON.stringify(plain.soundTest));
   // 2. ?lab page: rows injected, the link's config applied, address bar rewritten to the share link
   const lab = await page('/index.html?lab=speedPopup:num,fxSize:2');
   console.log('lab rows', lab.labRows.join(' | ') || '(none)', '· search', lab.search);

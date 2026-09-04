@@ -12,6 +12,7 @@ import { initOptions, isOpen as optionsOpen, openOptions, menuNav, binds, padBin
 import { initHowTo, isHowToOpen, openHowTo, closeHowTo } from './howto.js';
 import { initResults, syncReceipt, busy as resultsBusy, padNav as resultsPad, showScores } from './results.js';
 import { initLab } from './lab.js';
+import { initSoundTest, openSoundTest, busy as soundBusy, padNav as soundPad } from './soundtest.js';
 
 // build tag pinned bottom-right, its own element — confirms which build loaded
 const ver = document.getElementById('ver');
@@ -66,11 +67,13 @@ titleRender();
 
 initHowTo(); // r35: one-card briefing, auto once ever (registered first so it wins the capture phase)
 initResults(); // r44: receipt + hi-scores (capture listener registered before options)
+initSoundTest(); // r55: sound test card (capture listener registered before options — it sits on top of the menu)
 initLab(); // r50: playtest experiment rows (only with ?lab in the URL)
 initOptions({
   enterToggles: () => g.state === 'play', // title Enter starts; end-screen Enter retries
   onQuit: () => quitToTitle(),
   onRetry: () => retryRun(),
+  onSoundTest: () => openSoundTest(), // r55
 });
 
 function beginRun(t = currentStart) { // every run-start path
@@ -91,7 +94,7 @@ for (const ev of ['pointerdown', 'keydown', 'touchstart'])
 
 const keys = {};
 addEventListener('keydown', (e) => {
-  if (optionsOpen() || isHowToOpen() || resultsBusy()) return; // an overlay owns the keyboard (their own capture listeners)
+  if (optionsOpen() || isHowToOpen() || resultsBusy() || soundBusy()) return; // an overlay owns the keyboard (their own capture listeners)
   const k = e.key.toLowerCase();
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key) || isBoundKey(k)) e.preventDefault();
   keys[k] = true;
@@ -175,6 +178,9 @@ function frame(now) {
     const pe = padEdges(gp);
     if (isHowToOpen()) {
       if (pe.a || pe.b || pe.start) { closeHowTo(); padLatch = true; }
+    } else if (soundBusy()) { // r55: the sound test card sits on top of the options menu and owns the pad
+      soundPad(pe);
+      if (pe.a || pe.b || pe.start) padLatch = true;
     } else if (optionsOpen()) {
       if (isCapturing() && pe.btns.length) { for (const b of pe.btns) capturePad(b); padLatch = true; } // r40: stick rebinding
       else {

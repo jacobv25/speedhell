@@ -157,6 +157,28 @@ export function musicBurst(ms = 1500) {
   burstT = setTimeout(() => t.el.pause(), ms);
 }
 
+// r55 sound test music preview: plays a track's element from its musical
+// entry point WITHOUT touching `current` / musicShouldPlay — the run's own
+// music bookkeeping (options has it paused with a bookmark) is untouched, so
+// closing the card and resuming the run brings back exactly what was playing.
+let preview = null;
+export function previewMusic(name) {
+  if (!ac || !tracks[name]) return;
+  stopPreview();
+  const t = tracks[name]; clearTimeout(burstT);
+  try { t.el.currentTime = MUSIC[name].start; } catch (_) { /* not seekable yet */ }
+  t.level = t.target = 1; applyMusicVolumes();
+  const p = t.el.play(); if (p && p.catch) p.catch(() => {});
+  preview = name;
+}
+export function stopPreview() {
+  if (!preview) return;
+  const name = preview, t = tracks[name]; preview = null;
+  t.el.pause();
+  if (name === current) { if (pausedAt >= 0) { try { t.el.currentTime = pausedAt; } catch (_) { /* ok */ } } } // back to the run's bookmark
+  else { t.level = t.target = 0; applyMusicVolumes(); }
+}
+
 // ---------- procedural SFX ----------
 function osc(type, f0, f1, dur, vol, { t0 = 0, curve = 'exp', detune = 0 } = {}) {
   const t = ac.currentTime + t0;
@@ -198,6 +220,10 @@ export function sfxTest() { if (ac) explosion(1); } // r30: audible feedback for
 function arp(notes, step, dur, type = 'square', vol = 0.25) { notes.forEach((f, i) => osc(type, f, f, dur, vol, { t0: i * step })); }
 
 let shotTick = 0;
+// r55 sound test: `dry` suppresses the music side-effects (cut/duck/switch)
+// that a few handlers carry, so the card auditions the sound, not the transition.
+let dry = false;
+export function playSfx(id) { if (!ac) return; const h = HANDLERS[id]; if (!h) return; dry = true; try { h(); } finally { dry = false; } }
 const HANDLERS = {
   [SFX.SHOT]: () => { if ((shotTick++ & 1) === 0) { osc('square', 880, 220, 0.06, 0.12); noise(0.03, 0.08, { hp: 3000 }); } },
   [SFX.HIT]: () => { osc('triangle', 300, 120, 0.04, 0.18); },
@@ -209,12 +235,12 @@ const HANDLERS = {
   [SFX.ITEM]: () => { osc('sine', 1400, 2100, 0.07, 0.14); },
   [SFX.CANCEL]: () => { noise(0.5, 0.35, { hp: 1200 }); osc('sawtooth', 200, 1600, 0.45, 0.2); },
   [SFX.BOMB]: () => { noise(0.9, 0.7, { lp: 6000, lpEnd: 80 }); osc('sawtooth', 60, 20, 0.9, 0.5); osc('sine', 800, 40, 0.5, 0.4); },
-  [SFX.DIE]: () => { osc('square', 600, 40, 0.6, 0.35, { curve: 'lin' }); noise(0.6, 0.5, { lp: 4000, lpEnd: 100 }); duckMusic(0.35, 0.05); setTimeout(() => duckMusic(1, 0.6), 700); },
-  [SFX.WARNING]: () => { for (let i = 0; i < 3; i++) { osc('square', 440, 440, 0.18, 0.22, { t0: i * 0.36 }); osc('square', 330, 330, 0.18, 0.22, { t0: i * 0.36 + 0.18 }); } stopMusic(0.12); }, // r20 (Booth flag): the stage track used to FADE over 0.9s and was still audible under the siren — arcade warnings cut the music; the boss track then starts clean
+  [SFX.DIE]: () => { osc('square', 600, 40, 0.6, 0.35, { curve: 'lin' }); noise(0.6, 0.5, { lp: 4000, lpEnd: 100 }); if (!dry) { duckMusic(0.35, 0.05); setTimeout(() => duckMusic(1, 0.6), 700); } },
+  [SFX.WARNING]: () => { for (let i = 0; i < 3; i++) { osc('square', 440, 440, 0.18, 0.22, { t0: i * 0.36 }); osc('square', 330, 330, 0.18, 0.22, { t0: i * 0.36 + 0.18 }); } if (!dry) stopMusic(0.12); }, // r20 (Booth flag): the stage track used to FADE over 0.9s and was still audible under the siren — arcade warnings cut the music; the boss track then starts clean
   [SFX.MIDBOSS]: () => { osc('sawtooth', 80, 200, 0.6, 0.3); osc('square', 55, 55, 0.7, 0.2); },
-  [SFX.BOSS]: () => { playMusic('boss'); osc('sawtooth', 60, 160, 1.0, 0.35); noise(1.2, 0.25, { lp: 700, lpEnd: 100 }); },
-  [SFX.CLEAR]: () => { stopMusic(1.5); arp([523, 659, 784, 1047, 1319, 1568], 0.09, 0.5, 'square', 0.22); },
-  [SFX.GAMEOVER]: () => { stopMusic(0.5); arp([392, 370, 349, 330, 262], 0.16, 0.45, 'square', 0.2); },
+  [SFX.BOSS]: () => { if (!dry) playMusic('boss'); osc('sawtooth', 60, 160, 1.0, 0.35); noise(1.2, 0.25, { lp: 700, lpEnd: 100 }); },
+  [SFX.CLEAR]: () => { if (!dry) stopMusic(1.5); arp([523, 659, 784, 1047, 1319, 1568], 0.09, 0.5, 'square', 0.22); },
+  [SFX.GAMEOVER]: () => { if (!dry) stopMusic(0.5); arp([392, 370, 349, 330, 262], 0.16, 0.45, 'square', 0.2); },
 };
 
 export function drain(g) {
