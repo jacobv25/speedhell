@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-03 (r48: hi-score board ships seeded, floor 10000. Reds = midboss bot-priority question only).
+Last updated: 2026-09-04 (r49 EXPERIMENT: SPEED popup shows +value. Reds = midboss bot-priority question only).
 
 ---
 
@@ -103,11 +103,17 @@ If the screen is empty, no gate is holding, and the next timeline event is >30
 frames away, the stage clock runs 4×. Speed-killing a wave pulls the next one in
 sooner (WS06 lineage). Never fast-forwards through the WARNING ritual.
 
-### 2.6 Known legibility gap
+### 2.6 Speed-kill popup shows its value (r49 EXPERIMENT)
 
-Speed-kill popups say `SPEED`, not the doubled number; slow kills say `+800`.
-The biggest scoring lever is the one the player never sees. Candidate fix:
-`SPEED +1600`. Not yet done.
+Until r48 speed-kill popups said `SPEED` while slow kills said `+800` — the
+biggest scoring lever was the one the player never saw a number for. r49 makes
+the popup `SPEED +1600` (`speedText`, `game.js` above `addPopup`; both
+`killEnemy` and `scoreBossPhase`). Text only: no rng, no score change, popup
+stays gold/15px/big with the word first so the binary state (Pillar 2, BH
+WS06) still reads before the number. Rollback: Booth chip "SPEED word only
+(old)" sets `g.tune.speedNum = 0`. **Jacob: experimental — may be dropped or
+replaced.** Watch for: popup width ~2× (S2 readable-chaos), edge clipping at
+x<50 (addPopup clamps at 40).
 
 ## 3. Enemy lifecycles — "dynamic lifecycle" (S4)
 
@@ -445,7 +451,7 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
    bullets and the hop? If it stays, should it be *visible* (a meter, a tell)?
 3. **P3 parts reach.** Is the 5s part window honest for a human against the
    sweep + bob, or a bot-only side-bet? Measure before tuning.
-4. **SPEED popups hide the number.** Show `SPEED +1600`?
+4. **SPEED popups hide the number.** r49 experiment shows `SPEED +1600` (§2.6); verdict pending Jacob's playtest.
 5. **Midboss bloom readability.** Three slow laned walls at arrival — fair, or
    a jump-scare that needs to be two?
 6. **Mid #4 exit timing** overlaps the midboss gate, contradicting its own
@@ -1149,3 +1155,16 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   the receipt, the values and the entry rules are the same — only the entry
   threshold on a fresh install moved from 0 to 10000. Shell only; no core/sim/
   rng change. BUILD r47 → r48.
+- 2026-09-04 — r49 EXPERIMENT: `SPEED +1600` popup (wiki §2.6 / open question
+  #4; Jacob: "only an experiment, I may decide to not use it / go with something
+  else"). Corpus: Pillar 2 + BH WS06 want quick-kill bonuses as binary VISIBLE
+  states, never opaque frame math — the word stays first and gold, the number
+  makes the doubling legible beside the `+800` a slow kill already shows (the
+  old asymmetry meant the player only saw a number when they'd done it wrong).
+  MSX: the meta is authored in the game, no hidden math — a scoring lever the
+  player never sees the value of is the opposite. Pushback (S2 readable chaos,
+  BH WS02): the popup is ~2× wider on a dense field; mitigated by keeping the
+  15px gold style and the addPopup baseline de-conflict, unchanged. Not a
+  scoring change (values, windows, chain untouched); text only, no rng —
+  referee run byte-identical to r48 as control. Booth rollback chip "SPEED
+  word only (old)" for A/B. BUILD r48 → r49.
