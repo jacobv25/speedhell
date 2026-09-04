@@ -96,11 +96,12 @@ try {
   if (missing.length) fails.push('missing overlay ids: ' + missing.join(', '));
   if (plain.labRows.length || !plain.labHidden) fails.push('lab rows present WITHOUT ?lab: ' + JSON.stringify(plain.labRows));
   // 2. ?lab page: rows injected, the link's config applied, address bar rewritten to the share link
-  const lab = await page('/index.html?lab=speedPopup:num');
+  const lab = await page('/index.html?lab=speedPopup:num,fxSize:2');
   console.log('lab rows', lab.labRows.join(' | ') || '(none)', '· search', lab.search);
   if (!lab.labRows.length || lab.labHidden) fails.push('?lab did not inject lab rows');
   if (!lab.labRows.some((r) => r.startsWith('speedPopup=+1600'))) fails.push('?lab=speedPopup:num not applied: ' + JSON.stringify(lab.labRows));
-  if (!lab.search.includes('lab=speedPopup:num')) fails.push('address bar not rewritten to the share link: ' + lab.search);
+  if (!lab.labRows.some((r) => r.startsWith('fxSize=2×'))) fails.push('?lab fxSize:2 not applied (multi-experiment decode): ' + JSON.stringify(lab.labRows));
+  if (!lab.search.includes('speedPopup:num') || !lab.search.includes('fxSize:2')) fails.push('address bar not rewritten to the share link: ' + lab.search);
   if (fails.length) for (const f of fails) console.log('FAIL:', f);
   else { console.log('PASS: overlays hide; lab absent without ?lab, present + applied with it'); exitCode = 0; }
   ws.close();

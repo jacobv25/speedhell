@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-04 (r50: the Lab — playtest experiment switches, speedPopup first. Reds = midboss bot-priority question only).
+Last updated: 2026-09-04 (r51: explosion size + look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -457,6 +457,11 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
    a jump-scare that needs to be two?
 6. **Mid #4 exit timing** overlaps the midboss gate, contradicting its own
    comment. Fix the timing or accept the overlap as content?
+12. **Explosion size / look** (r51 lab: fxSize 1×/1.5×/2×, fxStyle classic/
+    bloom/heavy). Jacob wants them "bigger and better looking" (2026-09-04);
+    boghog already asked for "significantly bigger than the enemy". Which
+    combination, and does 2× hurt bullet reading on the boss? Testers decide
+    via `?lab=fxSize:2,fxStyle:heavy` etc.
 7. **Chain as a scoreboard.** The HUD's most prominent number is the least
    valuable one. Keep it (it's the *speed-kill streak*, which is the identity)
    or demote it?
@@ -575,8 +580,22 @@ and the `#lab` panel go.
   the HOW TO card (`src/howto.js` mirrors the art); fx particle counts stay on
   `g.fxRng`.
 
-Live experiments: **speedPopup** (§2.6, open Q4). Queued: explosions, player
-ship, boss art.
+Live experiments: **speedPopup** (§2.6, open Q4) · **fxSize** + **fxStyle**
+(explosions, open Q12, r51). Queued: player ship, boss art.
+
+**r51 explosions (renderer-only, `drawFx`).** `fxSize` 1× / 1.5× / 2×
+multiplies every particle's draw size (fire, core, ring, smoke, debris,
+spark); `fxStyle` classic / bloom / heavy: bloom = low-alpha warm halo behind
+each fireball (0.12 — nine stack additively on a boss phase, so it must stay
+low), a dim halo around the white core flash, sparks drawn as streaks along
+their velocity; heavy = bloom + a second wider fainter shockwave + darker,
+longer-lived smoke + 1.3× debris. Particle counts, positions, lifetimes and
+`g.fxRng` are untouched (the r8-fx budgets 31/38/55/~93/~63 still hold), so
+S8 stays measured by the same sim. Everything still draws below bullets.
+Pushback to watch (S2, BH WS02): at 2× a boss-phase burst covers most of the
+field; bullets stay on top but white cores over a white-yellow fireball lose
+contrast — the dark rims are doing the work. Peek: `test/fxpeek.html` via
+`tools/peek.mjs` renders the three looks at three frames side by side.
 
 ## Changelog of decisions recorded here
 
@@ -1219,3 +1238,16 @@ ship, boss art.
   now also loads `?lab=speedPopup:num` and asserts rows inject, the choice
   applies, and the address bar is rewritten; and asserts zero lab rows on the
   plain page. BUILD r49 → r50.
+- 2026-09-04 — r51 EXPERIMENT: explosions in the Lab (Jacob: "I know for sure
+  I want to experiment with the explosions, likely making them bigger and
+  better looking"). Two rows: fxSize 1×/1.5×/2× and fxStyle classic/bloom/
+  heavy — renderer-only in `drawFx`, details in §10, open Q12. Corpus: boghog
+  (r8-fx comment: "explosions significantly bigger than the enemy, varied
+  patterns, extra debris") and rubric S4-MUST "explosions punchy" both pull
+  toward bigger; S2-MUST depth sort is preserved (fx still below bullets) and
+  BH WS02 readable-chaos is the pushback — halos are alpha-capped after the
+  first peek blew a boss phase out to a flat white disc. Core, fx rng, particle
+  budgets and the referee untouched (no sim change possible: sim.mjs never
+  imports the renderer). New builder tool `tools/peek.mjs` + `test/fxpeek.html`
+  (headless screenshots of a harness page) so looks get eyeballed before
+  hand-off. `test/shell.mjs` now decodes a two-experiment link. BUILD r50 → r51.

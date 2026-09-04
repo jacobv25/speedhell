@@ -17,6 +17,14 @@ export const EXPERIMENTS = [
   { id: 'speedPopup', label: 'SPEED popup', def: 'both', ref: 'wiki §2.6 / open Q4',
     choices: [['both', 'SPEED +1600'], ['num', '+1600'], ['word', 'SPEED (old)'], ['off', 'none']],
     apply: (v) => { prefs.speedPopup = v; } },
+  // r51 explosions — renderer-only (particle counts/positions/fx-rng untouched);
+  // always drawn below bullets, so size can grow without masking a threat (S2).
+  { id: 'fxSize', label: 'explosion size', def: '1', ref: 'wiki §10 / open Q12',
+    choices: [['1', '1× (current)'], ['1.5', '1.5×'], ['2', '2×']],
+    apply: (v) => { prefs.fxSize = +v; } },
+  { id: 'fxStyle', label: 'explosion look', def: 'classic', ref: 'wiki §10 / open Q12',
+    choices: [['classic', 'classic (current)'], ['bloom', 'bloom — halos + streak sparks'], ['heavy', 'heavy — bloom + 2nd shockwave + smoke']],
+    apply: (v) => { prefs.fxStyle = v; } },
 ];
 
 const KEY = 'speedhell.lab';

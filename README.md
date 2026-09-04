@@ -51,5 +51,7 @@ never edit them** — that's grading your own homework.
 - `test/shell.mjs` — browser check of the DOM shell (overlays hide for real). Run it
   after any index.html / overlay change — a JS-only test can't see a missing CSS rule.
 - `src/lab.js` — playtest experiment switches (wiki §10). Open the game with `?lab`
-  to get the rows in OPTIONS; `?lab=speedPopup:num` is a shareable configuration.
+  to get the rows in OPTIONS; `?lab=speedPopup:num,fxSize:2` is a shareable configuration.
+- `tools/peek.mjs` + `test/fxpeek.html` — headless screenshot of a harness page (the
+  explosion looks side by side); eyeball presentation experiments before handing them off.
 - `evidence/` — metrics + screenshots consumed by gauntlet critics.

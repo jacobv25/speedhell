@@ -6,7 +6,12 @@ import { W, H, PLAYER, FX } from '../core/game.js';
 // r50 lab: presentation prefs the shell may switch live (src/lab.js writes
 // them). The renderer stays DOM-free; headless harnesses get the defaults.
 // speedPopup: 'both' = SPEED +1600 · 'num' = +1600 · 'word' = SPEED · 'off'
-export const prefs = { speedPopup: 'both' };
+// fxSize: draw-size multiplier on every explosion particle (r51 experiment)
+// fxStyle: 'classic' · 'bloom' (halos, streak sparks, hotter core) · 'heavy'
+//          (bloom + second shockwave + darker longer smoke + bigger debris)
+// Renderer-only: particle counts, positions and the fx rng are untouched, and
+// everything still draws BELOW bullets (S2 — explosions never mask threats).
+export const prefs = { speedPopup: 'both', fxSize: 1, fxStyle: 'classic' };
 
 // r8-fx explosion palette, indexed [family][heat stop 0=hot … 3=cool] by the
 // particle's remaining life. Lookup tables: no string building in the hot loop (S8).
@@ -225,19 +230,21 @@ export function draw(g, ctx, bgScroll) {
 
 function drawFx(ctx, g) {
   const n = g.particles.count, items = g.particles.items;
+  const S = prefs.fxSize, bloom = prefs.fxStyle !== 'classic', heavy = prefs.fxStyle === 'heavy'; // r51 lab
   for (let i = 0; i < n; i++) { // pass 1: smoke, debris
     const q = items[i];
     if (q.delay > 0 || (q.kind !== FX.SMOKE && q.kind !== FX.DEBRIS)) continue;
     const a = q.life / q.max;
     if (q.kind === FX.SMOKE) {
-      ctx.globalAlpha = a * 0.7;
+      ctx.globalAlpha = a * (heavy ? 0.85 : 0.7);
       ctx.fillStyle = FX_SMOKE[q.hue];
-      ctx.beginPath(); ctx.arc(q.x, q.y, q.size * (1 + (1 - a) * 1.2), 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(q.x, q.y, q.size * S * (1 + (1 - a) * (heavy ? 1.6 : 1.2)), 0, 7); ctx.fill();
     } else {
       ctx.globalAlpha = Math.min(1, a * 3);
       ctx.fillStyle = FX_DEBRIS[q.hue];
+      const d = q.size * S * (heavy ? 1.3 : 1);
       ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.rot);
-      ctx.fillRect(-q.size, -q.size / 2, q.size * 2, q.size);
+      ctx.fillRect(-d, -d / 2, d * 2, d);
       ctx.restore();
     }
   }
@@ -251,27 +258,44 @@ function drawFx(ctx, g) {
       case FX.SPARK: {
         ctx.globalAlpha = a;
         ctx.fillStyle = ramp[stop];
-        const s = 1 + a * 2;
-        ctx.fillRect(q.x - s / 2, q.y - s / 2, s, s);
+        const s = (1 + a * 2) * S;
+        if (bloom) { // streak along the velocity — reads as motion, not a dot
+          ctx.strokeStyle = ramp[stop]; ctx.lineWidth = s;
+          ctx.beginPath(); ctx.moveTo(q.x, q.y); ctx.lineTo(q.x - q.vx * 2.5, q.y - q.vy * 2.5); ctx.stroke();
+        } else ctx.fillRect(q.x - s / 2, q.y - s / 2, s, s);
         break;
       }
       case FX.FIRE: { // swells fast, then shrinks as it cools
-        const r = q.size * (a < 0.85 ? a / 0.85 : 0.4 + (1 - a) / 0.15 * 0.6);
+        const r = q.size * S * (a < 0.85 ? a / 0.85 : 0.4 + (1 - a) / 0.15 * 0.6);
+        if (bloom) { // soft halo behind the fireball (capped alpha: bullets stay legible over it)
+          ctx.globalAlpha = Math.min(1, a * 1.5) * 0.12; // low: nine of these stack additively on a boss phase
+          ctx.fillStyle = ramp[2];
+          ctx.beginPath(); ctx.arc(q.x, q.y, r * 1.7, 0, 7); ctx.fill();
+        }
         ctx.globalAlpha = Math.min(1, a * 1.5) * 0.85;
         ctx.fillStyle = ramp[1 + (((1 - a) * 2.99) | 0)]; // fire never starts white — the CORE owns the flash; overlaps bloom via 'lighter'
         ctx.beginPath(); ctx.arc(q.x, q.y, r, 0, 7); ctx.fill();
         break;
       }
       case FX.CORE: { // full size on frame 0, collapses
+        if (bloom) { // hotter flash: a wider dim halo around the white core
+          ctx.globalAlpha = a * 0.25;
+          ctx.fillStyle = ramp[1];
+          ctx.beginPath(); ctx.arc(q.x, q.y, q.size * S * a * 1.5, 0, 7); ctx.fill();
+        }
         ctx.globalAlpha = a;
         ctx.fillStyle = ramp[0];
-        ctx.beginPath(); ctx.arc(q.x, q.y, q.size * a, 0, 7); ctx.fill();
+        ctx.beginPath(); ctx.arc(q.x, q.y, q.size * S * a, 0, 7); ctx.fill();
         break;
       }
       case FX.RING: { // shockwave: expands out to `size`, thins and fades
         ctx.globalAlpha = a;
-        ctx.strokeStyle = ramp[1]; ctx.lineWidth = 0.5 + a * 2;
-        ctx.beginPath(); ctx.arc(q.x, q.y, q.size * (1 - a) + 1, 0, 7); ctx.stroke();
+        ctx.strokeStyle = ramp[1]; ctx.lineWidth = (0.5 + a * 2) * S;
+        ctx.beginPath(); ctx.arc(q.x, q.y, q.size * S * (1 - a) + 1, 0, 7); ctx.stroke();
+        if (heavy) { // second, wider, fainter shockwave trailing the first
+          ctx.globalAlpha = a * 0.45; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.arc(q.x, q.y, q.size * S * (1 - a) * 1.5 + 1, 0, 7); ctx.stroke();
+        }
         break;
       }
     }
