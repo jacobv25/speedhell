@@ -8,7 +8,9 @@ import { W, H, PLAYER, FX } from '../core/game.js';
 // speedPopup: 'both' = SPEED +1600 · 'num' = +1600 · 'word' = SPEED · 'off'
 // fxSize: draw-size multiplier on every explosion particle (r51 experiment)
 // fxStyle: 'classic' · 'bloom' (halos, streak sparks, hotter core) · 'heavy'
-//          (bloom + second shockwave + darker longer smoke + bigger debris)
+//          (bloom + second shockwave + darker longer smoke + bigger debris) ·
+//          'chunky' (r52: the Lazy Devs/CAVE recipe — spawned in core, see
+//          explodeChunky; here it means opaque shaded blobs + pixel snapping)
 // Renderer-only: particle counts, positions and the fx rng are untouched, and
 // everything still draws BELOW bullets (S2 — explosions never mask threats).
 export const prefs = { speedPopup: 'both', fxSize: 1, fxStyle: 'classic' };
@@ -22,6 +24,17 @@ const FX_RAMP = [
   ['#ffd27a', '#ff8a4a', '#e0503a', '#7a2a22'], // 3 BURN — boss handoff embers
 ];
 const FX_SMOKE = ['#3a3648', '#2c2a38', '#2a3038', '#3a2424'];
+// r52 chunky blob colour clock, [family][stage] = [rim, mid, highlight]; stage
+// 0 white flash → 1 yellow → 2 orange → 3 dark red → 4 grey smoke (Lazy Devs
+// "Better Explosions": white/yellow/orange/dark-red/grey, per-particle offset)
+const CH_SMOKE = ['#262432', '#34303f', '#46424f'];
+const CH_RAMP = [
+  [['#ffffff', '#ffffff', '#ffffff'], ['#b49aff', '#e8dcff', '#ffffff'], ['#6a4fc0', '#b49aff', '#e8dcff'], ['#3a2a70', '#6a4fc0', '#b49aff'], CH_SMOKE],
+  [['#ffffff', '#ffffff', '#ffffff'], ['#ff9a3c', '#ffe27a', '#ffffff'], ['#c8401e', '#ff9a3c', '#ffe27a'], ['#7a2a22', '#c8401e', '#ff9a3c'], CH_SMOKE],
+  [['#ffffff', '#ffffff', '#ffffff'], ['#7fd8ff', '#c8f4ff', '#ffffff'], ['#2f7fb0', '#7fd8ff', '#c8f4ff'], ['#1a4a70', '#2f7fb0', '#7fd8ff'], CH_SMOKE],
+  [['#ffd27a', '#ffd27a', '#ffffff'], ['#ff8a4a', '#ffd27a', '#ffffff'], ['#e0503a', '#ff8a4a', '#ffd27a'], ['#7a2a22', '#e0503a', '#ff8a4a'], CH_SMOKE],
+];
+const CH_STAGE_AT = [3, 9, 15, 22]; // age thresholds (frames) for stages 1..4 (white / yellow / orange / dark red / smoke)
 const FX_DEBRIS = ['#c8bfe8', '#d07a3a', '#5fb4d8', '#b0503a'];
 
 const ENEMY_TINT = ['#8a8fa8', '#9aa0b8', '#7d8298', '#a8adc4', '#b8bdd4', '#c8cde0', '#c0c6da'];
@@ -230,7 +243,31 @@ export function draw(g, ctx, bgScroll) {
 
 function drawFx(ctx, g) {
   const n = g.particles.count, items = g.particles.items;
-  const S = prefs.fxSize, bloom = prefs.fxStyle !== 'classic', heavy = prefs.fxStyle === 'heavy'; // r51 lab
+  const S = prefs.fxSize, bloom = prefs.fxStyle === 'bloom' || prefs.fxStyle === 'heavy', heavy = prefs.fxStyle === 'heavy'; // r51 lab
+  // r52 chunky pass 0: white constant-width shockwave UNDER everything, then
+  // opaque shaded blobs in spawn order (centre blob of each grape drawn last).
+  for (let i = 0; i < n; i++) {
+    const q = items[i];
+    if (q.delay > 0) continue;
+    if (q.kind === FX.RING && q.ck) { // linear expansion to target, hard cull (life sized to match)
+      const t = 1 - q.life / q.max;
+      ctx.globalAlpha = 1; ctx.strokeStyle = FX_RAMP[q.hue][0]; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(Math.round(q.x), Math.round(q.y), Math.max(1, Math.round(q.size * S * t)), 0, 7); ctx.stroke();
+    } else if (q.kind === FX.BLOB) {
+      const h = q.max - q.life + q.off; // age on this blob's own clock
+      const stage = h < CH_STAGE_AT[0] ? 0 : h < CH_STAGE_AT[1] ? 1 : h < CH_STAGE_AT[2] ? 2 : h < CH_STAGE_AT[3] ? 3 : 4;
+      const a = q.life / q.max;
+      // swell in over the first 4 frames, hold, then shrink to ZERO across the last 35% (never pops out)
+      const r = q.size * S * (h < 4 ? 0.55 + h * 0.1125 : a < 0.35 ? a / 0.35 : 1);
+      if (r < 0.6) continue;
+      const [rim, mid, hi] = CH_RAMP[q.hue][stage];
+      const x = Math.round(q.x), y = Math.round(q.y); // pixel-snapped: sub-pixel blobs read "unhinged" (Lazy Devs)
+      ctx.globalAlpha = stage === 4 ? Math.min(1, a * 2.2) : 1; // smoke fades a little as it shrinks
+      ctx.fillStyle = rim; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+      if (r >= 3) { ctx.fillStyle = mid; ctx.beginPath(); ctx.arc(x - r * 0.15, y - r * 0.15, r * 0.72, 0, 7); ctx.fill(); }
+      if (r >= 5) { ctx.fillStyle = hi; ctx.beginPath(); ctx.arc(x - r * 0.28, y - r * 0.28, r * 0.42, 0, 7); ctx.fill(); }
+    }
+  }
   for (let i = 0; i < n; i++) { // pass 1: smoke, debris
     const q = items[i];
     if (q.delay > 0 || (q.kind !== FX.SMOKE && q.kind !== FX.DEBRIS)) continue;
@@ -251,7 +288,7 @@ function drawFx(ctx, g) {
   ctx.globalCompositeOperation = 'lighter';
   for (let i = 0; i < n; i++) { // pass 2: hot kinds, additive
     const q = items[i];
-    if (q.delay > 0 || q.kind === FX.SMOKE || q.kind === FX.DEBRIS) continue;
+    if (q.delay > 0 || q.kind === FX.SMOKE || q.kind === FX.DEBRIS || q.kind === FX.BLOB || (q.kind === FX.RING && q.ck)) continue;
     const a = q.life / q.max, ramp = FX_RAMP[q.hue];
     const stop = ((1 - a) * 3.99) | 0;
     switch (q.kind) {
@@ -278,6 +315,11 @@ function drawFx(ctx, g) {
         break;
       }
       case FX.CORE: { // full size on frame 0, collapses
+        if (q.ck) { // r52 chunky: static contrast frame — full size for both frames, gone
+          ctx.globalAlpha = 1; ctx.fillStyle = ramp[0];
+          ctx.beginPath(); ctx.arc(Math.round(q.x), Math.round(q.y), q.size * S, 0, 7); ctx.fill();
+          break;
+        }
         if (bloom) { // hotter flash: a wider dim halo around the white core
           ctx.globalAlpha = a * 0.25;
           ctx.fillStyle = ramp[1];

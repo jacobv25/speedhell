@@ -34,7 +34,7 @@ const SFX_CAP = 32;
 // r8-fx: particle KINDS (the renderer draws each differently) and colour
 // FAMILIES (p.hue is a family index, not a hue). All fx randomness lives here
 // in core (g.rng) — the renderer keys only off g.frame (determinism seam).
-export const FX = { SPARK: 0, FIRE: 1, SMOKE: 2, DEBRIS: 3, RING: 4, CORE: 5 };
+export const FX = { SPARK: 0, FIRE: 1, SMOKE: 2, DEBRIS: 3, RING: 4, CORE: 5, BLOB: 6 }; // BLOB: r52 chunky grape blob
 export const FAM = { WHITE: 0, ORANGE: 1, CYAN: 2, BURN: 3 };
 export const TIER = { POP: 0, MED: 1, BIG: 2, PHASE: 3, PLAYER: 4 };
 
@@ -92,10 +92,12 @@ export function makeGame(seed = 1) {
     particles: makePool(400, () => ({
       x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 0, hue: 0,
       kind: 0, size: 0, rot: 0, vrot: 0, delay: 0, grav: 0, // r8-fx typed particle
+      fr: 1, off: 0, ck: 0, // r52 chunky: friction/frame, colour-clock start offset, chunky-spawned flag (CORE/RING draw variants)
     })),
     popups: makePool(32, () => ({ x: 0, y: 0, life: 0, text: '', big: 0, val: 0 })), // val: paid value (speed kills) — the renderer formats it (r50 lab)
     shake: 0, shakeMax: 0, flash: 0, cancelFlash: 0,
     hitstop: 0, fxHitstop: 0, // r8-fx: frames of world-freeze remaining; fxHitstop = frames granted per BIG/PHASE kill (0 = off)
+    fxStyle: 'classic', // r52 lab: explosion recipe chosen at SPAWN ('classic' | 'chunky'); main.js mirrors renderer prefs here — core stays DOM-free, fx rng only
     sfx: new Array(SFX_CAP).fill(0), sfxN: 0, // sound-event ring, drained per frame
     // instrumentation (read by sim + critics; cheap fixed-size)
     stats: {
@@ -155,7 +157,7 @@ export function spawnFx(g, kind, x, y, vx, vy, life, size, hue, delay = 0, grav 
   const p = g.particles.spawn(); if (!p) return null;
   p.kind = kind; p.x = x; p.y = y; p.vx = vx; p.vy = vy;
   p.max = p.life = life | 0; p.size = size; p.hue = hue; p.delay = delay | 0; p.grav = grav;
-  p.rot = 0; p.vrot = 0;
+  p.rot = 0; p.vrot = 0; p.fr = 1; p.off = 0; p.ck = 0;
   return p;
 }
 
@@ -167,6 +169,51 @@ function burst(g, x, y, n, hue, power = 1) { // isotropic spark spray
 }
 
 function setShake(g, n) { g.shake = g.shakeMax = n; }
+
+// r52 EXPERIMENT "chunky" (wiki §10 / open Q12) — the Lazy Devs / CAVE recipe
+// distilled from four episodes (Better Explosions, Shockwaves, Explosions,
+// Blob Grapes): matter thrown outward that STALLS (launch fast, friction
+// 0.86/frame), shaded OPAQUE blobs (renderer draws 3 offset circles, dark rim
+// → bright off-centre highlight, centre blob last) instead of additive discs,
+// ONE blob that cools white → yellow → orange → dark red → grey SMOKE and dies
+// by shrinking to zero (no separate smoke kind), a structured GRAPE (6 spokes
+// on a ring at a random start angle + a centre blob), bigger tiers stack
+// staggered grapes so new puffs emerge as earlier ones collapse (billow), a
+// static 2-frame oversized flash (S4 ≤2 startup frames) and a constant-width
+// white shockwave drawn UNDER the particles. Everything on g.fxRng; budgets
+// stay under classic's (POP 7+7+14 ≈ 28 … PHASE ≈ 74 < 93).
+const CH_GRAPES = [1, 2, 3, 4, 2], CH_SPOKES = 6, CH_FRICTION = 0.86;
+function explodeChunky(g, x, y, tier, hue, r) {
+  const rng = g.fxRng;
+  const R = Math.max(r, 8) * TIER_SC[tier];
+  const fl = spawnFx(g, FX.CORE, x, y, 0, 0, 2, R * 1.15, hue); if (fl) fl.ck = 1;       // static 2-frame contrast flash
+  const rw = spawnFx(g, FX.RING, x, y, 0, 0, Math.max(6, (R * 2.4 / 3.5) | 0), R * 2.4, hue); if (rw) rw.ck = 1; // linear, culled at target
+  for (let k = 0; k < CH_GRAPES[tier]; k++) {
+    const cx = k ? x + rng.range(-R * 0.5, R * 0.5) : x, cy = k ? y + rng.range(-R * 0.5, R * 0.5) : y;
+    const dl = k * 5, a0 = rng.range(0, 6.283), dist = R * 0.6, rb = R * 0.48 * (k ? rng.range(0.75, 1) : 1);
+    const life = 22 + rng.range(0, 10) + 18 + rng.range(0, 12); // fire phase + smoke phase, one particle
+    for (let i = 0; i < CH_SPOKES; i++) { // peripheral blobs first: outward along their spoke, then stall
+      // launch speed scales with R so the stall distance (≈ 7.1·s at 0.86 friction) lands the blob ~0.6R out:
+      // grape stays a raspberry (Lazy Devs: 6 spokes, ring 8, radius 5 for a popcorn), never a fidget spinner
+      const a = a0 + (i / CH_SPOKES) * 6.283, s = R * (0.05 + rng.range(0, 0.03)) * (1 + tier * 0.1);
+      const p = spawnFx(g, FX.BLOB, cx + Math.cos(a) * dist * 0.25, cy + Math.sin(a) * dist * 0.25, Math.cos(a) * s, Math.sin(a) * s - 0.2,
+        life + rng.range(-4, 4), rb, hue, dl);
+      if (p) { p.fr = CH_FRICTION; p.off = rng.range(0, 3) | 0; }
+    }
+    const c = spawnFx(g, FX.BLOB, cx, cy, 0, -0.25, life + 4, rb * 1.25, hue, dl); // centre blob LAST = drawn on top
+    if (c) { c.fr = 1; c.off = 0; }
+  }
+  for (let i = 0; i < TIER_DEBRIS[tier]; i++) { // chunks of the sprite, tumbling under gravity (unchanged from classic)
+    const a = rng.range(0, 6.283), s = rng.range(1.5, 4) * (0.8 + tier * 0.3);
+    const p = spawnFx(g, FX.DEBRIS, x, y, Math.cos(a) * s, Math.sin(a) * s - 1, 30 + rng.range(0, 20), 1.5 + rng.range(0, 2), hue, 0, 0.08);
+    if (p) { p.rot = rng.range(0, 6.283); p.vrot = rng.range(-0.4, 0.4); }
+  }
+  for (let i = 0; i < TIER_SPARK[tier]; i++) { // sparks: violent launch, hard stall
+    const a = rng.range(0, Math.PI * 2), s = rng.range(2, 6) * TIER_POWER[tier];
+    const p = spawnFx(g, FX.SPARK, x, y, Math.cos(a) * s, Math.sin(a) * s, 12 + rng.range(0, 10), 1, hue);
+    if (!p) break; p.fr = 0.82;
+  }
+}
 
 // r8-fx S4-MUST "explosions punchy": composite explosion — frame 0 puts a
 // white-hot CORE over the whole sprite plus an expanding shockwave RING
@@ -181,6 +228,7 @@ const TIER_CORE = [3, 3, 4, 5, 6];
 const TIER_FIRE = [5, 6, 9, 9, 8], TIER_SPREAD = [8, 12, 18, 22, 16], TIER_STAG = [2, 2, 2, 3, 2];
 const TIER_SMOKE = [3, 4, 6, 8, 5], TIER_DEBRIS = [7, 8, 12, 14, 12], TIER_SPARK = [14, 18, 26, 30, 30], TIER_POWER = [1.2, 1.6, 2, 2.2, 2.5];
 export function explode(g, x, y, tier, hue = FAM.ORANGE, r = 10) {
+  if (g.fxStyle === 'chunky') return explodeChunky(g, x, y, tier, hue, r);
   const rng = g.fxRng;
   const R = Math.max(r, 8) * TIER_SC[tier];
   spawnFx(g, FX.CORE, x, y, 0, 0, TIER_CORE[tier], R * 1.1, hue); // white FLASH: 3-6 frames, not a blob
@@ -565,7 +613,8 @@ function updateFx(g) {
     if (q.delay > 0) { q.delay--; continue; } // dormant sub-burst
     q.x += q.vx; q.y += q.vy;
     switch (q.kind) {
-      case FX.SPARK: q.vx *= 0.94; q.vy *= 0.94; break;
+      case FX.BLOB: q.vx *= q.fr; q.vy *= q.fr; break; // r52 chunky: launch fast, stall
+      case FX.SPARK: q.vx *= (q.fr < 1 ? q.fr : 0.94); q.vy *= (q.fr < 1 ? q.fr : 0.94); break;
       case FX.FIRE: q.vx *= 0.9; q.vy *= 0.9; break;
       case FX.SMOKE: q.vx *= 0.97; q.vy *= 0.97; break;
       case FX.DEBRIS: q.vy += q.grav; q.vx *= 0.97; q.vy *= 0.97; q.rot += q.vrot; break;

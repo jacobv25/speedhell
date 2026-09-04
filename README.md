@@ -53,5 +53,6 @@ never edit them** — that's grading your own homework.
 - `src/lab.js` — playtest experiment switches (wiki §10). Open the game with `?lab`
   to get the rows in OPTIONS; `?lab=speedPopup:num,fxSize:2` is a shareable configuration.
 - `tools/peek.mjs` + `test/fxpeek.html` — headless screenshot of a harness page (the
-  explosion looks side by side); eyeball presentation experiments before handing them off.
+  explosion looks side by side; `?strip=chunky` = one burst across 12 frames); eyeball
+  presentation experiments before handing them off.
 - `evidence/` — metrics + screenshots consumed by gauntlet critics.

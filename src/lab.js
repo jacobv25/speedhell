@@ -23,7 +23,7 @@ export const EXPERIMENTS = [
     choices: [['1', '1× (current)'], ['1.5', '1.5×'], ['2', '2×']],
     apply: (v) => { prefs.fxSize = +v; } },
   { id: 'fxStyle', label: 'explosion look', def: 'classic', ref: 'wiki §10 / open Q12',
-    choices: [['classic', 'classic (current)'], ['bloom', 'bloom — halos + streak sparks'], ['heavy', 'heavy — bloom + 2nd shockwave + smoke']],
+    choices: [['classic', 'classic (current)'], ['bloom', 'bloom — halos + streak sparks'], ['heavy', 'heavy — bloom + 2nd shockwave + smoke'], ['chunky', 'chunky — Lazy Devs / CAVE recipe (r52)']],
     apply: (v) => { prefs.fxStyle = v; } },
 ];
 

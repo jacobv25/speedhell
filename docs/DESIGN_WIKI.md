@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-04 (r51: explosion size + look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-04 (r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -581,7 +581,33 @@ and the `#lab` panel go.
   `g.fxRng`.
 
 Live experiments: **speedPopup** (§2.6, open Q4) · **fxSize** + **fxStyle**
-(explosions, open Q12, r51). Queued: player ship, boss art.
+(explosions, open Q12, r51; fxStyle gained **chunky** in r52). Queued: player
+ship, boss art.
+
+**r52 "chunky" (core spawn recipe + renderer, Lazy Devs / CAVE).** Jacob:
+"it's not necessarily the size that makes them feel better"; four Lazy Devs
+episodes (Better Explosions, Shockwaves, Explosions, Blob Grapes) distilled and
+compared against `explode()`: ours had every PART (flash, ring, staggered fire,
+smoke, debris, sparks) but not the MOTION or MATERIAL. `explodeChunky`
+(`game.js`, branch on `g.fxStyle` — main.js mirrors the lab pref into `g`
+each frame, core stays DOM-free, everything on `g.fxRng`): (1) matter thrown
+outward that STALLS — blobs launch at ~0.05–0.08·R px/f with 0.86 friction so
+they settle ~0.6R out (a raspberry, not a fidget spinner), sparks launch hard
+with 0.82 friction; (2) ONE blob per spoke that cools white → yellow → orange
+→ dark red → grey smoke on its own clock (stage thresholds 3/9/15/22 frames,
+random 0–2 start offset so nothing changes in lockstep) and dies by shrinking
+to zero across its last 35 % — no separate smoke kind; (3) shaded OPAQUE
+spheres — renderer draws each blob as three offset circles, dark rim → mid →
+off-centre highlight, source-over, centre blob of each grape spawned last so
+it draws on top (additive was why r51 heavy/2× blew out to a white disc);
+(4) structured grape — 6 spokes on a ring at a random start angle + a centre
+blob; tiers stack 1/2/3/4/2 grapes 5 frames apart so new puffs emerge as
+earlier ones collapse (billow); (5) static 2-frame oversized flash (S4 ≤2
+startup frames), constant-width white shockwave expanding linearly to 2.4R
+and culled at target, drawn UNDER the particles; (6) blob positions
+pixel-snapped. Budgets ≤ classic (POP ≈ 28, PHASE ≈ 74 vs 93). Classic path
+byte-identical (sim = r49 control). Frame strip: `tools/peek.mjs
+"test/fxpeek.html?strip=chunky"`. Lab: fxStyle = chunky.
 
 **r51 explosions (renderer-only, `drawFx`).** `fxSize` 1× / 1.5× / 2×
 multiplies every particle's draw size (fire, core, ring, smoke, debris,
@@ -1251,3 +1277,18 @@ contrast — the dark rims are doing the work. Peek: `test/fxpeek.html` via
   imports the renderer). New builder tool `tools/peek.mjs` + `test/fxpeek.html`
   (headless screenshots of a harness page) so looks get eyeballed before
   hand-off. `test/shell.mjs` now decodes a two-experiment link. BUILD r50 → r51.
+- 2026-09-04 — r52 EXPERIMENT: "chunky" explosion look in the Lab (Jacob: "i
+  guess it's not necessarily the size that makes them feel better… his
+  explosions feel satisfying like in a CAVE game", four Lazy Devs episodes
+  analysed). Recipe + numbers in §10. Corpus: boghog "explosions significantly
+  bigger than the enemy, varied patterns, extra debris" and rubric S4-MUST
+  "punchy, ≤2 startup frames, cover the sprite, debris" both pull toward it;
+  S2-MUST depth sort preserved (opaque blobs under bullets — and opaque can't
+  blow out to white under a bullet, which HELPS readable chaos vs r51's
+  additive halos); S8 budget: chunky spawns fewer particles than classic at
+  every tier. Core change is a spawn-time branch on `g.fxStyle` (default
+  classic) + three particle fields (friction, colour-clock offset, chunky
+  flag); classic path byte-identical — referee run == r49 control. Lazy Devs
+  caveats recorded: none of the four episodes touch shake/hitstop/sound (the
+  feel is motion + colour + volume), and his grape animation was deferred past
+  those episodes — (4) above is his stated plan, built here. BUILD r51 → r52.

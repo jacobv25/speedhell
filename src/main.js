@@ -5,7 +5,7 @@
 // first-class citizen: START = menu, d-pad/stick navigates it, A activates,
 // B backs out; title picker on d-pad; death screen A/shot = retry, B = title.
 import { makeGame, startRun, update, W, H } from './core/game.js';
-import { draw, resetHud } from './render/renderer.js';
+import { draw, resetHud, prefs as renderPrefs } from './render/renderer.js';
 import * as audio from './audio.js';
 import { BUILD } from './version.js';
 import { initOptions, isOpen as optionsOpen, openOptions, menuNav, binds, padBinds, isBoundKey, isCapturing, capturePad } from './options.js';
@@ -197,6 +197,7 @@ function frame(now) {
     } else { // play
       if (pe.start) openOptions();
     }
+    g.fxStyle = renderPrefs.fxStyle; // r52 lab: explosion recipe is chosen at spawn in core (fx rng only)
     if (!optionsOpen() && !isHowToOpen()) { pollInput(gp); update(g); audio.drain(g); bgScroll += 1.05; }
     acc -= STEP_MS;
   }
