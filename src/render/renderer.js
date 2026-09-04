@@ -13,7 +13,8 @@ import { W, H, PLAYER, FX } from '../core/game.js';
 //          explodeChunky; here it means opaque shaded blobs + pixel snapping)
 // Renderer-only: particle counts, positions and the fx rng are untouched, and
 // everything still draws BELOW bullets (S2 — explosions never mask threats).
-export const prefs = { speedPopup: 'both', fxSize: 1, fxStyle: 'classic' };
+// speedDress: r53 — transported to core as g.fxMeta by main.js (renderer ignores it)
+export const prefs = { speedPopup: 'both', fxSize: 1, fxStyle: 'classic', speedDress: 0 };
 
 // r8-fx explosion palette, indexed [family][heat stop 0=hot … 3=cool] by the
 // particle's remaining life. Lookup tables: no string building in the hot loop (S8).

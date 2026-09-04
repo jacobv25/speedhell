@@ -25,6 +25,10 @@ export const EXPERIMENTS = [
   { id: 'fxStyle', label: 'explosion look', def: 'classic', ref: 'wiki §10 / open Q12',
     choices: [['classic', 'classic (current)'], ['bloom', 'bloom — halos + streak sparks'], ['heavy', 'heavy — bloom + 2nd shockwave + smoke'], ['chunky', 'chunky — Lazy Devs / CAVE recipe (r52)']],
     apply: (v) => { prefs.fxStyle = v; } },
+  // r53 — dress the natural meta (research/explosion-and-weapon-feel §5 option 4)
+  { id: 'speedDress', label: 'speed-kill reward', def: 'off', ref: 'wiki §10 / open Q13',
+    choices: [['off', 'current'], ['on', 'speed kill = tier up · rush = chain + big boom · cancels pop']],
+    apply: (v) => { prefs.speedDress = v === 'on' ? 1 : 0; } },
 ];
 
 const KEY = 'speedhell.lab';

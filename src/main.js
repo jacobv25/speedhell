@@ -197,7 +197,7 @@ function frame(now) {
     } else { // play
       if (pe.start) openOptions();
     }
-    g.fxStyle = renderPrefs.fxStyle; // r52 lab: explosion recipe is chosen at spawn in core (fx rng only)
+    g.fxStyle = renderPrefs.fxStyle; g.fxMeta = renderPrefs.speedDress; // r52/r53 lab: explosion recipe + meta dressing are chosen at spawn in core (fx rng only)
     if (!optionsOpen() && !isHowToOpen()) { pollInput(gp); update(g); audio.drain(g); bgScroll += 1.05; }
     acc -= STEP_MS;
   }

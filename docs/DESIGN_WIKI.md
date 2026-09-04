@@ -8,12 +8,12 @@ it says so — the "Open questions" section is the part to send to a critic.*
 
 *Companion docs: `DESIGN_PILLARS.md` (the constitution), `HOMAGE_STUDY.md` (the
 lineage laws), `BOGHOG_CRAFT.md` (craft notes), `CRITIC_RUBRIC.md` (the referee's
-acceptance criteria), and `research/` (the deep-research corpus: canon fire-
+acceptance criteria), `ART_BIBLE.md` (drawing rules, draft 2026-09-04), and `research/` (the deep-research corpus: canon fire-
 gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger —
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-04 (Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-04 (r53: speed-kill reward dressing in the Lab (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -462,6 +462,11 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     boghog already asked for "significantly bigger than the enemy". Which
     combination, and does 2× hurt bullet reading on the boss? Testers decide
     via `?lab=fxSize:2,fxStyle:heavy` etc.
+13. **Speed-kill reward dressing** (r53 lab `speedDress`): should the natural
+    meta's payday LOOK like a payday — tier-up explosion, rush chain, per-bullet
+    cancel pops? MSX "you want the player to feel powerful" vs S2 readable
+    chaos on a 200-bullet wall. Does a bigger boom on a speed kill teach the
+    window faster than the popup does?
 7. **Chain as a scoreboard.** The HUD's most prominent number is the least
    valuable one. Keep it (it's the *speed-kill streak*, which is the identity)
    or demote it?
@@ -581,8 +586,22 @@ and the `#lab` panel go.
   `g.fxRng`.
 
 Live experiments: **speedPopup** (§2.6, open Q4) · **fxSize** + **fxStyle**
-(explosions, open Q12, r51; fxStyle gained **chunky** in r52). Queued: player
-ship, boss art.
+(explosions, open Q12, r51; fxStyle gained **chunky** in r52) · **speedDress**
+(speed-kill reward dressing, open Q13, r53). Queued: destruction sequence
+(after the art overhaul), hit impact blob, sprite-shaped debris (after art).
+
+**r53 "speed-kill reward" (core, `killEnemy` + `cancelPop`, flag `g.fxMeta`
+mirrored from the lab like `fxStyle`).** Research note
+`research/explosion-and-weapon-feel-2026-09-04.md` §5 option 4: dress the
+natural meta, not the gun. With it on: a speed kill explodes one tier up
+(POP→MED→BIG→PHASE), a rush (every 5th speed kill) fires the PHASE-tier hull
+chain and the KILL_BIG sound, and every cancelled bullet pops (a small opaque
+white→cyan blob shrinking over 10 f, capped at 120 then every other so a
+200-bullet midboss wall can't drain the pool) instead of one spark per four.
+Scoring, windows, chain, DPS and the shot cap are untouched (Pillar 5 holds);
+this is the presentation of what the stopwatch already pays. Headless check:
+speed kill 35→42 particles, rush 35→97 + KILL_BIG, 150-bullet wall 38→135
+particles at identical score.
 
 **r52 "chunky" (core spawn recipe + renderer, Lazy Devs / CAVE).** Jacob:
 "it's not necessarily the size that makes them feel better"; four Lazy Devs
@@ -1355,3 +1374,14 @@ is placement, not authoring time. Not scheduled.
   modes; the loop-2 spec stands and is item 2 of the §11 build order. Non-goal
   "no difficulty menu" → "no difficulty slider". Story placement note added to
   §11 (pillar "no story beats mid-stage" unchanged).
+- 2026-09-04 — r53 EXPERIMENT: speed-kill reward dressing in the Lab (Jacob:
+  "start with 4 and 5" from the explosion/weapon-feel research). Details §10,
+  open Q13. Corpus: MSX (DOJ review: "you want the player to feel powerful…
+  explosions on top of the explosions") read through Pillar 2/5 — the power
+  moment is the stopwatch reward, not the gun, so nothing about DPS, shot cap
+  or scoring moves; DOJ rations its hyper for the same reason. Boghog: "extra
+  debris, varied patterns"; S4-MUST punchy. Pushback logged: S2 readable chaos
+  on full-screen cancel walls (mitigated: pops are opaque, under bullets, and
+  the wall has already removed the bullets), S6 garnish stays garnish (the
+  rush shower's VALUE is unchanged, only its look). Core branch on g.fxMeta
+  (default 0): referee run == r49 control. BUILD r52 → r53.

@@ -98,6 +98,7 @@ export function makeGame(seed = 1) {
     shake: 0, shakeMax: 0, flash: 0, cancelFlash: 0,
     hitstop: 0, fxHitstop: 0, // r8-fx: frames of world-freeze remaining; fxHitstop = frames granted per BIG/PHASE kill (0 = off)
     fxStyle: 'classic', // r52 lab: explosion recipe chosen at SPAWN ('classic' | 'chunky'); main.js mirrors renderer prefs here — core stays DOM-free, fx rng only
+    fxMeta: 0, // r53 lab: dress the natural meta — speed kills explode one tier up, rush = PHASE-tier chain + KILL_BIG, cancel walls pop per bullet (presentation only; scoring untouched)
     sfx: new Array(SFX_CAP).fill(0), sfxN: 0, // sound-event ring, drained per frame
     // instrumentation (read by sim + critics; cheap fixed-size)
     stats: {
@@ -307,9 +308,16 @@ function killEnemy(g, e, idx) {
   const big = e.type === 3 || e.type === 4; // elite/midboss get the shake (S4);
   // boss sub-parts (type 6) pop like popcorn — shake stays reserved (S4-SHOULD)
   const med = e.type === 1 || e.type === 2; // turret / mid: heavier than popcorn, no shake
-  explode(g, e.x, e.y, big ? TIER.BIG : med ? TIER.MED : TIER.POP, e.type === 1 ? FAM.CYAN : FAM.ORANGE, e.r);
+  let tier = big ? TIER.BIG : med ? TIER.MED : TIER.POP;
+  // r53 EXPERIMENT (wiki §10, research/explosion-and-weapon-feel): the reward
+  // the natural meta pays is dressed, not the gun — a speed kill explodes one
+  // tier up (POP→MED→BIG→PHASE), a rush (every 5th) gets the PHASE-tier hull
+  // chain + the big kill sound. Power is earned on the stopwatch (MSX
+  // "difficulty creates meaning"; DOJ rations the hyper). No DPS/cap change.
+  if (g.fxMeta && speed) tier = g.chain % 5 === 0 ? TIER.PHASE : Math.min(tier + 1, TIER.PHASE);
+  explode(g, e.x, e.y, tier, e.type === 1 ? FAM.CYAN : FAM.ORANGE, e.r);
   if (big) { setShake(g, 14); g.hitstop = g.fxHitstop; }
-  sfx(g, big ? SFX.KILL_BIG : SFX.KILL);
+  sfx(g, big || (g.fxMeta && speed && g.chain % 5 === 0) ? SFX.KILL_BIG : SFX.KILL);
   if (e.type === 4) { // midboss down: relief wall + shower, gate opens — no breather (T2)
     // r9: the 100/bullet payday is a SPEED-kill property. A late kill cancels at
     // garnish rate like every other wall, so a dense screen can never be farmed
@@ -355,12 +363,23 @@ function cancelAllBullets(g, perBullet = 100) {
   if (n === 0) return 0;
   for (let i = n - 1; i >= 0; i--) {
     const b = g.eBullets.items[i];
-    if ((i & 3) === 0) burst(g, b.x, b.y, 1, FAM.CYAN, 0.6);
+    cancelPop(g, b.x, b.y, n - 1 - i);
     g.eBullets.killAt(i);
   }
   g.score += n * perBullet;
   g.cancelFlash = 20;
   return n;
+}
+
+// r53: what a cancelled bullet looks like. Classic = one cyan spark on every
+// 4th bullet (the wall reads as a fade). fxMeta = every bullet POPS: a small
+// opaque blob (white → cyan, shrinks to zero over 10f) at the bullet — DOJ's
+// "every hit is answered", the wall reads as a payday. Capped so a 200-bullet
+// midboss wall can't drain the 400 pool: first 120 pop, then every other.
+function cancelPop(g, x, y, k) {
+  if (!g.fxMeta) { if ((k & 3) === 0) burst(g, x, y, 1, FAM.CYAN, 0.6); return; }
+  if (k > 120 && (k & 1)) return;
+  spawnFx(g, FX.BLOB, x, y, 0, 0, 10, 4.5, FAM.CYAN);
 }
 
 export function bulletCancelWall(g, x, y, perBullet = 100, radius = Infinity) { // release moment (S5)
@@ -373,7 +392,7 @@ export function bulletCancelWall(g, x, y, perBullet = 100, radius = Infinity) { 
       const b = g.eBullets.items[i];
       const dx = b.x - x, dy = b.y - y;
       if (dx * dx + dy * dy > radius * radius) continue;
-      if ((n & 3) === 0) burst(g, b.x, b.y, 1, FAM.CYAN, 0.6);
+      cancelPop(g, b.x, b.y, n);
       g.eBullets.killAt(i); n++;
     }
     g.score += n * perBullet;
