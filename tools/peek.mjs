@@ -12,7 +12,7 @@ const [VW, VH] = (process.argv[4] || '1920x2562').split('x').map(Number);
 const cache = join(homedir(), 'Library', 'Caches', 'ms-playwright'); let bin;
 for (const d of readdirSync(cache).sort().reverse()) if (d.startsWith('chromium_headless_shell-')) { const b = join(cache, d, 'chrome-headless-shell-mac-arm64', 'chrome-headless-shell'); if (existsSync(b)) { bin = b; break; } }
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript' };
-const srv = await new Promise((res) => { const s = createServer((q, r) => { try { const f = join(ROOT, normalize(new URL(q.url, 'http://x').pathname)); r.writeHead(200, { 'content-type': MIME[extname(f)] || 'text/plain' }); r.end(readFileSync(f)); } catch { r.writeHead(404).end(); } }); s.listen(0, '127.0.0.1', () => res(s)); });
+const srv = await new Promise((res) => { const s = createServer((q, r) => { try { const f = join(ROOT, normalize(new URL(q.url, 'http://x').pathname)); const body = readFileSync(f); r.writeHead(200, { 'content-type': MIME[extname(f)] || 'text/plain' }); r.end(body); } catch { if (!r.headersSent) r.writeHead(404); r.end(); } }); s.listen(0, '127.0.0.1', () => res(s)); });
 const chrome = spawn(bin, ['--headless', '--remote-debugging-port=0', `--user-data-dir=${mkdtempSync(join(tmpdir(), 'pk-'))}`, '--no-first-run', '--mute-audio', `--window-size=${VW},${VH}`, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
 const wsUrl = await new Promise((res) => { let b = ''; chrome.stderr.on('data', (d) => { b += d; const m = b.match(/DevTools listening on (ws:\/\/\S+)/); if (m) res(m[1]); }); });
 const ws = new WebSocket(wsUrl); let id = 0; const pend = new Map();

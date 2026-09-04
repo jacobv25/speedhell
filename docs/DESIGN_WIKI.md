@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-04 (r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-04 (r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -1421,3 +1421,13 @@ is placement, not authoring time. Not scheduled.
   makes this the A/B tool for the audio pass and lets Mark hear one sound at
   a time. `test/shell.mjs` opens the card headlessly and asserts 18 rows.
   Browser-only; core, sim, rng untouched. BUILD r54 → r55.
+- 2026-09-04 — r56: sound test z-order FIX (Jacob: "i press sound test but
+  nothing happened and now my inputs through the gamepad are doing nothing").
+  r55 put #sounds at z-index 8; #opts is 10 and its panel is opaque, so the
+  card opened UNDERNEATH the menu — invisible, but it owned the pad (B would
+  have closed it; ↑↓/A moved an unseen cursor). Now z-index 12, above #opts
+  (10) and #howto (11). Lesson, same family as r45: "it rendered" is not "it
+  is visible" — `test/shell.mjs` now opens the menu, opens the card, and
+  asserts the card is the element under the screen centre (elementFromPoint),
+  not the options panel. tools/peek.mjs static server no longer crashes on a
+  404 (the page requests mp3s). BUILD r55 → r56.

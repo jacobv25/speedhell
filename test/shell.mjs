@@ -80,7 +80,7 @@ try {
         labRows: [...document.querySelectorAll('[data-lab]')].map((b) => b.dataset.lab + '=' + b.textContent),
         labHidden: document.getElementById('lab')?.classList.contains('hide'),
         search: location.search,
-        soundTest: (() => { document.getElementById('optSound').click(); const s = document.getElementById('sounds'); const r = { display: getComputedStyle(s).display, rows: s.querySelectorAll('.srow').length }; s.classList.add('hide'); return r; })(),
+        soundTest: (() => { dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); document.getElementById('optSound').click(); const s = document.getElementById('sounds'); const r = { display: getComputedStyle(s).display, rows: s.querySelectorAll('.srow').length, topmost: document.elementFromPoint(innerWidth / 2, innerHeight / 2)?.closest('#soundsCard') ? 'soundsCard' : (document.elementFromPoint(innerWidth / 2, innerHeight / 2)?.closest('#optsPanel') ? 'optsPanel' : 'other') }; s.classList.add('hide'); dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); return r; })(),
       })`, returnByValue: true,
     }, sessionId);
     await send('Target.closeTarget', { targetId });
@@ -98,6 +98,7 @@ try {
   if (plain.labRows.length || !plain.labHidden) fails.push('lab rows present WITHOUT ?lab: ' + JSON.stringify(plain.labRows));
   console.log('sound test', JSON.stringify(plain.soundTest));
   if (plain.soundTest.display !== 'grid' || plain.soundTest.rows < 18) fails.push('sound test did not open with 18 rows: ' + JSON.stringify(plain.soundTest));
+  if (plain.soundTest.topmost !== 'soundsCard') fails.push('sound test card is NOT the topmost element with the options menu open (r55 z-index bug): ' + plain.soundTest.topmost);
   // 2. ?lab page: rows injected, the link's config applied, address bar rewritten to the share link
   const lab = await page('/index.html?lab=speedPopup:num,fxSize:2');
   console.log('lab rows', lab.labRows.join(' | ') || '(none)', '· search', lab.search);

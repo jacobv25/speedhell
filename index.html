@@ -51,7 +51,7 @@
 
   /* r44 results receipt + hi-score table (r46: practice gets a distinct card) */
   #results, #scores { position: fixed; inset: 0; display: grid; place-items: center; z-index: 6; }
-  #sounds { position: fixed; inset: 0; display: grid; place-items: center; z-index: 8; } /* r55: above the options menu */
+  #sounds { position: fixed; inset: 0; display: grid; place-items: center; z-index: 12; } /* r56: ABOVE #opts (10) and #howto (11) — r55 said 8 and the card opened under the opaque options panel */
   #results.hide, #scores.hide { display: none; }
   #resultsCard, #scoresCard, #soundsCard { min-width: 280px; max-width: 92vw; padding: 16px 22px; background: rgba(8,10,18,.94);
     border: 1px solid #2a3050; font: 12px monospace; color: #c8cde4; text-align: center; }
