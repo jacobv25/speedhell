@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-04 (r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-04 (Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -25,7 +25,7 @@ produce the same run — this is what makes the bot referee possible). Eight
 sections: popcorn intro → turret alley → mid gauntlet → midboss → rush → elite
 pair → release → 3-phase boss. You have 3 lives and 2 bombs; a death restores
 bombs to 2. Score is the only progression. There is no rank, no difficulty
-menu, no unlocks.
+slider, no unlocks. Today there is one mode (arcade); the mode roadmap is §11.
 
 ## 2. Scoring — "stopwatches, not run time"
 
@@ -622,6 +622,52 @@ Pushback to watch (S2, BH WS02): at 2× a boss-phase burst covers most of the
 field; bullets stay on top but white cores over a white-yellow fireball lose
 contrast — the dark rims are doing the work. Peek: `test/fxpeek.html` via
 `tools/peek.mjs` renders the three looks at three frames side by side.
+
+## 11. Modes (roadmap, decided 2026-09-04 — nothing built)
+
+Pillar 3 originally read "one honest difficulty." Jacob's pushback: Blue Revolver
+ships three difficulties plus a challenge mode, ZeroRanger ships two modes (Green
+Orange / White Vanilla), CAVE ships arranges of varying difficulty. Checked against
+both corpora, the pillar was forbidding more than either lens does:
+
+- **MSX** opposes *easy modes that remove difficulty* but explicitly blesses
+  *novice modes that preserve the design skeleton* (Crimzon Clover, Gun-Vein,
+  Touhou scaling) and reveres CAVE's arranges as distinct designs. His accessibility
+  definition is "tools to engage the difficulty" — practice mode, stage select.
+- **Boghog** [T3]: "practice tools are the real accessibility fix (stage/section
+  select, save states) — not mode bloat"; [T1] "start hard, scale back"; later
+  regrets not making Expert harder and rejects easy-mode proliferation.
+- **ZeroRanger** research: one difficulty at launch was its recurring critical
+  complaint; White Vanilla *began as an easy mode and was reworked into a mode*.
+- **HOMAGE L8**: loop 2 = revenge-dot bullet-diff, the cheapest second difficulty.
+
+Rule that survives all four: **every mode is an honest design with its own scoring
+identity, never a number scaled down.** The 2026-08-29 "toggle → loop 2" ruling
+stands for what it ruled on (a slider); it no longer forbids modes.
+
+Build order (boghog: hard first, then scale back; nothing before arcade is finished):
+
+1. **Arcade** — as it stands; still the vertical slice everything is judged by.
+2. **Loop 2 / EX** — revenge-dot bullet-diff (L8, changelog 2026-08-29). Same
+   layouts; the mastered habit (speed-kill everything) fills the screen.
+3. **Challenge** — Blue Revolver's shape: boss / section practice with a grade per
+   attempt. Deterministic core + the Booth replay make it nearly free. This is what
+   both corpora mean by accessibility.
+4. **Caravan** — 2-minute fixed-seed time attack (Hudson lineage; §2.5 caravan pull
+   already exists as a mechanic).
+5. **Novice** — last, derived from the same skeleton: fewer bullets per spray,
+   slower needles, **identical speed-kill windows** (Touhou-scaling shape). Not an
+   hp change (standing rule).
+
+Referee cost: each mode is its own rng stream, so each needs its own bot suite and
+its own control run — a referee recert per mode, Jacob-authorized. Modes are named
+designs, not options rows: they live in a mode select, not the Lab (§10).
+
+Story placement (same session, cheap-liberties list in `research/undertale-free-
+release.md`): the pillar's "no story beats mid-stage" holds; text lives in a pre-run
+card, boss barks during the fight (wired to camp-governor / death signals), the
+receipt, and an interstitial between loops. Writing is async (agents); the constraint
+is placement, not authoring time. Not scheduled.
 
 ## Changelog of decisions recorded here
 
@@ -1292,3 +1338,20 @@ contrast — the dark rims are doing the work. Peek: `test/fxpeek.html` via
   caveats recorded: none of the four episodes touch shake/hitstop/sound (the
   feel is motion + colour + volume), and his grape animation was deferred past
   those episodes — (4) above is his stated plan, built here. BUILD r51 → r52.
+- 2026-09-04 — DECISION (consultation, no code, no build bump — r52 is a
+  parallel session's explosion experiment): **Pillar 3 amended** from "one honest
+  difficulty" to "every mode is an honest difficulty — an arrange with its own
+  scoring identity or a novice mode that keeps the skeleton; no slider, no
+  rubber-banding." Jacob: "the wiki we made says one difficulty but Blue Revolver
+  has three difficulties and an awesome challenge mode. Zero Ranger has… two
+  modes. CAVE games often include different arrange modes." Cleared: MSX (novice
+  modes that preserve the skeleton vs easy modes that remove difficulty; CAVE
+  arranges; accessibility = tools to engage difficulty), boghog T1 "start hard,
+  scale back" + T3 "practice tools, not mode bloat", ZeroRanger research (single
+  difficulty = its recurring complaint; White Vanilla easy-mode→mode rework),
+  HOMAGE L8. Pushback kept: no slider (Pillar 3), practice/EX before any easy
+  mode (boghog), nothing before arcade ships (two-game strategy). Supersedes the
+  2026-08-29 "toggle → loop 2" entry only where it read the pillar as forbidding
+  modes; the loop-2 spec stands and is item 2 of the §11 build order. Non-goal
+  "no difficulty menu" → "no difficulty slider". Story placement note added to
+  §11 (pillar "no story beats mid-stage" unchanged).

@@ -21,10 +21,17 @@ waves → 3-phase boss, 1CC-able in ~4–5 minutes by a practiced player.
    states** (SPEED BONUS or not), never opaque frame math [BH WS06]. The meta is
    authored in the game — no external rules needed to compete on score. [MSX]
 
-3. **Difficulty is the content.** [MSX] One honest difficulty. No menu slider, no
-   adaptive rubber-banding. The learning curve spreads across runs — a game over must
-   teach something usable in the next run [BH WS05]. Expert bias: the better you play,
-   the more the game gives you (harder + richer, not less).
+3. **Difficulty is the content.** [MSX] Every mode is an honest difficulty: either
+   a distinct design with its own scoring identity (an arrange — CAVE's Original/
+   Maniac/Ultra, ZeroRanger's White Vanilla) or a novice mode that keeps the
+   skeleton — patterns, layouts, systems — intact (Crimzon Clover, Touhou scaling)
+   [MSX]. No menu slider that scales one design down, no adaptive rubber-banding.
+   Modes are built hard-first and scaled back [BH T1], never before the arcade mode
+   is finished, and practice tools come before any easy mode [BH T3]. The learning
+   curve spreads across runs — a game over must teach something usable in the next
+   run [BH WS05]. Expert bias: the better you play, the more the game gives you
+   (harder + richer, not less). *(Amended 2026-09-04 from "one honest difficulty";
+   wiki §11 + changelog.)*
 
 4. **Performance play, true failure.** [MSX] Lives are the only currency; score dies
    with the credit. No checkpoints, no meta-progression, no unlock homework. Death is
@@ -46,6 +53,6 @@ waves → 3-phase boss, 1CC-able in ~4–5 minutes by a practiced player.
 
 ## Non-goals
 
-No procedural generation, no roguelike meta, no upgrade shop, no difficulty menu, no
+No procedural generation, no roguelike meta, no upgrade shop, no difficulty slider, no
 story beats mid-stage, no achievements. V1 has one loop; a second loop (harder repeat)
-is the natural v2, per arcade convention.
+is the first v2 mode, per arcade convention (mode roadmap: wiki §11).
