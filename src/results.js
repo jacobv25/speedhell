@@ -28,7 +28,18 @@ export function busy() { return entryOpen || tableOpen; } // an overlay that own
 const fmtTime = (f) => { const s = Math.floor(f / 60); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 const pad9 = (n) => String(n).padStart(9, '0');
 
-function loadScores() { try { const j = JSON.parse(store.get('speedhell.scores', '[]')); return Array.isArray(j) ? j : []; } catch { return []; } }
+// r48: arcade default table (Garegga/Cave convention — the board ships full,
+// so a weak run is never asked for a name; it has to beat the lowest row).
+// Floor 10000: the blind bot's ~29k die-early run makes rank 9, a 7k no-name
+// death does not; the expert clear (~175k) tops it. Seed rows carry seed:true,
+// are regenerated on every load (never trusted from storage) and render dashed.
+const SEED_NAMES = ['SPD', 'HEL', 'MSX', 'HOG', 'ACE', 'JET', 'RAY', 'ZAP', 'VEL', 'RIP'];
+const SEED = SEED_NAMES.map((name, i) => ({ name, score: (10 - i) * 10000, speedKills: 0, kills: 0, maxChain: 0, cleared: false, seed: true }));
+function loadScores() {
+  let stored = [];
+  try { const j = JSON.parse(store.get('speedhell.scores', '[]')); if (Array.isArray(j)) stored = j.filter((r) => r && !r.seed); } catch { /* bad json → seeds only */ }
+  return [...stored, ...SEED].sort((a, b) => b.score - a.score).slice(0, 10);
+}
 const saveScores = (a) => store.set('speedhell.scores', JSON.stringify(a));
 
 // called every frame from main.js — shows/hides with the game state
@@ -115,9 +126,9 @@ export function showScores() {
   const scores = loadScores();
   $('scoreTable').innerHTML =
     '<tr><th>#</th><th>name</th><th>score</th><th>speed</th><th>chain</th><th></th></tr>' +
-    (scores.length
-      ? scores.map((s, i) => `<tr><td>${i + 1}</td><td>${s.name}</td><td>${pad9(s.score)}</td><td>${s.speedKills}/${s.kills}</td><td>${s.maxChain}</td><td>${s.cleared ? 'CLEAR' : ''}</td></tr>`).join('')
-      : '<tr><td colspan="6">no scores yet — go set one</td></tr>');
+    scores.map((s, i) => s.seed
+      ? `<tr class="seed"><td>${i + 1}</td><td>${s.name}</td><td>${pad9(s.score)}</td><td>—</td><td>—</td><td></td></tr>`
+      : `<tr><td>${i + 1}</td><td>${s.name}</td><td>${pad9(s.score)}</td><td>${s.speedKills}/${s.kills}</td><td>${s.maxChain}</td><td>${s.cleared ? 'CLEAR' : ''}</td></tr>`).join('');
   tableOpen = true; $('scores').classList.remove('hide');
 }
 function closeScores() { tableOpen = false; $('scores').classList.add('hide'); }

@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-03 (r47: r45 latch removed, practice heading keeps the outcome, browser shell check. Reds = midboss bot-priority question only).
+Last updated: 2026-09-03 (r48: hi-score board ships seeded, floor 10000. Reds = midboss bot-priority question only).
 
 ---
 
@@ -1136,3 +1136,16 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
   headless gate test cannot see a missing stylesheet rule; shell/DOM changes
   are verified in a browser before being called fixed. No core/sim/rng
   change. BUILD r46 → r47.
+- 2026-09-03 — r48: seeded default hi-score table (Jacob, after a 7000-point
+  death prompted for initials: "seed the default table"). r44's rule was "top
+  10 of whatever is stored", so an empty board asked every run for a name.
+  Arcade convention (Garegga/Cave, HOMAGE_STUDY R8 lineage): the board ships
+  full and a run must beat the lowest row. Ten house rows 100000 → 10000
+  (SPD HEL MSX HOG ACE JET RAY ZAP VEL RIP), regenerated on every load, never
+  trusted from storage, rendered dimmed with dashed speed/chain columns.
+  Calibration from evidence/metrics.json: blind bot's ~29k early death makes
+  rank 9, passive-human clear ~37k rank 8, expert clear ~175k tops the board;
+  a 7k no-name death does not enter. Not a scoring change (Pillar 2 untouched):
+  the receipt, the values and the entry rules are the same — only the entry
+  threshold on a fresh install moved from 0 to 10000. Shell only; no core/sim/
+  rng change. BUILD r47 → r48.
