@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-04 (r53: speed-kill reward dressing in the Lab (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-04 (r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -462,6 +462,10 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     boghog already asked for "significantly bigger than the enemy". Which
     combination, and does 2× hurt bullet reading on the boss? Testers decide
     via `?lab=fxSize:2,fxStyle:heavy` etc.
+14. **Kill sound weight** (r54 lab `killAudio`): does a sub-bass thump under
+    kills read as CAVE weight or as mud under the music? Pitched by tier so
+    the ear can grade the kill. Audio-pass item; decide with the title-music
+    choice.
 13. **Speed-kill reward dressing** (r53 lab `speedDress`): should the natural
     meta's payday LOOK like a payday — tier-up explosion, rush chain, per-bullet
     cancel pops? MSX "you want the player to feel powerful" vs S2 readable
@@ -587,8 +591,17 @@ and the `#lab` panel go.
 
 Live experiments: **speedPopup** (§2.6, open Q4) · **fxSize** + **fxStyle**
 (explosions, open Q12, r51; fxStyle gained **chunky** in r52) · **speedDress**
-(speed-kill reward dressing, open Q13, r53). Queued: destruction sequence
-(after the art overhaul), hit impact blob, sprite-shaped debris (after art).
+(speed-kill reward dressing, open Q13, r53) · **killAudio** (kill sound
+weight, open Q14, r54). Queued: destruction sequence (after the art overhaul),
+hit impact blob, sprite-shaped debris (after art).
+
+**r54 "kill sound" (`audio.js` `thump`, lab `killAudio`).** 'heavy' layers a
+sub-bass sine under every explosion — 100 Hz (popcorn) / 80 Hz (elite,
+midboss, rush) / 60 Hz (boss phase) sliding to ~22 Hz over 0.3–0.5 s — plus a
+60 ms low-passed transient for attack. Browser-only, no core, no rng. The sfx
+bus already runs through the compressor, so the thump ducks itself against
+the music rather than clipping. Pairs with r53: a rush now fires KILL_BIG,
+so it thumps at the elite weight.
 
 **r53 "speed-kill reward" (core, `killEnemy` + `cancelPop`, flag `g.fxMeta`
 mirrored from the lab like `fxStyle`).** Research note
@@ -1385,3 +1398,11 @@ is placement, not authoring time. Not scheduled.
   the wall has already removed the bullets), S6 garnish stays garnish (the
   rush shower's VALUE is unchanged, only its look). Core branch on g.fxMeta
   (default 0): referee run == r49 control. BUILD r52 → r53.
+- 2026-09-04 — r54 EXPERIMENT: kill sound weight in the Lab (option 5 of the
+  explosion/weapon-feel research). Details §10, open Q14. Corpus: MSX (DOJ:
+  "you hear the laser, you hear the explosion, then you hear the kick-ass
+  tunes — everything blends"); boghog T1 "sync key events to music beats
+  loosely; nail the driving-forward feel" (a thump on every kill is the
+  driving-forward layer); no pushback found beyond taste — the compressor
+  keeps it under the music. Browser-only: core, sim, rng untouched. BUILD
+  r53 → r54.

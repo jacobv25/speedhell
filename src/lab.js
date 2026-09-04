@@ -12,6 +12,7 @@
 // never touch g.rng, scoring, or the referee (the sim always runs defaults).
 import { store } from './options.js';
 import { prefs } from './render/renderer.js';
+import { setKillWeight } from './audio.js';
 
 export const EXPERIMENTS = [
   { id: 'speedPopup', label: 'SPEED popup', def: 'both', ref: 'wiki §2.6 / open Q4',
@@ -29,6 +30,10 @@ export const EXPERIMENTS = [
   { id: 'speedDress', label: 'speed-kill reward', def: 'off', ref: 'wiki §10 / open Q13',
     choices: [['off', 'current'], ['on', 'speed kill = tier up · rush = chain + big boom · cancels pop']],
     apply: (v) => { prefs.speedDress = v === 'on' ? 1 : 0; } },
+  // r54 — kill audio weight (research §5 option 5)
+  { id: 'killAudio', label: 'kill sound', def: 'current', ref: 'wiki §10 / open Q14',
+    choices: [['current', 'current'], ['heavy', 'heavy — sub-bass thump, pitched by tier']],
+    apply: (v) => { setKillWeight(v); } },
 ];
 
 const KEY = 'speedhell.lab';
