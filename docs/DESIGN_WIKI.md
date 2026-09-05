@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-04 (r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-05 (r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -1465,3 +1465,16 @@ is placement, not authoring time. Not scheduled.
   do seem a bit wobbly" — the popcorn's ±20° sine wobble (heading(), the r20
   Booth fix) snapped across 2–3 of the 22.5° steps and read as jitter; at
   11.25° it sweeps ~4 steps. Bible §12 Q2 answered. BUILD r57 → r58.
+- 2026-09-05 — r60: ART SKINS (renderer-only refactor; branch `art/skins`).
+  Jacob: "i want to see all four implemented … four agents implementing the
+  art in those styles. and then ill play through them and see how they feel."
+  Everything a direction may restyle — palette, background, enemy/ship/item
+  painters, an optional post pass — moved into `src/render/skins/<id>.js`
+  (contract in `skins/base.js`, which IS the r58 look: pixel-identical on the
+  peek sheet). Bullets, the hit dot, the sprite cache/grid, fx, HUD layout
+  stay in `renderer.js`. Lab row `skin` (`?lab=skin:<id>`) switches live;
+  `tools/artpeek.html?skin=<id>` peeks one. Four skins — cute-occult,
+  neon-vector, synthwave, graphic-pop — are built by four Opus builders from
+  `docs/concepts/` per `docs/art-rounds/skins-brief.md`; Jacob picks by
+  playing. No design change; referee draws the base skin. BUILD r58 → r60
+  (r59 = the needle-tier branch).

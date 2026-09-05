@@ -265,3 +265,9 @@ draw fell 1.99 → 1.43 ms. (4) per-family `out`, as recommended.
   sanctioned non-bullet pink alongside WARNING).
 - 2026-09-04 — r58: heading steps 16 → 32 after Jacob's playtest verdict on the
   popcorn wobble (§12 Q2). Pixel look and 2-frame bullet flash approved.
+- 2026-09-05 — r60: skins. The renderer now delegates palette / background /
+  painters to `src/render/skins/<id>.js`; §2–5 remain the rules every skin
+  obeys (the renderer enforces the grid, rims and bullet contract for all of
+  them). Four concept directions built in parallel; see
+  `art-rounds/skins-brief.md`. Round 2 (boss forms) will be built INSIDE the
+  winning skin.
