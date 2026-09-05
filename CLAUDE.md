@@ -2,6 +2,8 @@
 
 Read `README.md` first, then `docs/DESIGN_PILLARS.md` (constitution) and
 `docs/DESIGN_WIKI.md` (how the systems actually work, and the open questions).
+Any renderer / art change also reads `docs/ART_BIBLE.md` (draft drawing rules) and
+stays inside it — or says explicitly where and why it doesn't.
 
 ## Rules
 
