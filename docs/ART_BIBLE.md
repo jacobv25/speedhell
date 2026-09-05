@@ -224,7 +224,10 @@ bullet hues appear on a body, because that body fires them.
 *Round 1 answers (r57, see `art-rounds/round-1.md` for the peeks):* (1) pixel
 discs — the rim reads crisper at 3–6× and the exact r20 radii survive because
 the span table takes fractional r; arc() is gone from every sprite. (2) 16
-steps shipped; wobble judged only from stills — Jacob's playtest call.
+steps shipped in r57; Jacob's playtest (2026-09-04): "the small enemies do seem
+a bit wobbly" — the popcorn's ±20° sine wobble snapped across 2–3 steps. r58
+moved to **32 steps** (`STEPS` in `renderer.js`), the named fallback; pixel look
+and the bullet flash were approved as-is.
 (3) cache is lazy per key (type × phase × side × step × prop × hit × flick ×
 extra); a full run populates a few hundred ≤100 px canvases, and max-load
 draw fell 1.99 → 1.43 ms. (4) per-family `out`, as recommended.
@@ -260,3 +263,5 @@ draw fell 1.99 → 1.43 ms. (4) per-family `out`, as recommended.
   the telegraph); boss hull keeps its r56 light-grey until Round 2 retunes it
   into the HEAVY ramp; the focus dot's pink rim stays (wiki §6.2 contract, a
   sanctioned non-bullet pink alongside WARNING).
+- 2026-09-04 — r58: heading steps 16 → 32 after Jacob's playtest verdict on the
+  popcorn wobble (§12 Q2). Pixel look and 2-frame bullet flash approved.

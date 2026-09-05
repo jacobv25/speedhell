@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-04 (r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-04 (r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -1460,3 +1460,8 @@ is placement, not authoring time. Not scheduled.
   still the highest-contrast layer; pink/cyan/gold/violet exclusivity now
   enforced by the palette block), MSX: no scoring or difficulty surface
   touched. BUILD r56 → r57.
+- 2026-09-04 — r58: heading steps 16 → 32 (renderer-only, `STEPS`). Jacob's
+  r57 playtest: pixel look approved, bullet flash approved, "the small enemies
+  do seem a bit wobbly" — the popcorn's ±20° sine wobble (heading(), the r20
+  Booth fix) snapped across 2–3 of the 22.5° steps and read as jitter; at
+  11.25° it sweeps ~4 steps. Bible §12 Q2 answered. BUILD r57 → r58.

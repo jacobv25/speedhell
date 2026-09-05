@@ -153,8 +153,11 @@ function poly(ctx, pts) {
   for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
   ctx.closePath(); ctx.fill();
 }
-const STEP = Math.PI / 8; // §2.4: 16 heading steps
-function stepOf(a) { return ((Math.round(a / STEP) % 16) + 16) % 16; }
+// §2.4 heading steps. r57 shipped 16 (22.5°); Jacob's playtest: the popcorn's
+// ±20° sine wobble snapped between 2–3 angles and read as jitter. r58: 32
+// (11.25°) — bible §12 Q2's named fallback — so the wobble sweeps ~4 steps.
+const STEPS = 32, STEP = Math.PI / (STEPS / 2);
+function stepOf(a) { return ((Math.round(a / STEP) % STEPS) + STEPS) % STEPS; }
 
 export function resetHud() { displayScore = 0; }
 
@@ -484,11 +487,11 @@ export function drawEnemy(ctx, g, e) {
   switch (e.type) {
     case 0: step = stepOf(heading(e)); if (e.phase === 3 && e.vy < -0.5) extra = 1; break; // riser climbing → exhaust plume
     case 1: case 3: step = stepOf(heading(e)); break;
-    case 2: extra = stepOf(Math.atan2(g.player.y - e.y, g.player.x - e.x)) + ((e.vulnAt >= 0 && g.frame - e.vulnAt > 240) ? 16 : 0); break; // barrel step + angry
+    case 2: extra = stepOf(Math.atan2(g.player.y - e.y, g.player.x - e.x)) + ((e.vulnAt >= 0 && g.frame - e.vulnAt > 240) ? STEPS : 0); break; // barrel step + angry
     case 5: extra = (e.vulnAt < 0 && e.phase > 0) ? ((g.frame & 2) ? 2 : 1) : 0; break; // burn-in frames
   }
   if (e.type === 1) dy = Math.round(Math.sin(e.age * 0.09) * 0.8); // parked bob, whole pixels
-  const key = ((((((e.type * 4 + phase) * 2 + side) * 16 + step) * 2 + prop) * 2 + hit) * 2 + flick) * 32 + extra;
+  const key = ((((((e.type * 4 + phase) * 2 + side) * STEPS + step) * 2 + prop) * 2 + hit) * 2 + flick) * 64 + extra;
   const s = CACHE.get(key) || sprite(key, SPAN[e.type], hit ? UI.white : rimOf(e.type, phase),
     (c) => paintEnemy(c, e.type, phase, side ? 1 : -1, step, prop, hit, flick, extra));
   ctx.drawImage(s.img, Math.round(e.x) - s.o, Math.round(e.y) - s.o + dy);
@@ -535,7 +538,7 @@ function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra) {
       break;
     }
     case 2: { // TURRET — ground family: solid under-plate (§4, no alpha shadow), khaki dome, barrel aims at the ship; rust when angry
-      const angry = extra >= 16, barrel = (extra & 15) * STEP;
+      const angry = extra >= STEPS, barrel = (extra % STEPS) * STEP;
       if (!hit) { ctx.save(); ctx.translate(2, 3); S(GROUND.out); poly(ctx, TURRET_PLATE); ctx.restore(); }
       S(GROUND.plate); poly(ctx, TURRET_PLATE);
       S(GROUND.shade); disc(ctx, 0, 0, 9);

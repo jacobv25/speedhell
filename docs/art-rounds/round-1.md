@@ -44,8 +44,10 @@ Regenerate: `node tools/peek.mjs tools/artpeek.html out.png 1920x1400`.
 
 1. **Pixel discs win.** At 3–6× the disc rim is a clean 1px ring; the arc version's
    rim smeared into the ring. Fractional radii keep the r20 sizes exact.
-2. **16 steps shipped.** The stills can't show the popcorn wobble; that's a playtest
-   call. 32 is a one-constant change (`STEP`).
+2. **16 steps shipped in r57, 32 in r58.** Jacob's playtest verdict: pixel look good,
+   bullet flash fine, "the small enemies do seem a bit wobbly" — the popcorn's ±20°
+   heading wobble snapped across 2–3 of the 22.5° steps. `STEPS = 32` (11.25°) lets it
+   sweep ~4 steps instead. Playtest again at r58.
 3. **Cache is lazy** — keys are integers built from type × phase × side × step × prop ×
    hit × flick × extra; a full run makes a few hundred canvases ≤ 100 px. No eviction
    needed.
