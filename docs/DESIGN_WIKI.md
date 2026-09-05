@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-04 (r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-04 (r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -380,6 +380,10 @@ either exactly true or errs in the player's favour, never against:
 > must update the card in the same commit — matching ⚠ notes sit on both
 > renderer art blocks. (Jacob, 2026-09-02: visual redesigns expected before
 > release.)
+> **r57 update:** the card no longer hand-copies pixels — it calls the renderer's
+> own `drawShip` / `drawRoundBullet` / `drawNeedle` (`src/render/renderer.js`), so it
+> mirrors the live art by construction. The rule now reads: keep the ship + dot
+> inside `drawShip` and the bullets inside those two functions.
 
 - **The ship's dot is drawn at 6px — the full effective kill radius** (your 3 +
   the bullet's 3, foldable because bullet radius is uniform). Rule: *a bullet's
@@ -1135,7 +1139,7 @@ is placement, not authoring time. Not scheduled.
   one-card form; Pillar 3 / WS05 leave deep teaching to game-overs and (later)
   the receipt. The card teaches ONLY the two SPEEDHELL-specific truths: the
   display contract (§6.2 — you are the 6px dot; only the white bullet core
-  kills; the card's canvases mirror the r20 renderer art pixel-for-pixel so it
+  kills; the card's canvases draw through the renderer's own ship/bullet functions (r57; hand-copied r35–r56) so it
   can never lie about the contract) and the speed-kill rule (§2.1 — stopwatch,
   SPEED = double + chain, binary). Live keybinds rendered from options state.
   Auto-shows ONCE ever (localStorage), dismiss = shot key/Enter/Esc/click;
@@ -1431,3 +1435,28 @@ is placement, not authoring time. Not scheduled.
   asserts the card is the element under the screen centre (elementFromPoint),
   not the options panel. tools/peek.mjs static server no longer crashes on a
   404 (the page requests mp3s). BUILD r55 → r56.
+- 2026-09-04 — r57: ART_BIBLE ROUND 1 (renderer-only; branch `art/round-1`).
+  Pixel grid (§2): integer sprite origins, integer geometry, 16 heading
+  steps, whole-pixel shake, no alpha shadows (turret gets a solid
+  under-plate). Named palette (§3): every hex literal in `renderer.js` now
+  lives in one block (`AIR/GROUND/HEAVY/SHIP/ROUND/NEEDLE/ITEM/UI/BOSS`,
+  exported as `PAL`) — values are r56's, unchanged; boss surface waits for
+  Round 2. Rims (§4): every enemy, part, boss and the ship is painted once
+  into an offscreen sprite cache (alpha-thresholded so polygon edges are
+  hard), outlined 1px in its family `out` colour, drawn with one drawImage
+  at an integer origin; hit-flash whitens the rim too; the ship adds a 1px
+  hull-light rim on its top edge. Bullets (§5): pink rounds are a two-frame
+  pixel-disc sprite at the exact r20 radii (5.6/4.2/3 — the r5 0.35px pulse
+  became a ring flash held 4 ticks); needles keep smooth rotation (an aimed
+  shot's direction is the telegraph — 16 steps would lie by up to 11°) and
+  gain the 1px bright tail tick. Items are pixel discs (pulse steps 1px).
+  The HOW TO card draws through `drawShip/drawRoundBullet/drawNeedle`
+  instead of hand-copied pixels (§6.2 sync rule updated). Max-load draw
+  cost 1.99 → 1.43 ms (headless, 1026 bullets). Core, `ENEMY_DEFS r`,
+  `PLAYER.hitR`, timeline, `g.rng`, sim and referee untouched — the
+  display contract's sizes are identical. Peek sheets + open-question
+  answers: `docs/art-rounds/round-1.md`. Corpus: boghog WS02 (values over
+  colour — rims add a value step, no new hue), Pillar 6 / S2-MUST (bullets
+  still the highest-contrast layer; pink/cyan/gold/violet exclusivity now
+  enforced by the palette block), MSX: no scoring or difficulty surface
+  touched. BUILD r56 → r57.

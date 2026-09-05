@@ -1,0 +1,65 @@
+<!doctype html><meta charset="utf-8">
+<!-- art peek (ART_BIBLE §11): one sheet — enemy gallery at 4x, then the four stage
+     moments (s2 turret alley / s4 midboss / s8 boss P2 / S8 max-load) at 2x, plus
+     a draw()-time readout on the max-load scene (perf gate ≤ 16.6 ms).
+     Builder tool — screenshots go in the round's brief, never evidence/.
+       node tools/peek.mjs tools/artpeek.html out.png 1920x1400 -->
+<body style="margin:0;background:#05060a">
+<canvas id="c" width="1920" height="1400"></canvas>
+<script type="module">
+import { makeGame, startRun, update, stressScene, W, H } from '../src/core/game.js';
+import { draw, drawEnemy, drawPlayer, resetHud } from '../src/render/renderer.js';
+import { makeBot } from '../test/bot.mjs';
+const c = document.getElementById('c'), ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = false;
+const label = (t, x, y) => { ctx.fillStyle = '#ffd24a'; ctx.font = 'bold 18px monospace'; ctx.textAlign = 'left'; ctx.fillText(t, x, y); };
+
+// --- gallery (mirrors tools/enemy-gallery.html) at 4x ------------------------
+{
+  const gc = document.createElement('canvas'); gc.width = 480; gc.height = 150; const gx = gc.getContext('2d');
+  const g = { frame: 300, player: { x: 240, y: 300, prevX: 240, prevY: 300, invuln: 0, focus: false }, fxRng: { next: () => 0.5 } };
+  const gf = { ...g, player: { ...g.player, focus: true } };
+  const E = (type, x, y, o = {}) => ({ type, x, y, vx: 0, vy: 0, age: 40, phase: 0, vulnAt: 0, flash: 0, side: 1, hp: 1, ...o });
+  const es = [
+    E(0, 30, 50, { vx: 0.47, vy: 1.6 }), E(0, 70, 50, { phase: 1, vx: 1.2, vy: 1.4 }), E(0, 115, 50, { phase: 2, vx: 1.7, vy: 0.3 }),
+    E(0, 160, 50, { phase: 3, vx: 0, vy: -2.4 }), E(0, 200, 50, { phase: 3, vx: 0, vy: 1.6, age: 220 }), E(1, 255, 50, { vy: 1.5 }),
+    E(2, 310, 50), E(2, 355, 50, { vulnAt: 0 }), E(3, 415, 50),
+    E(4, 60, 115), E(4, 150, 115, { phase: 1 }), E(1, 240, 115, { vulnAt: -1 }), E(3, 330, 115, { flash: 1 }),
+  ];
+  gx.fillStyle = '#0a0c14'; gx.fillRect(0, 0, 480, 150);
+  for (const e of es) drawEnemy(gx, g, e);
+  drawPlayer(gx, { ...g, player: { ...g.player, x: 420, y: 115 } }); drawPlayer(gx, { ...gf, player: { ...gf.player, x: 460, y: 115 } });
+  ctx.drawImage(gc, 0, 30, 1920, 600);
+  label('gallery 4x: popcorn diver crosser riser riser-fall mid turret angry elite / midboss midboss-B armored hit-flash player focus', 10, 22);
+}
+
+// --- stage moments at 2x ------------------------------------------------------
+const off = document.createElement('canvas'); off.width = W; off.height = H; const octx = off.getContext('2d');
+const stub = { next: () => 0.5, range: (a, b) => (a + b) / 2 };
+function shot(g, x, y, text, tag) {
+  const real = g.rng; g.rng = stub; octx.setTransform(1, 0, 0, 1, 0, 0);
+  for (let i = 0; i < 30; i++) draw(g, octx, g.frame * 1.05);
+  const t0 = performance.now(); for (let i = 0; i < 60; i++) draw(g, octx, g.frame * 1.05); const ms = (performance.now() - t0) / 60;
+  g.rng = real;
+  ctx.drawImage(off, x, y, W * 1.4, H * 1.4);
+  label(`${text}  draw ${ms.toFixed(2)} ms`, x, y - 6);
+  window.__perf = window.__perf || {}; window.__perf[tag] = +ms.toFixed(2);
+}
+const yield_ = () => new Promise((r) => setTimeout(r, 0));
+{
+  const g = makeGame(0xC0FFEE); startRun(g); resetHud();
+  const bot = makeBot({ aggressive: true, lookahead: 14, reactDelay: 0 });
+  const want = [['s2', (g) => g.stageT >= 720 + 150], ['s4', (g) => g.stageT >= 2400 + 60], ['p2', (g) => { for (let i = 0; i < g.enemies.count; i++) { const e = g.enemies.items[i]; if (e.type === 5 && e.phase === 1 && e.fireT === 140) return true; } return false; }]];
+  const pos = { s2: [0, 680], s4: [470, 680], p2: [940, 680] };
+  let k = 0;
+  while (g.state === 'play' && g.frame < 30000 && k < want.length) {
+    bot(g); update(g); if (g.frame % 500 === 0) await yield_();
+    if (want[k][1](g)) { const [x, y] = pos[want[k][0]]; shot(g, x, y, want[k][0] + ' t=' + g.stageT, want[k][0]); k++; }
+  }
+}
+{
+  const g = makeGame(7); g.state = 'play'; startRun(g); g.timeline = []; g.tlIndex = 0; stressScene(g); resetHud();
+  for (let f = 0; f < 45; f++) update(g);
+  shot(g, 1410, 680, 'max-load b=' + g.eBullets.count, 'maxload');
+}
+window.__done = true;
+</script></body>

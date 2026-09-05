@@ -2,9 +2,9 @@
 <style>body{margin:0;background:#0a0c14;color:#8a8fa8;font:12px monospace;display:grid;place-items:center;height:100vh}canvas{image-rendering:pixelated;background:#0a0c14}</style></head>
 <body><canvas id="c" width="480" height="150" style="width:1440px;height:450px"></canvas>
 <script type="module">
-import { drawEnemy, drawPlayer } from '../src/render/renderer.js';
+import { drawEnemy, drawPlayer, drawRoundBullet } from '../src/render/renderer.js';
 const ctx = document.getElementById('c').getContext('2d');
-const g = { frame: 300, player: { x: 240, y: 300, prevX: 240, prevY: 300, invuln: 0, focus: false } };
+const g = { frame: 300, player: { x: 240, y: 300, prevX: 240, prevY: 300, invuln: 0, focus: false }, fxRng: { next: () => 0.5 } };
 const gf = { frame: 300, player: { x: 300, y: 300, prevX: 300, prevY: 300, invuln: 0, focus: true } };
 const E = (type, x, y, o = {}) => ({ type, x, y, vx: 0, vy: 0, age: 0, phase: 0, vulnAt: 0, flash: 0, side: 1, hp: 1, ...o });
 const es = [
@@ -19,8 +19,9 @@ function frame() {
   drawPlayer(ctx, { ...g, player: { ...g.player, x: 420, y: 115 } }); drawPlayer(ctx, { ...gf, player: { ...gf.player, x: 460, y: 115 } });
   ctx.fillStyle = '#5a6480'; ctx.font = '6px monospace'; ctx.textAlign = 'center'; ctx.fillText('player', 420, 149); ctx.fillText('focus', 460, 149);
   // a pink round bullet at true hit distance from the focused core (6px = hitR + bullet r)
-  ctx.fillStyle = '#20060f'; ctx.beginPath(); ctx.arc(466, 115, 5.6, 0, 7); ctx.fill(); ctx.fillStyle = '#ff4fa3'; ctx.beginPath(); ctx.arc(466, 115, 4.2, 0, 7); ctx.fill();
+  drawRoundBullet(ctx, 466, 115, g.frame);
   for (const [name, e] of es) { e.age++; drawEnemy(ctx, g, e); ctx.fillStyle = '#5a6480'; ctx.font = '6px monospace'; ctx.textAlign = 'center'; ctx.fillText(name, e.x, e.y + 34); }
+  window.__done = true; // tools/peek.mjs
   requestAnimationFrame(frame);
 }
 frame();

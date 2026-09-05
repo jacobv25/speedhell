@@ -5,6 +5,7 @@
 // contract (wiki §6.2) and the speed-kill rule (§2.1) — auto-shown once ever,
 // then reachable with H from the title. Never gates play. Browser-only.
 import { binds } from './options.js';
+import { drawShip, drawRoundBullet, drawNeedle } from './render/renderer.js';
 
 const seen = () => { try { return localStorage.getItem('speedhell.howto') === 'seen'; } catch { return true; } };
 const markSeen = () => { try { localStorage.setItem('speedhell.howto', 'seen'); } catch { /* ok */ } };
@@ -24,43 +25,27 @@ export function openHowTo() {
 }
 export function closeHowTo() { open = false; markSeen(); $('howto').classList.add('hide'); } // exported r38: pad A/B/START dismisses
 
-function poly(ctx, pts) { ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.closePath(); ctx.fill(); }
-
-// ⚠ KEEP IN SYNC: these two draw functions are hand-copied from
-// src/render/renderer.js (drawPlayer + the enemy-bullet block). Jacob expects
-// ship/bullet redesigns before release — when the renderer art changes, THIS
-// CARD MUST CHANGE IN THE SAME COMMIT (matching notes sit on both renderer
-// blocks). A stale card teaches a false display contract.
-// The ship at 3x — the EXACT r20 art (renderer.js drawPlayer): big ship, 6px
-// effective dot. Mirroring the real pixels is the point: the card must never
-// lie about the contract it teaches.
+// r57 (ART_BIBLE Round 1): the card no longer hand-copies pixels — it calls the
+// renderer's own drawShip / drawRoundBullet / drawNeedle, so the ship and both
+// bullet castes mirror the live art BY CONSTRUCTION (wiki §6.2 sync rule, r35).
+// Any renderer redesign flows here automatically; only the layout is local.
+// The ship at 3x: big ship, 6px effective dot (focus look — white dot, pink rim).
 function drawShipCard(ctx) {
+  ctx.imageSmoothingEnabled = false;
   ctx.save(); ctx.translate(48, 52); ctx.scale(3, 3);
-  ctx.fillStyle = '#6b5aa8';
-  poly(ctx, [[-14, 12], [-4, 4], [4, 4], [14, 12], [10, 15], [-10, 15]]);
-  ctx.fillStyle = '#f0ecff';
-  poly(ctx, [[0, -17], [4, -8], [13, 11], [5, 8], [0, 12], [-5, 8], [-13, 11], [-4, -8]]);
-  ctx.fillStyle = '#c9bdf5';
-  poly(ctx, [[4, -8], [13, 11], [11, 11], [3, -6]]); poly(ctx, [[-4, -8], [-13, 11], [-11, 11], [-3, -6]]);
-  ctx.fillStyle = '#4a3f78'; ctx.fillRect(-2, 12, 4, 4);
-  ctx.fillStyle = '#241f38'; ctx.beginPath(); ctx.arc(0, 0, 8, 0, 7); ctx.fill(); // dark well (3+5)
-  ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(0, 0, 6, 0, 7); ctx.fill(); // the 6px truth
-  ctx.strokeStyle = '#ff4fa3'; ctx.lineWidth = 0.7; ctx.beginPath(); ctx.arc(0, 0, 6, 0, 7); ctx.stroke();
+  drawShip(ctx, 0, 0, true);
   ctx.restore();
 }
 
-// Both bullet castes at 3x (renderer.js enemy-bullet block): white = the true
-// 3px hit circle; pink ring / cyan body are graze.
+// Both bullet castes at 3x: white = the true 3px hit circle; pink ring / cyan
+// body are graze.
 function drawBulletCard(ctx) {
+  ctx.imageSmoothingEnabled = false;
   ctx.save(); ctx.translate(30, 48); ctx.scale(3, 3);
-  ctx.fillStyle = '#20060f'; ctx.beginPath(); ctx.arc(0, 0, 5.6, 0, 7); ctx.fill();
-  ctx.fillStyle = '#ff4fa3'; ctx.beginPath(); ctx.arc(0, 0, 4.2, 0, 7); ctx.fill();
-  ctx.fillStyle = '#ffe6f2'; ctx.beginPath(); ctx.arc(0, 0, 3, 0, 7); ctx.fill();
+  drawRoundBullet(ctx, 0, 0, 0);
   ctx.restore();
-  ctx.save(); ctx.translate(64, 48); ctx.scale(3, 3); ctx.rotate(Math.PI / 2);
-  ctx.fillStyle = '#031418'; ctx.fillRect(-7, -3, 14, 6);
-  ctx.fillStyle = '#37d6e0'; ctx.fillRect(-6, -2, 12, 4);
-  ctx.fillStyle = '#e8feff'; ctx.fillRect(-3, -2, 7, 4);
+  ctx.save(); ctx.translate(64, 48); ctx.scale(3, 3);
+  drawNeedle(ctx, 0, 0, Math.PI / 2);
   ctx.restore();
 }
 

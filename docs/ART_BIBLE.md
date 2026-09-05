@@ -3,8 +3,8 @@
 *The drawing rules every builder draws to and every critic grades against.
 Companion to `DESIGN_PILLARS.md` (constitution), `CRITIC_RUBRIC.md` (S2 visibility,
 S3b boss theatre, S4 enemy design — the referee's acceptance criteria) and
-`DESIGN_WIKI.md`. Drafted 2026-09-04 from the visual-design brief; **status: DRAFT,
-nothing has been built to it yet.** Every number below is read from
+`DESIGN_WIKI.md`. Drafted 2026-09-04 from the visual-design brief; **status: Round 1 built (r57,
+branch `art/round-1`, brief in `art-rounds/round-1.md`); Rounds 2–6 open.** Every number below is read from
 `src/render/renderer.js` and `src/core/stage.js` as of r51/r52.*
 
 **Scope guard.** Everything here is renderer-only. Hitboxes (`ENEMY_DEFS r`,
@@ -221,6 +221,14 @@ bullet hues appear on a body, because that body fires them.
 
 ## 12. Open questions (for the Round 1 builder and critics)
 
+*Round 1 answers (r57, see `art-rounds/round-1.md` for the peeks):* (1) pixel
+discs — the rim reads crisper at 3–6× and the exact r20 radii survive because
+the span table takes fractional r; arc() is gone from every sprite. (2) 16
+steps shipped; wobble judged only from stills — Jacob's playtest call.
+(3) cache is lazy per key (type × phase × side × step × prop × hit × flick ×
+extra); a full run populates a few hundred ≤100 px canvases, and max-load
+draw fell 1.99 → 1.43 ms. (4) per-family `out`, as recommended.
+
 1. Bullet discs: `arc()` vs pixel-disc table — does the crisp rim beat the
    smooth circle at 2–3× scale? Peek both.
 2. 16-step rotation vs smooth: does the popcorn wobble (`sin(age)`) look
@@ -233,6 +241,7 @@ bullet hues appear on a body, because that body fires them.
 ## Rounds (from the brief, ranked by impact)
 
 1. **Art bible + pixel grid + palette + rims** — this file's §2–5. Renderer-only.
+   **Built: r57** (`art-rounds/round-1.md`).
 2. **Boss forms** — §10. Renderer-only.
 3. **Stagecraft** — §7 + turrets on landmarks. *Design change.*
 4. **Motion** — §8. Renderer-only (+ How-To card).
@@ -246,3 +255,8 @@ bullet hues appear on a body, because that body fires them.
   claims in that brief: bullets *do* carry dark rims + white cores (the
   contract is right, the rims are just thin on a near-black field), and the
   boss *does* have three forms (the missing thing is surface, not silhouette).
+- 2026-09-04 — r57: Round 1 built to §2–5 (renderer-only). Deviations noted in
+  the brief: needles keep smooth rotation (§2.4 exception — aimed direction is
+  the telegraph); boss hull keeps its r56 light-grey until Round 2 retunes it
+  into the HEAVY ramp; the focus dot's pink rim stays (wiki §6.2 contract, a
+  sanctioned non-bullet pink alongside WARNING).

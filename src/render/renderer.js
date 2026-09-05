@@ -1,6 +1,9 @@
 // Canvas2D renderer. Visibility rules from rubric S2: washed-out low-contrast
 // background; bullets pair dark rims with bright cores; consistent language
 // (pink rounds = static/random, cyan needles = aimed); bullets on top.
+// r57 (ART_BIBLE Round 1, renderer-only): named palette (§3), pixel grid (§2),
+// per-family 1px rims via an offscreen sprite cache (§4), pixel-disc bullets
+// and items (§5). Core, hitboxes, timeline, g.rng and the referee untouched.
 import { W, H, PLAYER, FX } from '../core/game.js';
 
 // r50 lab: presentation prefs the shell may switch live (src/lab.js writes
@@ -16,8 +19,31 @@ import { W, H, PLAYER, FX } from '../core/game.js';
 // speedDress: r53 — transported to core as g.fxMeta by main.js (renderer ignores it)
 export const prefs = { speedPopup: 'both', fxSize: 1, fxStyle: 'classic', speedDress: 0 };
 
+// ---------------------------------------------------------------------------
+// PALETTE (ART_BIBLE §3). The only hex literals in this file live in this block
+// and the fx/section tables below it. Exclusivity: pink + cyan are bullets (and
+// the boss cores/parts that fire them), gold is value, violet is the player,
+// white is bullet cores / hit-flash / the player hull highlight. Values are
+// the r56 ones — Round 1 names first, retunes second (bible §3).
+// ---------------------------------------------------------------------------
+const AIR    = { out: '#2a2f45', shade: '#5c6584', base: '#8d97b4', hi: '#c9d1e8', glass: '#eef1f8' };
+const GROUND = { out: '#2a2816', plate: '#34321f', shade: '#5f5c3e', base: '#9a9678', hi: '#c6c2a2', exhaust: '#d9c08a' };
+const HEAVY  = { out: '#22242e', shade: '#474c60', base: '#7a8097', hi: '#aab1c8', stripe: '#8a5a52', core: '#f0e6c8' };
+const SHIP   = { dark: '#4a3f78', shade: '#6b5aa8', edge: '#c9bdf5', hull: '#f0ecff', shot: '#c3a8ff', well: '#241f38', dot: '#e8e2ff' };
+const ROUND  = { rim: '#20060f', ring: '#ff4fa3', ringHi: '#ff8ec4', core: '#ffe6f2' };
+const NEEDLE = { rim: '#031418', body: '#37d6e0', core: '#e8feff' };
+const ITEM   = { rim: '#0e0c04', gold: '#ffd24a', glint: '#fff6d0' };
+const UI     = { text: '#cdd3e8', dim: '#8a8fa8', score: '#e8ecf8', lives: '#e8f6ff', white: '#ffffff',
+                 gold: ITEM.gold, warn: ROUND.ring, warnHi: ROUND.ringHi, warnBand: '#14040a', warnText: ROUND.core,
+                 hudBack: 'rgba(6,8,14,0.55)', bannerBack: 'rgba(6,8,14,0.72)', bombFlash: '#dff6ff' };
+// Boss surface is Round 2 (bible §10); Round 1 only names what r56 drew.
+const BOSS   = { hull: '#c8cde0', armor: '#3a3f55', burnA: '#e0604a', burnB: '#7a2a22', ember: '#ffb347', strut: '#8a8fa8', hot: '#fff6f0',
+                 cores: [ROUND.ring, NEEDLE.body, ITEM.gold] };
+export const PAL = { AIR, GROUND, HEAVY, SHIP, ROUND, NEEDLE, ITEM, UI, BOSS };
+
 // r8-fx explosion palette, indexed [family][heat stop 0=hot … 3=cool] by the
 // particle's remaining life. Lookup tables: no string building in the hot loop (S8).
+// (FX family — bible §3 "as tabled"; explosions are Round 5.)
 const FX_RAMP = [
   ['#ffffff', '#e8dcff', '#b49aff', '#6a4fc0'], // 0 WHITE/violet — player
   ['#ffffff', '#ffe27a', '#ff9a3c', '#c8401e'], // 1 ORANGE — default kill
@@ -38,15 +64,15 @@ const CH_RAMP = [
 const CH_STAGE_AT = [3, 9, 15, 22]; // age thresholds (frames) for stages 1..4 (white / yellow / orange / dark red / smoke)
 const FX_DEBRIS = ['#c8bfe8', '#d07a3a', '#5fb4d8', '#b0503a'];
 
-const ENEMY_TINT = ['#8a8fa8', '#9aa0b8', '#7d8298', '#a8adc4', '#b8bdd4', '#c8cde0', '#c0c6da'];
 let displayScore = 0; // ticks up toward real score [BOGHOG_CRAFT]
 
-// Section place-identity (r5 S5-SHOULD-1): each stage section gets its own
-// subtle background accent — hue-shifted slabs/stars near the base wash values,
-// plus one large landmark slab that scrolls through as the section plays.
-// Purely renderer-side (keyed off g.stageT); values stay washed-out so the
-// background never competes with the bullet layer (S2-MUST-1).
+// FIELD family (bible §3): section place-identity (r5 S5-SHOULD-1) — each stage
+// section gets its own subtle background accent — hue-shifted slabs/stars near
+// the base wash values, plus one large landmark slab that scrolls through as
+// the section plays. Purely renderer-side (keyed off g.stageT); values stay
+// washed-out so the background never competes with the bullet layer (S2-MUST-1).
 // Entry stageT per section: intro / s1..s8.
+const FIELD_BG = '#0a0c14';
 const SEC_T = [0, 120, 720, 1700, 2400, 2460, 2900, 3700, 3900];
 const SEC_SLAB = ['#12151f', '#101726', '#171820', '#181422', '#1d1418', '#1c1812', '#101c17', '#101a26', '#1d1220'];
 const SEC_STAR = ['#161a28', '#141d30', '#1e2026', '#1f1a2e', '#261b20', '#25211a', '#16241e', '#152230', '#261a2a'];
@@ -70,6 +96,66 @@ const BOSS_SLAB = ['#111b30', '#261416', '#28262c'];
 const BOSS_STAR = ['#15233c', '#2c181a', '#302e33'];
 const BOSS_LAND = ['#16243e', '#2e1a1e', '#333038'];
 
+// ---------------------------------------------------------------------------
+// PIXEL GRID + SPRITE CACHE (bible §2, §4).
+// Every sprite is painted ONCE into an offscreen canvas per (type, variant,
+// heading step, flags), alpha-thresholded so anti-aliased polygon edges become
+// hard pixels, rimmed with its family's `out` colour at the four 1px offsets,
+// then drawImage'd at an integer origin. Rims cost nothing per frame and the
+// per-enemy draw drops from ~10 fills to one drawImage (S8).
+// ---------------------------------------------------------------------------
+const CACHE = new Map();
+function makeCanvas(w, h) {
+  if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(w, h);
+  const c = document.createElement('canvas'); c.width = w; c.height = h; return c;
+}
+function crisp(cv) { // §2.5: no anti-aliasing side effects — edge pixels are on or off
+  const x = cv.getContext('2d'), im = x.getImageData(0, 0, cv.width, cv.height), d = im.data;
+  for (let i = 3; i < d.length; i += 4) d[i] = d[i] < 128 ? 0 : 255;
+  x.putImageData(im, 0, 0);
+}
+// paint(ctx) draws the sprite centred on the origin. rim: 1px outline colour
+// (null = none). topLight: replaces the rim on the top edge (player hull rim, §4).
+function sprite(key, span, rim, paint, topLight) {
+  let s = CACHE.get(key); if (s) return s;
+  const size = span + 4, o = size >> 1;
+  const body = makeCanvas(size, size), bx = body.getContext('2d');
+  bx.translate(o, o); paint(bx); crisp(body);
+  const out = makeCanvas(size, size), ox = out.getContext('2d');
+  if (rim) {
+    const m = makeCanvas(size, size), mx = m.getContext('2d');
+    mx.drawImage(body, 0, 0); mx.globalCompositeOperation = 'source-in';
+    mx.fillStyle = rim; mx.fillRect(0, 0, size, size);
+    ox.drawImage(m, 1, 0); ox.drawImage(m, -1, 0); ox.drawImage(m, 0, 1);
+    if (topLight) { mx.fillStyle = topLight; mx.fillRect(0, 0, size, size); }
+    ox.drawImage(m, 0, -1);
+  }
+  ox.drawImage(body, 0, 0);
+  s = { img: out, o }; CACHE.set(key, s); return s;
+}
+// Pixel discs (§2.3): a row-span table per radius — a pixel is in when its
+// centre lies inside r about an integer origin, so disc(r) matches arc(r)'s
+// footprint without the soft edge. Fractional r keeps the r20 bullet sizes.
+const DISC = new Map();
+function discSpans(r) {
+  let s = DISC.get(r); if (s) return s; s = [];
+  const n = Math.ceil(r);
+  for (let j = -n; j < n; j++) {
+    const cy = j + 0.5, h = r * r - cy * cy; if (h <= 0) continue;
+    const k = Math.ceil(Math.sqrt(h) - 0.5) - 1; if (k < 0) continue;
+    s.push(j, -(k + 1), 2 * (k + 1));
+  }
+  DISC.set(r, s); return s;
+}
+function disc(ctx, x, y, r) { const s = discSpans(r); for (let i = 0; i < s.length; i += 3) ctx.fillRect(x + s[i + 1], y + s[i], s[i + 2], 1); }
+function poly(ctx, pts) {
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.closePath(); ctx.fill();
+}
+const STEP = Math.PI / 8; // §2.4: 16 heading steps
+function stepOf(a) { return ((Math.round(a / STEP) % 16) + 16) % 16; }
+
 export function resetHud() { displayScore = 0; }
 
 export function draw(g, ctx, bgScroll) {
@@ -79,7 +165,8 @@ export function draw(g, ctx, bgScroll) {
     // r28: fxRng, NEVER g.rng — draw() only runs in the browser, so pulling the
     // gameplay stream here desynced live runs from headless replay (the Booth
     // recorder divergence). Renderer randomness must never touch g.rng.
-    ctx.translate((g.fxRng.next() - 0.5) * amp, (g.fxRng.next() - 0.5) * amp);
+    // r57: whole-pixel shake so the grid survives it (§2.1).
+    ctx.translate(Math.round((g.fxRng.next() - 0.5) * amp), Math.round((g.fxRng.next() - 0.5) * amp));
   }
 
   // background: deep indigo, faint slow stars — low value contrast (S2),
@@ -91,7 +178,7 @@ export function draw(g, ctx, bgScroll) {
     const e = g.enemies.items[i];
     if (e.type === 5) { bossPhase = e.phase; break; }
   }
-  const bgC = bossPhase >= 0 ? BOSS_BG[bossPhase] : '#0a0c14';
+  const bgC = bossPhase >= 0 ? BOSS_BG[bossPhase] : FIELD_BG;
   const slabC = bossPhase >= 0 ? BOSS_SLAB[bossPhase] : SEC_SLAB[sec];
   const starC = bossPhase >= 0 ? BOSS_STAR[bossPhase] : SEC_STAR[sec];
   const landC = bossPhase >= 0 ? BOSS_LAND[bossPhase] : SEC_LAND[sec];
@@ -100,7 +187,7 @@ export function draw(g, ctx, bgScroll) {
   // landmark slab: enters at the section boundary, scrolls with section progress
   {
     const [lx, lw, lh] = SEC_LANDGEO[sec];
-    const ly = (g.stageT - SEC_T[sec]) * 0.55 - lh - 20;
+    const ly = Math.round((g.stageT - SEC_T[sec]) * 0.55 - lh - 20);
     if (ly < H + 20) {
       ctx.fillStyle = landC;
       ctx.fillRect(lx, ly, lw, lh);
@@ -110,13 +197,13 @@ export function draw(g, ctx, bgScroll) {
   }
   ctx.fillStyle = starC;
   for (let i = 0; i < 40; i++) {
-    const sx = (i * 137.5) % W;
-    const sy = ((i * 89.3) + bgScroll * (0.4 + (i % 3) * 0.3)) % (H + 40) - 20;
+    const sx = Math.floor((i * 137.5) % W);
+    const sy = Math.floor(((i * 89.3) + bgScroll * (0.4 + (i % 3) * 0.3)) % (H + 40) - 20);
     ctx.fillRect(sx, sy, i % 3 === 0 ? 2 : 1, 8 + (i % 3) * 6);
   }
   ctx.fillStyle = slabC;
   for (let i = 0; i < 6; i++) {
-    const sy = ((i * 173) + bgScroll * 0.25) % (H + 120) - 60;
+    const sy = Math.floor(((i * 173) + bgScroll * 0.25) % (H + 120) - 60);
     ctx.fillRect(30 + (i * 97) % (W - 120), sy, 60, 34); // dim "terrain" slabs
   }
 
@@ -124,16 +211,16 @@ export function draw(g, ctx, bgScroll) {
   // scales with value (fat chains pay in visibly fatter gold) and a slow
   // glint pulse keeps the big discs reading as treasure, not UI. Safe to grow:
   // items sit below enemies/fx/bullets, so size can never mask a threat.
+  // r57: pixel discs from the cache, one per integer radius (the pulse steps 1px).
   for (let i = 0; i < g.items.count; i++) {
     const it = g.items.items[i];
-    const r = Math.min(12, 7 + it.val / 150) + Math.sin(g.frame * 0.11 + it.tw) * 0.6;
-    ctx.fillStyle = '#0e0c04';
-    ctx.beginPath(); ctx.arc(it.x, it.y, r, 0, 7); ctx.fill();
-    ctx.fillStyle = '#ffd24a';
-    ctx.beginPath(); ctx.arc(it.x, it.y, r * 0.78, 0, 7); ctx.fill();
-    ctx.fillStyle = '#fff6d0';
-    const hl = Math.max(2, r * 0.3);
-    ctx.fillRect(it.x - r * 0.4, it.y - r * 0.4, hl, hl);
+    const r = Math.round(Math.min(12, 7 + it.val / 150) + Math.sin(g.frame * 0.11 + it.tw) * 0.6);
+    const s = CACHE.get(1000 + r) || sprite(1000 + r, 2 * r + 2, null, (c) => {
+      c.fillStyle = ITEM.rim; disc(c, 0, 0, r);
+      c.fillStyle = ITEM.gold; disc(c, 0, 0, Math.round(r * 0.78));
+      c.fillStyle = ITEM.glint; const hl = Math.max(2, Math.round(r * 0.3)); c.fillRect(-Math.round(r * 0.4), -Math.round(r * 0.4), hl, hl);
+    });
+    ctx.drawImage(s.img, Math.round(it.x) - s.o, Math.round(it.y) - s.o);
   }
 
   // enemies — desaturated silhouettes, distinct per role (S4)
@@ -151,38 +238,22 @@ export function draw(g, ctx, bgScroll) {
   // of the cyan/teal family entirely — that family belongs to enemy needles
   // (r5 S2-MUST-3), and violet reads apart from gold items and pink rounds.
   for (let i = 0; i < g.pBullets.count; i++) {
-    const b = g.pBullets.items[i];
-    ctx.fillStyle = '#c3a8ff';
-    ctx.fillRect(b.x - 2, b.y - 10, 4, 20);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(b.x - 1, b.y - 9, 2, 18);
+    const b = g.pBullets.items[i], x = Math.round(b.x), y = Math.round(b.y);
+    ctx.fillStyle = SHIP.shot;
+    ctx.fillRect(x - 2, y - 10, 4, 20);
+    ctx.fillStyle = UI.white;
+    ctx.fillRect(x - 1, y - 9, 2, 18);
   }
 
-  // ⚠ ART-CHANGE NOTE (r35): src/howto.js drawBulletCard mirrors both bullet
-  // castes pixel-for-pixel — redesign bullets → update the card, same commit.
+  // ⚠ ART-CHANGE NOTE (r35/r57): src/howto.js draws its bullet card through
+  // drawRoundBullet / drawNeedle below — the card mirrors by construction.
   // enemy bullets — TOP layer; needles above rounds (faster ⇒ higher, S2)
   for (let pass = 0; pass < 2; pass++) {
     for (let i = 0; i < g.eBullets.count; i++) {
       const b = g.eBullets.items[i];
       if (b.kind !== pass) continue;
-      if (pass === 0) { // pink round: dark rim, bright ring (subtle pulse, r5 S2-SHOULD), white core
-        ctx.fillStyle = '#20060f';
-        ctx.beginPath(); ctx.arc(b.x, b.y, 5.6, 0, 7); ctx.fill();
-        ctx.fillStyle = '#ff4fa3';
-        ctx.beginPath(); ctx.arc(b.x, b.y, 4.2 + Math.sin(g.frame * 0.24) * 0.35, 0, 7); ctx.fill();
-        // r20 (Booth session 2): the WHITE part of a bullet is the part that
-        // counts — Touhou's "non-white border does not count", now literal.
-        // White core = the true 3px hit circle; ring and rim are graze area.
-        ctx.fillStyle = '#ffe6f2';
-        ctx.beginPath(); ctx.arc(b.x, b.y, 3, 0, 7); ctx.fill();
-      } else { // cyan needle: elongated along velocity (S2 telegraphing)
-        const ang = Math.atan2(b.vy, b.vx);
-        ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(ang);
-        ctx.fillStyle = '#031418'; ctx.fillRect(-7, -3, 14, 6);
-        ctx.fillStyle = '#37d6e0'; ctx.fillRect(-6, -2, 12, 4);
-        ctx.fillStyle = '#e8feff'; ctx.fillRect(-3, -2, 7, 4); // white = the 3px hit circle at the centre (+1px nose taper)
-        ctx.restore();
-      }
+      if (pass === 0) drawRoundBullet(ctx, b.x, b.y, g.frame);
+      else drawNeedle(ctx, b.x, b.y, Math.atan2(b.vy, b.vx));
     }
   }
 
@@ -198,8 +269,8 @@ export function draw(g, ctx, bgScroll) {
     }
     ctx.globalAlpha = Math.min(1, q.life / 18);
     ctx.font = q.big ? 'bold 15px monospace' : '11px monospace';
-    ctx.fillStyle = q.big ? '#ffd24a' : '#cdd3e8';
-    ctx.fillText(text, q.x, q.y);
+    ctx.fillStyle = q.big ? UI.gold : UI.text;
+    ctx.fillText(text, Math.round(q.x), Math.round(q.y));
   }
   ctx.globalAlpha = 1;
 
@@ -210,17 +281,17 @@ export function draw(g, ctx, bgScroll) {
     const on = (g.frame >> 3) & 1;
     const fade = Math.min(1, g.warn / 12);
     ctx.globalAlpha = 0.8 * fade;
-    ctx.fillStyle = '#14040a';
+    ctx.fillStyle = UI.warnBand;
     ctx.fillRect(0, H / 2 - 32, W, 64);
     ctx.globalAlpha = fade;
-    ctx.fillStyle = on ? '#ff4fa3' : '#ff8ec4';
+    ctx.fillStyle = on ? UI.warn : UI.warnHi;
     for (let x = 0; x < W; x += 26) { // hazard ticks along the band edges
       ctx.fillRect(x + (on ? 0 : 13), H / 2 - 32, 13, 3);
       ctx.fillRect(x + (on ? 13 : 0), H / 2 + 29, 13, 3);
     }
     ctx.textAlign = 'center';
     ctx.font = 'bold 26px monospace';
-    ctx.fillStyle = on ? '#ff4fa3' : '#ffe6f2';
+    ctx.fillStyle = on ? UI.warn : UI.warnText;
     ctx.fillText('W A R N I N G', W / 2, H / 2 + 9);
     ctx.globalAlpha = 1;
   }
@@ -233,13 +304,39 @@ export function draw(g, ctx, bgScroll) {
     const ca = g.cancelFlash > 0 ? g.cancelFlash / 76 : 0;
     const comb = 1 - (1 - fa) * (1 - ca);
     const cap = comb > 0.55 ? 0.55 / comb : 1;
-    if (fa > 0) { ctx.globalAlpha = fa * cap; ctx.fillStyle = '#dff6ff'; ctx.fillRect(0, 0, W, H); }
-    if (ca > 0) { ctx.globalAlpha = ca * cap; ctx.fillStyle = '#ffd24a'; ctx.fillRect(0, 0, W, H); }
+    if (fa > 0) { ctx.globalAlpha = fa * cap; ctx.fillStyle = UI.bombFlash; ctx.fillRect(0, 0, W, H); }
+    if (ca > 0) { ctx.globalAlpha = ca * cap; ctx.fillStyle = UI.gold; ctx.fillRect(0, 0, W, H); }
     ctx.globalAlpha = 1;
   }
 
   ctx.restore();
   drawHud(ctx, g);
+}
+
+// --- enemy bullets (bible §5; wiki §6.2 display contract) -------------------
+// Round: dark rim → pink ring → WHITE core = the true 3px hit circle. r57: a
+// pixel-disc sprite at the exact r20 radii (5.6 / 4.2 / 3), two frames — the
+// r5 0.35px pulse becomes a 2-frame ring flash held 4 ticks (SLYNYRD: flashing
+// reads as dangerous). Sizes unchanged: ring and rim are graze area.
+export function drawRoundBullet(ctx, x, y, frame) {
+  const f = (frame >> 2) & 1;
+  const s = CACHE.get(2000 + f) || sprite(2000 + f, 12, null, (c) => {
+    c.fillStyle = ROUND.rim; disc(c, 0, 0, 5.6);
+    c.fillStyle = f ? ROUND.ringHi : ROUND.ring; disc(c, 0, 0, 4.2);
+    c.fillStyle = ROUND.core; disc(c, 0, 0, 3);
+  });
+  ctx.drawImage(s.img, Math.round(x) - s.o, Math.round(y) - s.o);
+}
+// Needle: elongated along velocity (S2 telegraphing) — rotation stays smooth
+// because an aimed shot's direction IS the telegraph (16 steps would lie by up
+// to 11°). r57 adds the 1px bright tail tick (§5) so direction reads from the
+// sprite alone. White = the 3px hit circle at the centre (+1px nose taper).
+export function drawNeedle(ctx, x, y, ang) {
+  ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.rotate(ang);
+  ctx.fillStyle = NEEDLE.rim; ctx.fillRect(-7, -3, 14, 6);
+  ctx.fillStyle = NEEDLE.body; ctx.fillRect(-6, -2, 12, 4);
+  ctx.fillStyle = NEEDLE.core; ctx.fillRect(-3, -2, 7, 4); ctx.fillRect(-6, -2, 1, 4);
+  ctx.restore();
 }
 
 function drawFx(ctx, g) {
@@ -353,15 +450,14 @@ function drawFx(ctx, g) {
 // the player (Pillar 6; boghog WS02 "values are the most important thing…
 // colours still matter"). Two families: AIR — aircraft silhouettes, nose along
 // their heading, banking with lateral velocity, prop flicker; GROUND — squat,
-// wide, a base plate with a drop shadow and a barrel that aims at the ship
-// (Komazawa: "the way tanks fire… every enemy had a backstory"). Size ladder
-// per DDP's "big things are slow; fast things are small". Every behaviour
-// variant is its own craft: fighter, diver, crosser dart, riser climber.
-// Hit-flash and armor flicker unchanged. Renderer-only: core hitboxes
-// (ENEMY_DEFS r) untouched — sprites stay within ~1.2r.
-const AIR = { base: '#8d97b4', shade: '#5c6584', hi: '#c9d1e8', glass: '#eef1f8' };
-const GROUND = { base: '#9a9678', shade: '#5f5c3e', hi: '#c6c2a2', plate: '#34321f' };
-const HEAVY = { base: '#7a8097', shade: '#474c60', hi: '#aab1c8', stripe: '#8a5a52' };
+// wide, a base plate with a solid under-plate and a barrel that aims at the
+// ship (Komazawa: "the way tanks fire… every enemy had a backstory"). Size
+// ladder per DDP's "big things are slow; fast things are small". Every
+// behaviour variant is its own craft: fighter, diver, crosser dart, riser
+// climber. Renderer-only: core hitboxes (ENEMY_DEFS r) untouched — sprites
+// stay within ~1.2r (bible §6).
+// r57: every sprite goes through the cache — integer geometry (§2.2), 16
+// heading steps (§2.4), family rim (§4), hit-flash whitens the rim too.
 // sprites are drawn nose-DOWN (+y, toward the player); rotate to the velocity
 // heading when moving so crossers fly sideways and risers climb nose-up
 function heading(e) {
@@ -371,33 +467,55 @@ function heading(e) {
   return (vx * vx + e.vy * e.vy > 0.09) ? Math.atan2(e.vy, vx) - Math.PI / 2 : 0;
 }
 const TURRET_PLATE = [[-9, -13], [9, -13], [13, -9], [13, 9], [9, 13], [-9, 13], [-13, 9], [-13, -9]];
+const SPAN = [32, 48, 40, 66, 72, 100, 32]; // cache canvas per type (rotated extents + rim)
+function rimOf(type, phase) {
+  if (type === 0) return phase === 1 ? HEAVY.out : phase === 3 ? GROUND.out : AIR.out;
+  if (type === 1) return AIR.out;
+  if (type === 2) return GROUND.out;
+  return HEAVY.out;
+}
 
 export function drawEnemy(ctx, g, e) {
-  const flick = e.vulnAt < 0 && (g.frame & 4); // intro armor shimmer
-  const hit = e.flash > 0; // r8-fx S4-MUST: hit-flash — every fill goes white for 2 frames
-  const F = (c) => { ctx.fillStyle = hit ? '#ffffff' : c; };
-  const S = (c) => F(flick ? '#3a3f55' : c); // surface fill: armor shimmer applies
+  const flick = (e.vulnAt < 0 && (g.frame & 4)) ? 1 : 0; // intro armor shimmer
+  const hit = e.flash > 0 ? 1 : 0; // r8-fx S4-MUST: hit-flash — every fill goes white for 2 frames
   const prop = (g.frame & 2) ? 1 : 0;
-  ctx.save(); ctx.translate(e.x, e.y);
+  const phase = e.phase & 3, side = e.side > 0 ? 1 : 0;
+  let step = 0, extra = 0, dy = 0;
   switch (e.type) {
+    case 0: step = stepOf(heading(e)); if (e.phase === 3 && e.vy < -0.5) extra = 1; break; // riser climbing → exhaust plume
+    case 1: case 3: step = stepOf(heading(e)); break;
+    case 2: extra = stepOf(Math.atan2(g.player.y - e.y, g.player.x - e.x)) + ((e.vulnAt >= 0 && g.frame - e.vulnAt > 240) ? 16 : 0); break; // barrel step + angry
+    case 5: extra = (e.vulnAt < 0 && e.phase > 0) ? ((g.frame & 2) ? 2 : 1) : 0; break; // burn-in frames
+  }
+  if (e.type === 1) dy = Math.round(Math.sin(e.age * 0.09) * 0.8); // parked bob, whole pixels
+  const key = ((((((e.type * 4 + phase) * 2 + side) * 16 + step) * 2 + prop) * 2 + hit) * 2 + flick) * 32 + extra;
+  const s = CACHE.get(key) || sprite(key, SPAN[e.type], hit ? UI.white : rimOf(e.type, phase),
+    (c) => paintEnemy(c, e.type, phase, side ? 1 : -1, step, prop, hit, flick, extra));
+  ctx.drawImage(s.img, Math.round(e.x) - s.o, Math.round(e.y) - s.o + dy);
+}
+
+function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra) {
+  const F = (c) => { ctx.fillStyle = hit ? UI.white : c; };
+  const S = (c) => F(flick ? BOSS.armor : c); // surface fill: armor shimmer applies
+  switch (type) {
     case 0: { // popcorn family — each behaviour variant is its own craft
-      ctx.rotate(heading(e));
-      if (e.phase === 2) {          // CROSSER: dart interceptor — long, swept, flies sideways across the top band
+      ctx.rotate(step * STEP);
+      if (phase === 2) {            // CROSSER: dart interceptor — long, swept, flies sideways across the top band
         S(AIR.shade); poly(ctx, [[0, 12], [8, -5], [0, -10], [-8, -5]]);
-        S(AIR.base); poly(ctx, [[0, 13], [2.5, -3], [0, -9], [-2.5, -3]]);
+        S(AIR.base); poly(ctx, [[0, 13], [3, -3], [0, -9], [-3, -3]]);
         S(AIR.hi); poly(ctx, [[0, 12], [8, -5], [7, -5], [0, 10]]);
         S(AIR.glass); ctx.fillRect(-1, 1, 2, 3);
-      } else if (e.phase === 3) {   // RISER: stubby climber with exhaust — nose flips as it turns to fall
+      } else if (phase === 3) {     // RISER: stubby climber with exhaust — nose flips as it turns to fall
         S(GROUND.shade); poly(ctx, [[0, 9], [8, 2], [8, -3], [-8, -3], [-8, 2]]);
         S(GROUND.base); poly(ctx, [[0, 11], [4, 0], [4, -8], [-4, -8], [-4, 0]]);
         S(GROUND.hi); ctx.fillRect(-4, -8, 8, 1);
         S(AIR.glass); ctx.fillRect(-1, 2, 2, 3);
-        if (e.vy < -0.5 && prop) { S('#d9c08a'); poly(ctx, [[-3, -8], [3, -8], [0, -15]]); }
+        if (extra && prop) { S(GROUND.exhaust); poly(ctx, [[-3, -8], [3, -8], [0, -15]]); } // climbing: exhaust plume
       } else {                      // FIGHTER — and its diver twin (phase 1): darker, nose on the target
-        const c = e.phase === 1 ? HEAVY : AIR;
+        const c = phase === 1 ? HEAVY : AIR;
         S(c.shade); ctx.fillRect(-9, -2, 18, 4);       // main wing
         S(c.shade); ctx.fillRect(-4, -8, 8, 2);        // tailplane
-        S(c.base); poly(ctx, [[0, 10], [2.5, 2], [2.5, -8], [0, -10], [-2.5, -8], [-2.5, 2]]); // fuselage
+        S(c.base); poly(ctx, [[0, 10], [3, 2], [3, -8], [0, -10], [-3, -8], [-3, 2]]); // fuselage
         S(c.hi); ctx.fillRect(-9, -2, 18, 1);          // leading-edge light
         S(AIR.glass); ctx.fillRect(-1, 0, 2, 3);       // canopy
         S(c.hi); if (prop) ctx.fillRect(-4, 9, 8, 1); else ctx.fillRect(-1, 7, 2, 4); // prop disc flicker
@@ -405,30 +523,29 @@ export function drawEnemy(ctx, g, e) {
       break;
     }
     case 1: { // MID — twin-boom heavy fighter: wider, taller, two engines; bobs while parked
-      ctx.rotate(heading(e)); ctx.translate(0, Math.sin(e.age * 0.09) * 0.8);
+      ctx.rotate(step * STEP);
       S(AIR.shade); ctx.fillRect(-15, -4, 30, 5);                               // wing
       S(AIR.shade); ctx.fillRect(-10, -13, 3, 10); ctx.fillRect(7, -13, 3, 10); // tail booms
       S(AIR.base); ctx.fillRect(-13, -13, 26, 2);                               // tailplane bar
-      S(AIR.base); poly(ctx, [[0, 13], [3.5, 3], [3.5, -9], [0, -11], [-3.5, -9], [-3.5, 3]]); // fuselage
+      S(AIR.base); poly(ctx, [[0, 13], [4, 3], [4, -9], [0, -11], [-4, -9], [-4, 3]]); // fuselage
       S(AIR.base); ctx.fillRect(-11, -6, 5, 9); ctx.fillRect(6, -6, 5, 9);      // engine nacelles
       S(AIR.hi); ctx.fillRect(-15, -4, 30, 1);
-      S(AIR.glass); ctx.fillRect(-1.5, 2, 3, 4);
+      S(AIR.glass); ctx.fillRect(-2, 2, 4, 4);
       S(AIR.hi); if (prop) { ctx.fillRect(-12, 3, 7, 1); ctx.fillRect(5, 3, 7, 1); }
       break;
     }
-    case 2: { // TURRET — ground family: plate + drop shadow, khaki dome, barrel aims at the ship; rust when angry
-      const angry = e.vulnAt >= 0 && g.frame - e.vulnAt > 240;
-      const a = Math.atan2(g.player.y - e.y, g.player.x - e.x);
-      if (!hit) { ctx.save(); ctx.translate(3, 4); ctx.globalAlpha = 0.45; ctx.fillStyle = '#000'; poly(ctx, TURRET_PLATE); ctx.restore(); }
+    case 2: { // TURRET — ground family: solid under-plate (§4, no alpha shadow), khaki dome, barrel aims at the ship; rust when angry
+      const angry = extra >= 16, barrel = (extra & 15) * STEP;
+      if (!hit) { ctx.save(); ctx.translate(2, 3); S(GROUND.out); poly(ctx, TURRET_PLATE); ctx.restore(); }
       S(GROUND.plate); poly(ctx, TURRET_PLATE);
-      S(GROUND.shade); ctx.beginPath(); ctx.arc(0, 0, 9, 0, 7); ctx.fill();
-      S(angry ? HEAVY.stripe : GROUND.base); ctx.beginPath(); ctx.arc(-1, -1, 7, 0, 7); ctx.fill();
-      ctx.save(); ctx.rotate(a); S(GROUND.shade); ctx.fillRect(0, -2.5, 15, 5); S(GROUND.hi); ctx.fillRect(4, -2.5, 11, 1.5); ctx.restore();
+      S(GROUND.shade); disc(ctx, 0, 0, 9);
+      S(angry ? HEAVY.stripe : GROUND.base); disc(ctx, -1, -1, 7);
+      ctx.save(); ctx.rotate(barrel); S(GROUND.shade); ctx.fillRect(0, -2, 15, 4); S(GROUND.hi); ctx.fillRect(4, -2, 11, 1); ctx.restore();
       S(GROUND.hi); ctx.fillRect(-4, -5, 3, 2);
       break;
     }
     case 3: { // ELITE — heavy bomber: broad wing, four engines, rust wingtip stripes; the space controller
-      ctx.rotate(heading(e));
+      ctx.rotate(step * STEP);
       S(HEAVY.shade); poly(ctx, [[-22, -4], [22, -4], [18, 4], [-18, 4]]);                 // wing
       S(HEAVY.shade); ctx.fillRect(-9, -18, 18, 3);                                        // tailplane
       S(HEAVY.base); poly(ctx, [[0, 20], [7, 8], [7, -14], [3, -19], [-3, -19], [-7, -14], [-7, 8]]); // fuselage
@@ -444,7 +561,7 @@ export function drawEnemy(ctx, g, e) {
       S(HEAVY.base); poly(ctx, [[0, -20], [28, -4], [28, 3], [11, 15], [-11, 15], [-28, 3], [-28, -4]]);
       S(HEAVY.base); poly(ctx, [[0, 24], [8, 10], [8, -16], [0, -20], [-8, -16], [-8, 10]]);   // central hull
       S(HEAVY.stripe); ctx.fillRect(-28, -2, 8, 2); ctx.fillRect(20, -2, 8, 2);
-      S(e.phase === 1 ? '#f0e6c8' : HEAVY.shade); poly(ctx, [[0, 12], [5, 2], [0, -8], [-5, 2]]);
+      S(phase === 1 ? HEAVY.core : HEAVY.shade); poly(ctx, [[0, 12], [5, 2], [0, -8], [-5, 2]]);
       S(HEAVY.hi); poly(ctx, [[0, -20], [28, -4], [27, -3], [0, -19], [-27, -3], [-28, -4]]);
       S(HEAVY.hi); if (prop) { ctx.fillRect(-22, 8, 8, 1); ctx.fillRect(14, 8, 8, 1); }
       break;
@@ -453,119 +570,131 @@ export function drawEnemy(ctx, g, e) {
       // r6 S3b: each phase is a FORM change — three distinct silhouettes.
       // During the 60f handoff armor the incoming form BURNS IN: red-hot
       // flicker (g.frame-keyed — no rng in draw) over the whole body.
-      const burning = e.vulnAt < 0 && e.phase > 0;
-      const body = burning ? ((g.frame & 2) ? '#e0604a' : '#7a2a22') : (flick ? '#3a3f55' : ENEMY_TINT[5]);
-      const core = burning ? '#ffb347' : (['#ff4fa3', '#37d6e0', '#ffd24a'][e.phase] || '#fff');
+      // Surface detail (panels, modules, engines) is Round 2 (bible §10).
+      const burning = extra > 0;
+      const body = burning ? (extra === 2 ? BOSS.burnA : BOSS.burnB) : (flick ? BOSS.armor : BOSS.hull);
+      const core = burning ? BOSS.ember : (BOSS.cores[phase] || UI.white);
       F(body);
-      if (e.phase === 0) {        // P1: winged carrier — broad hull + swept wing roots
+      if (phase === 0) {        // P1: winged carrier — broad hull + swept wing roots
         poly(ctx, [[0, -30], [28, -12], [22, 26], [-22, 26], [-28, -12]]);
         poly(ctx, [[-24, -8], [-42, 2], [-24, 12]]); // wing roots reach for the pods
         poly(ctx, [[24, -8], [42, 2], [24, 12]]);
         F(core);
         poly(ctx, [[0, -16], [14, 10], [-14, 10]]);
-      } else if (e.phase === 1) { // P2: armor shed — wide flat hull, new geometry
+      } else if (phase === 1) { // P2: armor shed — wide flat hull, new geometry
         poly(ctx, [[-36, -4], [-16, -18], [16, -18], [36, -4], [24, 18], [-24, 18]]);
         F(core);
         ctx.fillRect(-20, -4, 40, 8); // exposed cyan core band
       } else {                    // P3: stripped bare core — small, angular, white-hot
         poly(ctx, [[0, -24], [17, 0], [0, 20], [-17, 0]]);
-        F(burning ? '#ffb347' : '#8a8fa8');
+        F(burning ? BOSS.ember : BOSS.strut);
         ctx.fillRect(-26, -3, 9, 6); ctx.fillRect(17, -3, 9, 6); // bare struts
         F(core);
         poly(ctx, [[0, -13], [9, 0], [0, 11], [-9, 0]]);
-        F('#fff6f0');
+        F(BOSS.hot);
         ctx.fillRect(-2, -3, 4, 6); // white-hot center
       }
       break;
     }
     case 6: {
       // r6 boss sub-part: silhouette continues the boss's form — destroying it
-      // visibly amputates that piece (S3b part MUST). Shapes keyed to e.phase.
-      if (e.phase === 0) {        // wing pod: outward-swept blade
-        poly(ctx, [[0, -9], [e.side * 13, -2], [e.side * 9, 6], [0, 8]]);
-        F('#ff4fa3');
-        ctx.fillRect(e.side * 3 - 2, -2, 4, 4);
-      } else if (e.phase === 1) { // armor node: slab with exposed vent
+      // visibly amputates that piece (S3b part MUST). Shapes keyed to phase.
+      // The part carries its emitter's bullet hue — the one sanctioned body use (§3).
+      S(BOSS.hull);
+      if (phase === 0) {        // wing pod: outward-swept blade
+        poly(ctx, [[0, -9], [side * 13, -2], [side * 9, 6], [0, 8]]);
+        F(ROUND.ring);
+        ctx.fillRect(side * 3 - 2, -2, 4, 4);
+      } else if (phase === 1) { // armor node: slab with exposed vent
         ctx.fillRect(-8, -8, 16, 16);
-        F('#37d6e0');
+        F(NEEDLE.body);
         ctx.fillRect(-4, -3, 8, 6);
       } else {                    // core relay node: bright diamond
         poly(ctx, [[0, -9], [8, 0], [0, 9], [-8, 0]]);
-        F('#ffd24a');
+        F(ITEM.gold);
         poly(ctx, [[0, -5], [4, 0], [0, 5], [-4, 0]]);
-        F('#fff');
+        F(UI.white);
         ctx.fillRect(-1, -1, 2, 2);
       }
       break;
     }
   }
-  ctx.restore();
 }
 
-function poly(ctx, pts) {
-  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
-  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
-  ctx.closePath(); ctx.fill();
+// --- player -------------------------------------------------------------------
+// ⚠ ART-CHANGE NOTE (r35/r57): the HOW TO card (src/howto.js) draws its ship
+// through drawShip below, so the card mirrors by construction — keep the ship
+// + dot inside this one function.
+// r20 (Booth flags): the ship is drawn BIG around a tiny core — 28px span on
+// a 3px hit radius (bullets add their own 3px: a bullet kills when its
+// centre is within 6px of the dot). boghog WS01: "small hitboxes, much
+// smaller than their sprites… if it harms the player, make it small";
+// Cave ships run ~8–10:1 sprite:hitbox, the old 18px body was 3:1 and the
+// focus ring read as "the hitbox is half the ship". The core dot is always
+// drawn (visible hit point); focus brightens it, no ring.
+// r20 hitbox marker, per the genre research (hitbox-display-report.md): the
+// marker is NEVER smaller than the truth — Touhou draws a 10px dot over a
+// ~3-7px hitbox; Mushihimesama's circle covers "a few pixels". Every bullet
+// here has the same 3px radius, so we fold it in and draw ONE dot at the
+// full effective radius (hitR + 3 = 6px): a bullet's CENTRE touching your
+// dot is a hit — no smaller mark exists to mis-read, and every surprise is
+// a pleasant one. Dark well behind it for value contrast (WS02); focus
+// whitens the dot and adds the pink rim (a 1px disc ring at r7 — outside
+// the truth, never inside it).
+// r57 (§4): dark rim + a 1px hull-light rim along the top edge, so the ship
+// pops against its own violet shots.
+export function drawShip(ctx, x, y, focus) {
+  const s = CACHE.get('ship') || sprite('ship', 36, SHIP.dark, (c) => {
+    c.fillStyle = SHIP.shade;                                   // wing underside shade
+    poly(c, [[-14, 12], [-4, 4], [4, 4], [14, 12], [10, 15], [-10, 15]]);
+    c.fillStyle = SHIP.hull;                                    // hull
+    poly(c, [[0, -17], [4, -8], [13, 11], [5, 8], [0, 12], [-5, 8], [-13, 11], [-4, -8]]);
+    c.fillStyle = SHIP.edge;                                    // wing leading edges
+    poly(c, [[4, -8], [13, 11], [11, 11], [3, -6]]); poly(c, [[-4, -8], [-13, 11], [-11, 11], [-3, -6]]);
+    c.fillStyle = SHIP.dark; c.fillRect(-2, 12, 4, 4);          // exhaust
+  }, SHIP.hull);
+  const dk = focus ? 'dot1' : 'dot0';
+  const d = CACHE.get(dk) || sprite(dk, 2 * (PLAYER.hitR + 5) + 2, null, (c) => {
+    c.fillStyle = SHIP.well; disc(c, 0, 0, PLAYER.hitR + 5);
+    if (focus) { c.fillStyle = ROUND.ring; disc(c, 0, 0, PLAYER.hitR + 4); }
+    c.fillStyle = focus ? UI.white : SHIP.dot; disc(c, 0, 0, PLAYER.hitR + 3);
+  });
+  ctx.drawImage(s.img, x - s.o, y - s.o);
+  ctx.drawImage(d.img, x - d.o, y - d.o);
 }
 
 export function drawPlayer(ctx, g) {
   const p = g.player;
   if (p.invuln > 0 && (g.frame & 2)) return; // classic invuln blink
-  ctx.save(); ctx.translate(p.x, p.y);
+  const x = Math.round(p.x), y = Math.round(p.y);
   // option trail (follow-through, S1) — violet family: the whole player identity
   // sits outside the enemy needle cyan (r5 S2-MUST-3, with the shot recolor)
-  ctx.fillStyle = '#4a3f78';
-  ctx.fillRect(-19 - (p.x - p.prevX) * 2, 6 - (p.y - p.prevY) * 2, 5, 5);
-  ctx.fillRect(15 - (p.x - p.prevX) * 2, 6 - (p.y - p.prevY) * 2, 5, 5);
-  // ⚠ ART-CHANGE NOTE (r35): the HOW TO card (src/howto.js drawShipCard)
-  // mirrors this ship + dot pixel-for-pixel. Redesign the ship → update the
-  // card in the same commit, or the onboarding lies about the contract.
-  // r20 (Booth flags): the ship is drawn BIG around a tiny core — 28px span on
-  // a 3px hit radius (bullets add their own 3px: a bullet kills when its
-  // centre is within 6px of the dot). boghog WS01: "small hitboxes, much
-  // smaller than their sprites… if it harms the player, make it small";
-  // Cave ships run ~8–10:1 sprite:hitbox, the old 18px body was 3:1 and the
-  // focus ring read as "the hitbox is half the ship". The core dot is always
-  // drawn (visible hit point); focus brightens it, no ring.
-  ctx.fillStyle = '#6b5aa8';                                   // wing underside shade
-  poly(ctx, [[-14, 12], [-4, 4], [4, 4], [14, 12], [10, 15], [-10, 15]]);
-  ctx.fillStyle = '#f0ecff';                                   // hull
-  poly(ctx, [[0, -17], [4, -8], [13, 11], [5, 8], [0, 12], [-5, 8], [-13, 11], [-4, -8]]);
-  ctx.fillStyle = '#c9bdf5';                                   // wing leading edges
-  poly(ctx, [[4, -8], [13, 11], [11, 11], [3, -6]]); poly(ctx, [[-4, -8], [-13, 11], [-11, 11], [-3, -6]]);
-  ctx.fillStyle = '#4a3f78'; ctx.fillRect(-2, 12, 4, 4);       // exhaust
-  // r20 hitbox marker, per the genre research (hitbox-display-report.md): the
-  // marker is NEVER smaller than the truth — Touhou draws a 10px dot over a
-  // ~3-7px hitbox; Mushihimesama's circle covers "a few pixels". Every bullet
-  // here has the same 3px radius, so we fold it in and draw ONE dot at the
-  // full effective radius (hitR + 3 = 6px): a bullet's CENTRE touching your
-  // dot is a hit — no smaller mark exists to mis-read, and every surprise is
-  // a pleasant one. Dark well behind it for value contrast (WS02); focus
-  // whitens the dot and adds the pink rim.
-  ctx.fillStyle = '#241f38'; ctx.beginPath(); ctx.arc(0, 0, PLAYER.hitR + 5, 0, 7); ctx.fill();
-  ctx.fillStyle = p.focus ? '#ffffff' : '#e8e2ff';
-  ctx.beginPath(); ctx.arc(0, 0, PLAYER.hitR + 3, 0, 7); ctx.fill();
-  if (p.focus) { ctx.strokeStyle = '#ff4fa3'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, PLAYER.hitR + 3, 0, 7); ctx.stroke(); }
-  ctx.restore();
+  const tx = Math.round((p.x - p.prevX) * 2), ty = Math.round((p.y - p.prevY) * 2);
+  ctx.fillStyle = SHIP.dark;
+  ctx.fillRect(x - 19 - tx, y + 6 - ty, 5, 5);
+  ctx.fillRect(x + 15 - tx, y + 6 - ty, 5, 5);
+  drawShip(ctx, x, y, p.focus);
 }
 
 function drawHud(ctx, g) {
   displayScore += Math.ceil((g.score - displayScore) * 0.18);
   // low-alpha backing strip: the score/chain block stays legible over popups,
   // items, and background accents (r5 S6-legibility)
-  ctx.fillStyle = 'rgba(6,8,14,0.55)';
+  ctx.fillStyle = UI.hudBack;
   ctx.fillRect(0, 0, W, 46);
   ctx.textAlign = 'left';
   ctx.font = 'bold 14px monospace';
-  ctx.fillStyle = '#e8ecf8';
+  ctx.fillStyle = UI.score;
   ctx.fillText(String(displayScore).padStart(9, '0'), 10, 20);
   ctx.font = '11px monospace';
-  ctx.fillStyle = '#8a8fa8';
+  ctx.fillStyle = UI.dim;
   ctx.fillText('CHAIN ' + g.chain, 10, 36);
-  if (g.practice) { ctx.font = 'bold 9px monospace'; ctx.fillStyle = '#ffd24a'; ctx.fillText('PRACTICE', 6, H - 6); } // r36: always visible — this score is rehearsal
+  if (g.practice) { ctx.font = 'bold 9px monospace'; ctx.fillStyle = UI.gold; ctx.fillText('PRACTICE', 6, H - 6); } // r36: always visible — this score is rehearsal
   // lives / bombs icons
-  for (let i = 0; i < g.player.lives; i++) { ctx.fillStyle = '#e8f6ff'; ctx.beginPath(); ctx.moveTo(W - 16 - i * 16, 12); ctx.lineTo(W - 10 - i * 16, 24); ctx.lineTo(W - 22 - i * 16, 24); ctx.closePath(); ctx.fill(); }
-  for (let i = 0; i < g.player.bombs; i++) { ctx.fillStyle = '#ffd24a'; ctx.beginPath(); ctx.arc(W - 14 - i * 16, 36, 5, 0, 7); ctx.fill(); }
+  ctx.fillStyle = UI.lives;
+  for (let i = 0; i < g.player.lives; i++) poly(ctx, [[W - 16 - i * 16, 12], [W - 10 - i * 16, 24], [W - 22 - i * 16, 24]]);
+  ctx.fillStyle = UI.gold;
+  for (let i = 0; i < g.player.bombs; i++) disc(ctx, W - 14 - i * 16, 36, 5);
 
   ctx.textAlign = 'center';
   if (g.state === 'title') {
@@ -576,10 +705,10 @@ function drawHud(ctx, g) {
 // Field-relative type: sized for the 320-wide logical field (post-r4 rescale);
 // the canvas stretch supplies the on-screen size.
 function banner(ctx, big, lines) {
-  ctx.fillStyle = 'rgba(6,8,14,0.72)';
+  ctx.fillStyle = UI.bannerBack;
   ctx.fillRect(0, H / 2 - 44, W, 92);
-  ctx.font = 'bold 21px monospace'; ctx.fillStyle = '#ff4fa3';
+  ctx.font = 'bold 21px monospace'; ctx.fillStyle = UI.warn;
   ctx.fillText(big, W / 2, H / 2 - 16);
-  ctx.font = '9px monospace'; ctx.fillStyle = '#cdd3e8';
+  ctx.font = '9px monospace'; ctx.fillStyle = UI.text;
   lines.forEach((ln, i) => ctx.fillText(ln, W / 2, H / 2 + 4 + i * 14));
 }
