@@ -23,3 +23,10 @@ in the wiki changelog, 2026-09-04).
   silliness (penguins, moai, octopi, mascots) plus beautiful, fully clothed anime
   heroines in the 90s Konami/Psikyo arcade illustration style. Four sheets:
   enemy lineup, boss three forms, section landmarks, heroine + ship + logo.
+- `2026-09-04-neon-vector/` — Geometry Wars / Resogun / Sektori lineage: glowing
+  wireframe shapes on black, additive bloom. Jacob's verdict on the Parodius set:
+  "not terrible but too close to Parodius"; this and synthwave were the two
+  picks from the pop-culture survey (cute-occult was the recommendation).
+- `2026-09-04-synthwave/` — 80s outrun: sunset gradients, grids, chrome. World
+  palette deliberately indigo / violet / orange / gold so hot pink + cyan stay
+  bullet-only.
