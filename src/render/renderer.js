@@ -22,13 +22,15 @@ import { SKINS } from './skins/index.js';
 // Renderer-only: particle counts, positions and the fx rng are untouched, and
 // everything still draws BELOW bullets (S2 — explosions never mask threats).
 // speedDress: r53 — transported to core as g.fxMeta by main.js (renderer ignores it)
-// skin: r60 — which skins/*.js draws the world (setSkin below; Lab row `skin`)
-export const prefs = { speedPopup: 'both', fxSize: 1, fxStyle: 'classic', speedDress: 0, skin: 'base' };
+// skin: r60 — which skins/*.js draws the world (setSkin below; Lab row `skin`); r62 default cute-occult
+export const prefs = { speedPopup: 'both', fxSize: 1, fxStyle: 'classic', speedDress: 0, skin: 'cute-occult' };
 
-let skin = SKINS.base;
+// r62: cute-occult is THE look (Jacob's verdict 2026-09-05: "the most personality");
+// base = the r58 classic, kept as the contract's reference implementation.
+let skin = SKINS['cute-occult'];
 export function getSkin() { return skin; }
 export function setSkin(id) {
-  const s = SKINS[id] || SKINS.base;
+  const s = SKINS[id] || SKINS['cute-occult'];
   if (s !== skin) { skin = s; CACHE.clear(); } // sprites are per-skin; rebuild lazily
   prefs.skin = s.id;
 }

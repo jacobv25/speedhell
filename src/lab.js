@@ -17,7 +17,7 @@ import { setKillWeight } from './audio.js';
 
 export const EXPERIMENTS = [
   // r60 — art direction skins (renderer-only; bullets, dot, hitboxes never move)
-  { id: 'skin', label: 'art skin', def: 'base', ref: 'wiki §11 art rounds / concepts',
+  { id: 'skin', label: 'art skin', def: 'cute-occult', ref: 'wiki §11 art rounds / concepts',
     choices: Object.values(SKINS).map((s) => [s.id, s.name]),
     apply: (v) => { setSkin(v); } },
   { id: 'speedPopup', label: 'SPEED popup', def: 'both', ref: 'wiki §2.6 / open Q4',

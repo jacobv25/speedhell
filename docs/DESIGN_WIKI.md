@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-05 (r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-05 (r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -538,7 +538,7 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     (the wiki §3 note already flags that timing) so the gate opens under fire;
     (c) both, sequenced. Referee: s7_pressure/s6 walls will move; the midboss
     speed-kill window (11.7s) stays. First target of the S3/D pass.
-11. **Enemy visual identity (Booth session 1, 2026-08-30). FIRST PASS SHIPPED r20 (renderer-only), Booth playtest pending.** "All the enemies
+11. **Enemy visual identity (Booth session 1, 2026-08-30). FIRST PASS r20; SECOND PASS r62 — the cute-occult skin gives every type and popcorn variant its own creature (see §10 art skins / changelog r62). SHIPPED r20 (renderer-only), Booth playtest pending.** "All the enemies
     are grey geometrical shapes of similar sizes… everything just looks like
     grey, boring, geometric shapes." The r19 overlap works mechanically (replay:
     a clean speed-kill sweep of turret alley rep 1) but doesn't read as an
@@ -1491,3 +1491,20 @@ is placement, not authoring time. Not scheduled.
   on screen; all four separate fighter/diver by silhouette only. Jacob picks by
   feel; the winner becomes the default and the bible §3 palette is rewritten
   to it. BUILD r60 → r61.
+- 2026-09-05 — r62: ART DIRECTION = CUTE-OCCULT (Jacob's override, recorded
+  here as the CLAUDE.md rule requires for a change neither corpus argues for).
+  Verdict after playing the four r61 skins: "the cute occult felt like it had
+  the most personality … i did like what you were trying with the synthwave
+  background. felt like Outrun … I liked the attempt at building getting close
+  to you as the stage scrolled, the execution wasn't quite there." Renderer
+  default skin → cute-occult (Lab row default too; artpeek default too);
+  base stays as "classic (r58)" for reference. Bible §3 palette rewritten to
+  the skin's ramps (BONE / WAX / MOTH), §10 Round 2 points at its boss sheet,
+  Rounds list notes the synthwave approaching-landmark technique as Round 3's
+  starting idea. Corpus check: MSX — theme is not a system; readability and
+  scoring surfaces untouched; boghog — values-over-colour holds (bone `base`
+  below bullet cores, S2 max-load sheet); HOMAGE L1 "the place is the wave"
+  is what Round 3 will serve. The referee now draws cute-occult by default —
+  evidence shots regenerate at the pending recert. Losers (neon-vector,
+  graphic-pop) await Jacob's delete/keep call; synthwave kept until its
+  landmark technique is ported. BUILD r61 → r62.

@@ -9,7 +9,7 @@
 <script type="module">
 import { makeGame, startRun, update, stressScene, W, H } from '../src/core/game.js';
 import { draw, drawEnemy, drawPlayer, resetHud, setSkin } from '../src/render/renderer.js';
-setSkin(new URLSearchParams(location.search).get('skin') || 'base'); // r60: node tools/peek.mjs 'tools/artpeek.html?skin=neon-vector' out.png
+setSkin(new URLSearchParams(location.search).get('skin') || 'cute-occult'); // r60: node tools/peek.mjs 'tools/artpeek.html?skin=neon-vector' out.png
 import { makeBot } from '../test/bot.mjs';
 const c = document.getElementById('c'), ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = false;
 const label = (t, x, y) => { ctx.fillStyle = '#ffd24a'; ctx.font = 'bold 18px monospace'; ctx.textAlign = 'left'; ctx.fillText(t, x, y); };

@@ -222,7 +222,7 @@ function paintItem(c, r, K) {
 }
 
 export default {
-  id: 'base', name: 'current (r58)',
+  id: 'base', name: 'classic (r58)',
   pal: { AIR, GROUND, HEAVY, SHIP, ITEM, UI, BOSS },
   span: [32, 48, 40, 66, 72, 100, 32],
   rimOf, drawBackground, paintEnemy, paintShip, paintItem, post: null,

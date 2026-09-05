@@ -543,7 +543,7 @@ function post(ctx, g, K) {
 }
 
 export default {
-  id: 'cute-occult', name: 'cute occult',
+  id: 'cute-occult', name: 'cute-occult (default, r62)',
   pal: { AIR, GROUND, HEAVY, SHIP, ITEM, UI, BOSS },
   span: [32, 48, 40, 66, 76, 112, 32],
   rimOf, drawBackground, paintEnemy, paintShip, paintItem, post,
