@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-05 (r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-05 (r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -1478,3 +1478,16 @@ is placement, not authoring time. Not scheduled.
   `docs/concepts/` per `docs/art-rounds/skins-brief.md`; Jacob picks by
   playing. No design change; referee draws the base skin. BUILD r58 → r60
   (r59 = the needle-tier branch).
+- 2026-09-05 — r61: FOUR SKINS MERGED (branch `art/skins`; renderer-only).
+  Four Opus builders, one worktree each, from `docs/concepts/` per
+  `docs/art-rounds/skins-brief.md`; each gated by the orchestrator (only its
+  skin file + brief + peek changed; no `g.rng`, no alpha on sprite fills,
+  pink/cyan only on the sanctioned boss cores; max-load draw: cute-occult
+  1.76 ms · neon-vector 1.70 · synthwave 1.55 · graphic-pop 1.65, gate 16.6).
+  Peek sheets `docs/img/r6x-skin-<id>.png`, briefs `docs/art-rounds/skin-<id>.md`.
+  Play: `?lab=skin:<id>` (Lab row "art skin"). Builder deviations to weigh:
+  synthwave boss cores amber (not pink/cyan/gold — my brief was stricter than
+  bible §10's core exception); neon-vector midboss = a 4th saturated hue while
+  on screen; all four separate fighter/diver by silhouette only. Jacob picks by
+  feel; the winner becomes the default and the bible §3 palette is rewritten
+  to it. BUILD r60 → r61.
