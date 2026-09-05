@@ -30,3 +30,10 @@ in the wiki changelog, 2026-09-04).
 - `2026-09-04-synthwave/` — 80s outrun: sunset gradients, grids, chrome. World
   palette deliberately indigo / violet / orange / gold so hot pink + cyan stay
   bullet-only.
+- `2026-09-04-cute-occult/` — Cult of the Lamb / Hollow Knight lineage (the
+  survey's recommendation): flat cute critters, thick outlines, candles and sigils.
+- `2026-09-04-kawaii/` — Kirby / Sanrio pastel mascots on a night-sky field.
+- `2026-09-04-rubber-hose/` — 1930s Fleischer / Cuphead ink-and-wash cartoon.
+- `2026-09-04-graphic-pop/` — Persona 5 / Jet Set Radio poster graphics: halftone,
+  hard shadows, red / mustard / black.
+Jacob asked for all six survey directions (2026-09-04) to compare side by side.
