@@ -99,6 +99,7 @@ function mayFire(g, e) {
 }
 
 export function updateEnemy(g, e) {
+  g.emitter = e; // r59: patterns.js reads the firing enemy's type for the needle tier
   switch (e.type) {
     case 0: { // zako — popcorn; 'phase' 1 = diver variant (escalation twist)
       if (e.phase === 1 && e.age > 40 && e.age < 70) {
@@ -396,6 +397,7 @@ function pickSafeX(e) {
 }
 
 export function updateBoss(g, e) {
+  g.emitter = e; // r59: needle-tier context (see patterns.js fire)
   const phase = e.phase, rep = e.fireT / 240 | 0;
   // escalation per cycle (S3); super-linear past rep 3 — killers resolve phases
   // by rep 2-4, so the steep tail is what riding a timeout costs (S4/S6, r3)

@@ -51,7 +51,9 @@ a route*: next spawn ≈ previous wave's earliest kill + a beat.
 **L6 — Strict bullet color castes, with a boss-only dialect.** Two-to-five
 families whose roles never trade across the whole game (BRDA#7, Psikyo#3,
 DDP#7). Psikyo's version is sharpest: needles = stage, patterned dots = boss —
-you can tell "stage or boss?" from bullet shape alone.
+you can tell "stage or boss?" from bullet shape alone. SPEEDHELL's caste (r59)
+is the same idea by source tier, inverted: pink rounds = the stage's common
+fire, cyan needles = the special tier (mid/elite/midboss/boss) aiming at you.
 
 **L7 — Destructible parts + point-blank invitations.** Bosses lose turret
 groups one by one; the optimal position for at least one attack is directly

@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-04 (r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-04 (r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -424,6 +424,48 @@ bullet hit radius to the old visual core (3 → ~2) would make every dodge in
 the game easier — a balance decision (and a full referee re-roll), parked
 unless playtests ask for a more lenient game.
 
+
+### 6.3 Bullet castes by source (r59)
+
+*Jacob, 2026-09-04: "the cyan needles should be more special … the pink bullets
+should be the normal bullets the enemies use. only special enemies use the
+needles."*
+
+**Rule.** Pink round = the common bullet: any enemy, any pattern type,
+including a popcorn's or turret's aimed prong. Cyan needle = aimed fire from
+the special tier only — mid, elite, midboss, boss and its parts
+(`game.js NEEDLE_TIER`). The needle keeps both cues: it is aimed (dodge by
+moving) *and* it tells you a real gun is on you. Boss fights keep both castes,
+so layered boss patterns still separate by colour (boghog: bullets that move
+together share a look).
+
+**Mechanism.** `patterns.js fire()` downgrades a needle to a round when the
+emitter (`g.emitter`, set at the top of `updateEnemy`/`updateBoss`) is outside
+the tier. Same angle, speed and rng consumption; only `kind` and its `r`
+change (needle 2.6 / round 3.2 — the downgraded prong keeps the round's
+radius so same look = same hitbox; see the open question on radii in §8).
+
+**Measured** (seed C0FFEE, headless): needle share of all enemy fire
+
+| tier | expert | passive-human | first needle |
+|---|---|---|---|
+| r58 (needle = any aimed shot) | 45% | 42% | s1 |
+| **B (shipped): mid + elite + midboss + boss** | 22% | 23% | s3 mids |
+| A: elite + midboss + boss | 18% | 15% | s4 midboss |
+| C: B + turrets | 37% | 39% | s2 (turret alley ~90%) |
+
+Outcomes moved (expert clears faster and scores higher; passive-human clears
+on its last life instead of one spare), so the certified run is stale —
+**referee recert pending** after Jacob's playtest.
+
+**Why this and not "needle = any aimed shot" (r5–r58).** Jacob pushed back on
+the old rule as genre law; research agreed: Touhou uses rice bullets in rings
+and aimed fans alike, Sparen treats aimed/fixed/random as angle types
+independent of sprite, Ketsui's pink/blue marks the loop, Psikyo/Raiden
+differentiate by *source* (HOMAGE L6). What the genre does keep: elongated
+bullets travel along their long axis, bullets that move together look alike,
+≤3 families, white core = hitbox — all retained. Rubric S2-MUST line
+rewritten under Jacob's authorization; HOMAGE L6 amended.
 ## 7. The referee (how "balanced" is decided)
 
 `test/sim.mjs` runs the real core headlessly with scripted bots (expert,
@@ -549,6 +591,10 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     Also from the session: the S1→S2 seam is a 2.5–3 s empty screen (flag 1)
     and the crossers' top-side entry "doesn't feel right" (flag 3). Debrief:
     `playtest/sessions/2026-08-30-booth-1.md`.
+15. **Bullet hit radii are not uniform.** `patterns.js fire()` gives needles r 2.6
+   and rounds r 3.2 while §6.2 says every bullet is 3 (dot = 6 = 3 + 3). Truth is
+   5.6 / 6.2 to the dot. Unify at 3.0 (both castes move; recert) or document the
+   split? Surfaced by r59.
 
 ## 9. Practice notes (for humans)
 
@@ -1465,3 +1511,16 @@ is placement, not authoring time. Not scheduled.
   do seem a bit wobbly" — the popcorn's ±20° sine wobble (heading(), the r20
   Booth fix) snapped across 2–3 of the 22.5° steps and read as jitter; at
   11.25° it sweeps ~4 steps. Bible §12 Q2 answered. BUILD r57 → r58.
+
+- 2026-09-04 — r59: BULLET CASTE BY SOURCE (design change; branch
+  `design/needle-tier`; Jacob's decision after his push-back on the r5 rule).
+  Cyan needles are now only the special tier's aimed fire (mid, elite, midboss,
+  boss + parts — `game.js NEEDLE_TIER`); popcorn-family and turret aimed prongs
+  become pink rounds. Needle share 45% → 22% (expert), first needle moves from
+  s1 to the s3 mids. Details, numbers and the four-tier comparison in §6.3.
+  Rubric S2-MUST bullet-language line rewritten (Jacob-authorized), HOMAGE L6
+  amended, patterns/renderer comments updated. Downgraded shots take the
+  round's r 3.2 (same look = same hitbox); the pre-existing 2.6/3.2 vs "3"
+  discrepancy is open Q15. Corpus: MSX — readable enemy hierarchy, no scoring
+  surface touched; boghog — layered boss patterns keep two colours; HOMAGE L6
+  Psikyo source caste. Referee recert pending. BUILD r58 → r59.

@@ -1,19 +1,27 @@
 // Bullet pattern emitters. Three deliberate types per rubric S3:
-//   aimed   — trajectory from player position (manipulable, cyan needles)
+//   aimed   — trajectory from player position (manipulable)
 //   static  — fixed geometry (positional, pink rounds)
 //   random  — weighted spread within limits (reactive, pink rounds)
+// Caste (r59, rubric S2): a cyan NEEDLE is aimed fire from the special tier
+// (game.js NEEDLE_TIER); every other bullet — including a popcorn or turret's
+// aimed prong — is a pink ROUND. fire() enforces it.
 // Every helper spawns GROUPS, never lone bullets in open space (S2).
 
 const TAU = Math.PI * 2;
 
 export const B_ROUND = 0;  // pink round: static / randomized spread
-export const B_NEEDLE = 1; // cyan needle: fast aimed
+export const B_NEEDLE = 1; // cyan needle: fast aimed, special tier only (r59)
 
 function fire(g, x, y, angle, speed, kind, accel = 0, curve = 0) {
   const b = g.eBullets.spawn();
   if (!b) return;
   b.x = x; b.y = y;
   b.vx = Math.cos(angle) * speed; b.vy = Math.sin(angle) * speed;
+  // r59 (Jacob, 2026-09-04): needles are the SPECIAL enemies' aimed fire. If a
+  // needle tier is set (g.needleTier[type] truthy), any needle from an emitter
+  // outside the tier is downgraded to a pink round — same angle, same speed,
+  // same rng consumption; only the caste (and its r) changes.
+  if (kind === B_NEEDLE && g.needleTier && g.emitter && !g.needleTier[g.emitter.type]) kind = B_ROUND;
   b.kind = kind; b.r = kind === B_NEEDLE ? 2.6 : 3.2;
   b.accel = accel; b.curve = curve; b.age = 0;
 }

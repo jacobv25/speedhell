@@ -37,8 +37,12 @@ pass/fail per check; a surface passes when all MUST checks pass.*
 - MUST: background value-contrast reduced (washed out) vs bullet layer; bullets pair
   a very dark rim/core with a very bright rim/core (checked on screenshots in both
   busiest scenes).
-- MUST: bullet color language is consistent: round pink/magenta = spread/static,
-  needle cyan/white = fast aimed. ≤ 3 bullet color families on screen.
+- MUST: bullet color language is consistent: round pink/magenta = the common
+  bullet (any enemy, any pattern — static, random, or a popcorn/turret's aimed
+  prong); needle cyan/white = AIMED fire from the special tier only (mid, elite,
+  midboss, boss + parts). A needle therefore always means "a real gun has you".
+  ≤ 3 bullet color families on screen. *(r59 rewrite, Jacob-authorized
+  2026-09-04; r5–r58 read "needle = any aimed shot".)*
 - MUST: enemy bullets never share a color family with score items or player shots.
 - MUST: depth sort — bullets render above enemies, explosions below bullets; faster/
   smaller bullets above slower/bigger.

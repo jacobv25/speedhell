@@ -1,6 +1,6 @@
 // Canvas2D renderer. Visibility rules from rubric S2: washed-out low-contrast
 // background; bullets pair dark rims with bright cores; consistent language
-// (pink rounds = static/random, cyan needles = aimed); bullets on top.
+// (pink rounds = anyone; cyan needles = a special enemy aiming at you, r59); bullets on top.
 // r57 (ART_BIBLE Round 1, renderer-only): named palette (§3), pixel grid (§2),
 // per-family 1px rims via an offscreen sprite cache (§4), pixel-disc bullets
 // and items (§5). Core, hitboxes, timeline, g.rng and the referee untouched.

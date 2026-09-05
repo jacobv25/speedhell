@@ -42,6 +42,15 @@ export function sfx(g, id) {
   if (g.sfxN < SFX_CAP) g.sfx[g.sfxN++] = id;
 }
 
+// r59 (Jacob, 2026-09-04): BULLET CASTE BY SOURCE. Cyan needles are the aimed
+// fire of the "special" tier only — mid (1), elite (3), midboss (4), boss (5)
+// and its parts (6). Everything else (popcorn family, turrets) fires pink
+// rounds even when aimed. patterns.js fire() downgrades out-of-tier needles.
+// Sim (seed C0FFEE, expert): needles 45% → 22% of all fire; first needle now
+// appears with the s3 mids; s1/s2/s5 are all-pink. Set g.needleTier = null
+// to replay the old rule. Referee recert pending (bullet stream changed).
+export const NEEDLE_TIER = { 1: 1, 3: 1, 4: 1, 5: 1, 6: 1 };
+
 export function makeGame(seed = 1) {
   const g = {
     seed, rng: makeRng(seed), frame: 0,
@@ -66,6 +75,7 @@ export function makeGame(seed = 1) {
     clearBonus: 0, clearAt: 0, endFrame: 0,
     // pools — capacities are hard caps (rubric S8)
     pBullets: makePool(64, () => ({ x: 0, y: 0, vy: 0, alive: 0 })),
+    needleTier: NEEDLE_TIER, emitter: null, // r59: bullet caste by source (null = every aimed shot is a needle, the r5–r58 rule)
     eBullets: makePool(1400, () => ({ x: 0, y: 0, vx: 0, vy: 0, kind: 0, r: 3, accel: 0, curve: 0, age: 0 })),
     enemies: makePool(64, () => ({
       type: 0, x: 0, y: 0, vx: 0, vy: 0, hp: 0, r: 10, age: 0,
