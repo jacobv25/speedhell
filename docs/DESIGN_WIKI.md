@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-04 (r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-05 (r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -580,7 +580,7 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     (the wiki §3 note already flags that timing) so the gate opens under fire;
     (c) both, sequenced. Referee: s7_pressure/s6 walls will move; the midboss
     speed-kill window (11.7s) stays. First target of the S3/D pass.
-11. **Enemy visual identity (Booth session 1, 2026-08-30). FIRST PASS SHIPPED r20 (renderer-only), Booth playtest pending.** "All the enemies
+11. **Enemy visual identity (Booth session 1, 2026-08-30). FIRST PASS r20; SECOND PASS r62 — the cute-occult skin gives every type and popcorn variant its own creature (see §10 art skins / changelog r62). SHIPPED r20 (renderer-only), Booth playtest pending.** "All the enemies
     are grey geometrical shapes of similar sizes… everything just looks like
     grey, boring, geometric shapes." The r19 overlap works mechanically (replay:
     a clean speed-kill sweep of turret alley rep 1) but doesn't read as an
@@ -1524,3 +1524,55 @@ is placement, not authoring time. Not scheduled.
   discrepancy is open Q15. Corpus: MSX — readable enemy hierarchy, no scoring
   surface touched; boghog — layered boss patterns keep two colours; HOMAGE L6
   Psikyo source caste. Referee recert pending. BUILD r58 → r59.
+- 2026-09-05 — r60: ART SKINS (renderer-only refactor; branch `art/skins`).
+  Jacob: "i want to see all four implemented … four agents implementing the
+  art in those styles. and then ill play through them and see how they feel."
+  Everything a direction may restyle — palette, background, enemy/ship/item
+  painters, an optional post pass — moved into `src/render/skins/<id>.js`
+  (contract in `skins/base.js`, which IS the r58 look: pixel-identical on the
+  peek sheet). Bullets, the hit dot, the sprite cache/grid, fx, HUD layout
+  stay in `renderer.js`. Lab row `skin` (`?lab=skin:<id>`) switches live;
+  `tools/artpeek.html?skin=<id>` peeks one. Four skins — cute-occult,
+  neon-vector, synthwave, graphic-pop — are built by four Opus builders from
+  `docs/concepts/` per `docs/art-rounds/skins-brief.md`; Jacob picks by
+  playing. No design change; referee draws the base skin. BUILD r58 → r60
+  (r59 = the needle-tier branch).
+- 2026-09-05 — r61: FOUR SKINS MERGED (branch `art/skins`; renderer-only).
+  Four Opus builders, one worktree each, from `docs/concepts/` per
+  `docs/art-rounds/skins-brief.md`; each gated by the orchestrator (only its
+  skin file + brief + peek changed; no `g.rng`, no alpha on sprite fills,
+  pink/cyan only on the sanctioned boss cores; max-load draw: cute-occult
+  1.76 ms · neon-vector 1.70 · synthwave 1.55 · graphic-pop 1.65, gate 16.6).
+  Peek sheets `docs/img/r6x-skin-<id>.png`, briefs `docs/art-rounds/skin-<id>.md`.
+  Play: `?lab=skin:<id>` (Lab row "art skin"). Builder deviations to weigh:
+  synthwave boss cores amber (not pink/cyan/gold — my brief was stricter than
+  bible §10's core exception); neon-vector midboss = a 4th saturated hue while
+  on screen; all four separate fighter/diver by silhouette only. Jacob picks by
+  feel; the winner becomes the default and the bible §3 palette is rewritten
+  to it. BUILD r60 → r61.
+- 2026-09-05 — r62: ART DIRECTION = CUTE-OCCULT (Jacob's override, recorded
+  here as the CLAUDE.md rule requires for a change neither corpus argues for).
+  Verdict after playing the four r61 skins: "the cute occult felt like it had
+  the most personality … i did like what you were trying with the synthwave
+  background. felt like Outrun … I liked the attempt at building getting close
+  to you as the stage scrolled, the execution wasn't quite there." Renderer
+  default skin → cute-occult (Lab row default too; artpeek default too);
+  base stays as "classic (r58)" for reference. Bible §3 palette rewritten to
+  the skin's ramps (BONE / WAX / MOTH), §10 Round 2 points at its boss sheet,
+  Rounds list notes the synthwave approaching-landmark technique as Round 3's
+  starting idea. Corpus check: MSX — theme is not a system; readability and
+  scoring surfaces untouched; boghog — values-over-colour holds (bone `base`
+  below bullet cores, S2 max-load sheet); HOMAGE L1 "the place is the wave"
+  is what Round 3 will serve. The referee now draws cute-occult by default —
+  evidence shots regenerate at the pending recert. Losers (neon-vector,
+  graphic-pop) await Jacob's delete/keep call; synthwave kept until its
+  landmark technique is ported. BUILD r61 → r62.
+- 2026-09-05 — r63: MERGE — r59 (bullet caste by source) + r60–r62 (art
+  skins, cute-occult default) on one line (branch `design/needle-tier`).
+  `art/skins` had been cut from r58, so its playtest builds r60–r62 silently
+  lacked r59: every aimed shot was a needle again. No new design decision;
+  both changes as recorded above. Skins draw by `b.kind`, so downgraded
+  prongs render pink under every skin with no skin edits. Conflicts were the
+  BUILD tag, this file's header/changelog, and the renderer header comment.
+  Referee recert still pending (r59's bullet stream + r62's default skin).
+  BUILD r59/r62 → r63.

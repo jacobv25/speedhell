@@ -11,10 +11,15 @@
 // Presentation-only knobs (renderer/fx prefs) may switch live, mid-run — they
 // never touch g.rng, scoring, or the referee (the sim always runs defaults).
 import { store } from './options.js';
-import { prefs } from './render/renderer.js';
+import { prefs, setSkin } from './render/renderer.js';
+import { SKINS } from './render/skins/index.js';
 import { setKillWeight } from './audio.js';
 
 export const EXPERIMENTS = [
+  // r60 — art direction skins (renderer-only; bullets, dot, hitboxes never move)
+  { id: 'skin', label: 'art skin', def: 'cute-occult', ref: 'wiki §11 art rounds / concepts',
+    choices: Object.values(SKINS).map((s) => [s.id, s.name]),
+    apply: (v) => { setSkin(v); } },
   { id: 'speedPopup', label: 'SPEED popup', def: 'both', ref: 'wiki §2.6 / open Q4',
     choices: [['both', 'SPEED +1600'], ['num', '+1600'], ['word', 'SPEED (old)'], ['off', 'none']],
     apply: (v) => { prefs.speedPopup = v; } },

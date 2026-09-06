@@ -3,8 +3,8 @@
 *The drawing rules every builder draws to and every critic grades against.
 Companion to `DESIGN_PILLARS.md` (constitution), `CRITIC_RUBRIC.md` (S2 visibility,
 S3b boss theatre, S4 enemy design — the referee's acceptance criteria) and
-`DESIGN_WIKI.md`. Drafted 2026-09-04 from the visual-design brief; **status: Round 1 built (r57,
-branch `art/round-1`, brief in `art-rounds/round-1.md`); Rounds 2–6 open.** Every number below is read from
+`DESIGN_WIKI.md`. Drafted 2026-09-04 from the visual-design brief; **status: direction chosen — CUTE-OCCULT (r62, Jacob 2026-09-05); Round 1 built (r57); the
+palette below is the cute-occult skin's (`src/render/skins/cute-occult.js`); Rounds 2–6 open, built inside that skin.** Every number below is read from
 `src/render/renderer.js` and `src/core/stage.js` as of r51/r52.*
 
 **Scope guard.** Everything here is renderer-only. Hitboxes (`ENEMY_DEFS r`,
@@ -82,31 +82,36 @@ What already exists — do not rebuild these, build on them:
 
 ## 3. Palette
 
-One block of named constants at the top of `renderer.js`; **no hex literal
-anywhere else in the renderer** (Round 1 replaces the ~50 literals). Values
-below are the current ones where they exist — the pass names them first and
-retunes second, so the peek can A/B each change.
+**Direction (r62): CUTE-OCCULT** — Cult of the Lamb / Hollow Knight lineage: cute
+skull-faced critters and acolytes with thick outlines in a dark eldritch crypt of
+candles, sigils, bone, moth wings and shrines. Bone-white on deep purple with
+dried-red accents; candle gold is a warm note, never a field. Jacob's verdict
+after playing four built skins (2026-09-05): "the most personality". Reference
+sheets: `docs/concepts/2026-09-04-cute-occult/`. The skin file is the palette's
+single source of truth; the table mirrors it.
 
 | Family | Role | Swatches (dark → light) | Rule |
 |---|---|---|---|
-| `FIELD` | background wash | bg `#0a0c14`; per-section `SEC_SLAB/STAR/LAND` (9 each, r5) | every value ≤ `#2c` per channel; saturation ≤ 30 % — the washed band (S2-MUST-1) |
-| `AIR` | popcorn, mid, crosser | out `#2a2f45` · shade `#5c6584` · base `#8d97b4` · hi `#c9d1e8` · glass `#eef1f8` | desaturated blue-grey |
-| `GROUND` | turret, riser | out `#2a2816` · plate `#34321f` · shade `#5f5c3e` · base `#9a9678` · hi `#c6c2a2` | desaturated khaki |
-| `HEAVY` | diver, elite, midboss, boss hull | out `#22242e` · shade `#474c60` · base `#7a8097` · hi `#aab1c8` · stripe `#8a5a52` | darker slate; rust stripe is the only warm note |
-| `PLAYER` | ship, options, player shots | dark `#4a3f78` · shade `#6b5aa8` · edge `#c9bdf5` · hull `#f0ecff` · shot `#c3a8ff` + white | violet is player-only (r5 S2-MUST-3) |
-| `ROUND` | pink bullets | rim `#20060f` · ring `#ff4fa3` · core `#ffe6f2` | boss/static/random; pink is bullet-only |
-| `NEEDLE` | cyan bullets | rim `#031418` · body `#37d6e0` · core `#e8feff` | aimed; cyan is bullet-only |
-| `ITEM` | gold, score popups, receipt values | rim `#0e0c04` · gold `#ffd24a` · glint `#fff6d0` | gold is value-only |
-| `FX` | explosions (`FX_RAMP`, `CH_RAMP`, smoke, debris) | as tabled, r8/r52 | draws below bullets; alpha-capped |
-| `UI` | HUD, popups, banners | text `#cdd3e8` · dim `#8a8fa8` · value gold · warning pink · white | never a fourth saturated hue |
+| `FIELD` | the crypt | bg `#0c0716`; per-section `SEC_SLAB/STAR/LAND` (9 each); wax `#2b1e12`, bone-in-band `#2c2632` | every value ≤ `#2e` per channel — the washed band (S2-MUST-1); candles are dim motes, never lights |
+| `AIR` = **BONE** | popcorn fighter, crosser, mid | out `#1b1424` · shade `#6b5f6e` · base `#b5a894` · hi `#d6c9b0` · socket `#251320` · glow `#8c3040` · robe `#5e2130` / `#7d3040` | skull masks are `base` with a 1 px `hi` top edge; sockets carry a 1 px dried-red ember, never a bright eye |
+| `GROUND` = **WAX** | turret, riser | out `#191521` · plate `#282433` · shade `#4c4657` · base `#8e8779` · hi `#b4ac9a` · flame `#d8a24a` · flameHi `#f0cf86` · exhaust `#a03a3e` | stone + candle; the flame is a 2 px wick tip, duller than `ITEM.gold` |
+| `HEAVY` = **MOTH** | diver, elite, midboss, boss hull | out `#171320` · shade `#3b3348` · base `#6a5d72` · hi `#98899a` · wine `#6a2030` / `#8c2e3c` · core `#e8d9b4` · gold `#b8913f` | dark chitin; wine is the warm note (replaces the r5 rust stripe) |
+| `PLAYER` | broom-craft, options, player shots | dark `#3a2a52` · shade `#5a4478` · edge `#c9bdf5` · hull `#f0ecff` · shot `#c3a8ff` + white | violet is player-only (r5 S2-MUST-3) |
+| `ROUND` | pink bullets | rim `#20060f` · ring `#ff4fa3` ↔ `#ff8ec4` · core `#ffe6f2` | not skinnable — the display contract (wiki §6.2) |
+| `NEEDLE` | cyan needles | rim `#031418` · body `#37d6e0` · core `#e8feff` | not skinnable; special tier's aimed fire only (r59) |
+| `ITEM` | gold, score popups, receipt values | rim `#0e0c04` · gold `#ffd24a` · glint `#fff6d0` | gold is value-only; candle gold must stay duller |
+| `BOSS` | the eye reliquary | hull `#b5a894` · armor `#39304a` · burn `#d0644a` / `#6e2a24` · ember `#ffb347` · hot `#e8d9b4` · cores pink / cyan / gold per phase | the iris carries the phase's bullet hue — the one sanctioned body use |
+| `FX` | explosions | as tabled in `renderer.js` (r8/r52) | Round 5 |
+| `UI` | HUD, popups, banners | text `#cdc6d8` · dim `#8a8298` · score `#eae4f0` · value gold · warning pink · white | never a fourth saturated hue |
 
-**Exclusivity (hard rule):** pink and cyan appear only on bullets and boss
-cores/parts that fire them; gold only on items/value; violet only on the
-player. Enemy bodies never exceed ~25 % saturation. `#ffffff` is reserved for
-bullet cores, hit-flash and the player's hull highlight.
+**Exclusivity (hard rule):** pink and cyan appear only on bullets and the boss
+iris / part windows that fire them; gold only on items/value; violet only on the
+player. Enemy bodies never exceed ~25 % saturation; the dried-red accents are the
+family's one warm note. `#ffffff` is reserved for bullet cores, hit-flash and the
+player's hull highlight.
 
 **Value ladder (top → bottom):** bullet cores (white) > bullet bodies > player
-hull > item gold > enemy `hi` > enemy `base` > enemy `shade` > outlines >
+hull > item gold > bone `hi` > bone `base` > moth `hi` > moth `base` > outlines >
 landmark > slabs > stars > field. Any new colour must slot into this ladder
 without crossing a neighbour.
 
@@ -196,6 +201,12 @@ screenshot players post.
 
 ## 10. Boss as forms (Round 2 spec)
 
+*r62: Round 2 builds INSIDE the cute-occult skin from its boss sheet
+(`docs/concepts/2026-09-04-cute-occult/boss.jpg`): P1 winged reliquary
+cathedral (horn shields, halo, gun towers), P2 flat manta with a six-module
+leading edge, P3 bare radiant core on engine pods. The skin's first pass at
+these is the starting point, not the finish.*
+
 Keep the three forms and the burn-in. Each form is assembled from **modules**
 drawn with §4 rules: hull (3 tones + rim + 1 px panel lines in `shade`),
 two turret groups (GROUND dome recipe, smaller), engines (2-frame glow in the
@@ -245,8 +256,8 @@ draw fell 1.99 → 1.43 ms. (4) per-family `out`, as recommended.
 
 1. **Art bible + pixel grid + palette + rims** — this file's §2–5. Renderer-only.
    **Built: r57** (`art-rounds/round-1.md`).
-2. **Boss forms** — §10. Renderer-only.
-3. **Stagecraft** — §7 + turrets on landmarks. *Design change.*
+2. **Boss forms** — §10. Renderer-only. *Inside cute-occult (r62).*
+3. **Stagecraft** — §7 + turrets on landmarks. *Design change.* Jacob (2026-09-05) liked the synthwave skin's landmarks that grow as they approach — port that technique into the crypt, executed properly.
 4. **Motion** — §8. Renderer-only (+ How-To card).
 5. **Explosions** — Lab verdict. Renderer-only.
 6. **Screens** — §9. Shell + renderer.
@@ -265,3 +276,15 @@ draw fell 1.99 → 1.43 ms. (4) per-family `out`, as recommended.
   sanctioned non-bullet pink alongside WARNING).
 - 2026-09-04 — r58: heading steps 16 → 32 after Jacob's playtest verdict on the
   popcorn wobble (§12 Q2). Pixel look and 2-frame bullet flash approved.
+- 2026-09-05 — r60: skins. The renderer now delegates palette / background /
+  painters to `src/render/skins/<id>.js`; §2–5 remain the rules every skin
+  obeys (the renderer enforces the grid, rims and bullet contract for all of
+  them). Four concept directions built in parallel; see
+  `art-rounds/skins-brief.md`. Round 2 (boss forms) will be built INSIDE the
+  winning skin.
+- 2026-09-05 — r62: DIRECTION CHOSEN — cute-occult. Jacob played all four skins
+  (r61): "the cute occult felt like it had the most personality"; synthwave's
+  Outrun background and its approaching landmarks were the other thing he
+  liked ("the execution wasn't quite there") → Round 3. §3 rewritten to the
+  cute-occult palette; §10 points Round 2 at its boss sheet. Renderer default
+  = cute-occult; base (r58 classic) stays as the contract's reference.
