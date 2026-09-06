@@ -26,7 +26,30 @@ Ah… ah…
 
 ---
 
-## 2. STAGE 1 — "Skull Parade"
+## 2. STAGE 1 — COVER of Skyline Breaker (preferred; Jacob 2026-09-05: the original "felt very introductory")
+
+Use Suno **Cover** on `assets/music/skyline-breaker.mp3`. Keep Audio Influence
+high (melody survives), Style Influence moderate. Output must stay ~3:00+ (the
+stage never loops in a run); Extend if it comes out short.
+
+**Variant A — Instrumental toggle ON (start here)**
+```
+Gothic arcade rock cover, keep the original melody, structure and 123 BPM tempo. First-stage energy: bright, brisk, introductory, not heavy. Harpsichord carries the main melody, clean electric guitar doubles it, pipe organ chords under the chorus, string section swells, tolling bell on section changes, real rock drum kit with light double-kick fills, chiptune square-wave arps as sparkle. One short tasteful guitar lead near the end, no shredding. Steady energy, no fade-out. Crisp, glossy arcade mix; cathedral reverb on organ and strings only; drums and guitar dry. Deathsmiles meets Castlevania stage one.
+```
+
+**Variant B — with the wordless vocal, Instrumental toggle OFF**
+```
+Gothic arcade rock cover, keep the original melody, structure and 123 BPM tempo. First-stage energy: bright, brisk, introductory, not heavy. Harpsichord carries the main melody, clean electric guitar doubles it, haunting wordless female soprano "ah" pad behind the chorus, pipe organ chords, string section swells, tolling bell on section changes, real rock drum kit with light double-kick fills, chiptune square-wave arps as sparkle. One short tasteful guitar lead near the end, no shredding. Steady energy, no fade-out. Crisp, glossy arcade mix; cathedral reverb on organ, strings and voice only; drums and guitar dry. No lyrics. Deathsmiles meets Castlevania stage one.
+```
+Lyrics box for B:
+```
+[Female vocals: wordless, haunting, in the background]
+Ah… ah… ah…
+```
+
+---
+
+## 2b. STAGE 1 — from scratch — "Skull Parade" (fallback; the first take went too hard for stage 1)
 
 **STYLE**
 ```
@@ -52,7 +75,7 @@ Ah… ah… ah…
 
 ---
 
-## 3. STAGE 1 BOSS — "The Reliquary Opens"
+## 3. STAGE 1 BOSS — "The Reliquary Opens" (Jacob: the first gothic generation "could work great for the boss music" — this is the fallback if it needs a redo)
 
 **STYLE**
 ```
