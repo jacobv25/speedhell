@@ -1594,8 +1594,12 @@ is placement, not authoring time. Not scheduled.
 - 2026-09-07 — REFEREE RECERT at r64 (Jacob-authorized, separate commit; no
   BUILD bump — nothing in the game changed). `node test/sim.mjs` then
   `node test/shots.mjs`: metrics + 25 shots + manifest regenerated from one
-  run; `shot-s4-midboss-p2.png` is gone because the certified expert run no
-  longer reaches midboss phase 2 before the timeout. Certified state: 13
+  run; `shot-s4-midboss-p2.png` is gone — NOT because phase B is unreached
+  (a core trace shows it at f+1042 of the fight, hp < 180, firing ~6.5 s
+  before the f+1435 timeout with 87 hp left) but because `test/shots.html`
+  still tests `hp < 130 * 0.45` (pre-r25 hp). Referee-file fix, Jacob to
+  authorize. Watch the certified fight live: `sandbox.html?stage=0&seed=
+  12648430&bot=referee&god=0&lives=0&speed=4&slowAt=2200` (sandbox commit). Certified state: 13
   checks green (stress p99 0.109 ms, max 0.547 ms of 16.6; determinism
   byte-identical), four red — s6_alignment 1.52 (<3), s4_dynamic 1.44
   (<1.6), s7_robust (midboss timeout on all six seeds; 5eed42 also boss-p3),
