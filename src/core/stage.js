@@ -55,7 +55,7 @@ export function spawnParts(g, boss) {
   }
 }
 
-const MIDBOSS_TIMEOUT = 1400;          // ~23s — no milking (S6)
+const MIDBOSS_TIMEOUT = 2100;          // r65: 35s (was 1400/23s) — Jacob's call after watching the certified fight; a timeout stays (S6: the post-bloom crosser pulse is an infinite point source)
 const BOSS_PHASE_HP = [110, 134, 135]; // HP is a pattern-duration knob [BOGHOG T1]; index 0 unused
 // (spawn hp is ENEMY_DEFS[5].hp). P2/P3 trimmed r6.3: the camp governor's bands hold campers to
 // near-zero income (referee probes: 0 kills, pure timeouts), so HP now only needs to fit the honest

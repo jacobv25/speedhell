@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-07 (referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-07 (r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -207,8 +207,9 @@ firing. Point-blank on a turret is quiet (its reward) — nothing else is.
 Descends to y=73, then sweeps rail-to-rail on the house tanh curve. Phase A
 (hp > 45%): twin aimed fans every 70f, bendy streams every 130f; a leave-alive
 hose starts at 780f. Phase B: rings every 130f + bounded spray; a desperation
-layer past 950f. Times out at 1,400f (23.3s) — flees, no score, no cancel wall,
-gate opens. "No milking" (S6).
+layer past 950f. Times out at 2,100f (35s; r65 — was 1,400f/23.3s) — flees, no
+score, no cancel wall, gate opens. "No milking" (S6): the timeout is what caps
+the post-bloom crosser pulse (a popcorn pair every 150f while it lives).
 
 ### 4.2 The design question that came up (2026-08-27)
 
@@ -1608,3 +1609,26 @@ is placement, not authoring time. Not scheduled.
   timeout on every seed is the standing signal (r25/26 400 hp override, wiki
   §8); the r59 caste and r62 skin are now what the evidence shows. §6.3 and
   §7 updated.
+- 2026-09-07 — r65: MIDBOSS TIMEOUT 23s → 35s (design change; `stage.js
+  MIDBOSS_TIMEOUT` 1400 → 2100; Jacob's call after watching the certified
+  referee fight live in the sandbox — "the computer player was shooting from
+  too far away… remove the midboss timeout, or at the very least extend it").
+  Measured (7 seeds × expert/human bots, midboss fight only): 23s — 0/14
+  kills, avg 0.6 deaths in the fight; 35s — 4/14 kills, 0.9 deaths, 0 game
+  overs; 47s — 8/14, 2 game overs; none — 14/14 but fights to 64s. Max
+  bullets on screen flat (~117) at every setting, so the leave-alive ramps do
+  not pile up. Removal rejected: the post-bloom crosser pair every 150f is an
+  infinite point source (~320 pts per 2.5s), so with no timeout parking under
+  the midboss out-earns the 16,000 speed kill inside a minute — rubric S6
+  MUST ("nothing respawns infinitely for points"); the gate would also hold
+  the stage forever for a player who cannot finish it (boghog T2: the stage
+  does not wait). Milk ceiling at 35s ≈ 9.6k < the honest 16k. Corpus: MSX —
+  timeouts are scoring integrity, not difficulty; no scoring math touched;
+  boghog T1 — hp stays the pattern-duration knob (400 untouched, no
+  hp-inflation). Control sim at r65 (uncommitted evidence): three robust
+  seeds now clear the midboss by kills (bada55, 5eed42, 1234567); the
+  certified seed still times out at 35s with 12 hp left; facade/ab12cd pick
+  up boss-p2 timeouts (rng drift); s6_alignment score ratio 1.52 → 2.96 (bar
+  3). The bot shooting from too far is a separate referee-side fix
+  (test/bot.mjs, Jacob to authorize). Referee recert pending after the
+  playtest settles. BUILD r64 → r65.
