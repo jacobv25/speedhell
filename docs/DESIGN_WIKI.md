@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-07 (r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-07 (referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -482,16 +482,18 @@ Two things a reader should know:
   when a bot fires or dodges changes which random numbers later sprays draw,
   and downstream seeds can flip. A red check is not automatically a regression —
   run HEAD as a control first (memory: `speedhell-rng-stream-fragility`).
-- **Certified 2026-09-07 at r64** (Jacob-authorized recert; `evidence/metrics.json`
-  + `evidence/shots/` regenerated together, shots replaying the certified
-  expert run). Four checks are RED on the certified run and are recorded, not
-  hidden: `s6_alignment` (aggressive/passive score ratio 1.52 < 3; bullet
-  ratio 1.44), `s4_dynamic` (passive faces 1.44× bullets < 1.6), `s7_robust`
-  (expert clears all six seeds but every seed logs a midboss timeout; 5eed42
-  also boss-p3, 0 lives), `s7_clearable` (expert clears the certified seed
-  with a midboss timeout and 0 lives spare). Whether those bars are still the
-  right bars is §8.1's question and Jacob's call; builders never edit `test/`
-  or `CRITIC_RUBRIC.md`.
+- **Certified 2026-09-07 at r65** (Jacob-authorized recert after the r65
+  playtest, with the referee bot fix in the same session: the aggressive bot
+  now closes in on the midboss/boss instead of shooting from the bottom, and
+  the p2 shot keys on the phase latch). `evidence/metrics.json` +
+  `evidence/shots/` (26 shots, midboss-p2 back) regenerated together. 16
+  checks green — zero timeouts on every seed, `s6_alignment` 3.15 (≥3),
+  `s4_dynamic` 1.97 (≥1.6), `s7_clearable` green (expert clears, 1 life). One
+  RED, recorded not hidden: `s7_robust` — all six seeds clear by kills with no
+  timeouts, but bada55 / 1234567 / ab12cd finish at 0 lives (bar: ≥1). Closing
+  in is what costs the lives; the bot's dodge is a greedy 14-frame lookahead.
+  Whether "≥1 life on every seed" is the right bar for a bot is §8.1's kind of
+  question and Jacob's call; builders never edit `test/` or `CRITIC_RUBRIC.md`.
 
 The bots define what "expert" means here. Jacob is not a 1CC-level player;
 "the bot can do it" is evidence about the bot.
@@ -1632,3 +1634,18 @@ is placement, not authoring time. Not scheduled.
   3). The bot shooting from too far is a separate referee-side fix
   (test/bot.mjs, Jacob to authorize). Referee recert pending after the
   playtest settles. BUILD r64 → r65.
+- 2026-09-07 — REFEREE FIX + RECERT at r65 (both Jacob-authorized: "perform
+  the referee fixes. go ahead with r65 recert"). `test/bot.mjs`: the
+  aggressive bot homed to y = H−110 whatever it shot at; with shotLimit 6 /
+  shotSpeed 9 a bottom-of-screen shot lives ~37f, so the limit capped fire at
+  ~1 per 6f instead of 1 per 3f — half DPS on big targets (the "shooting from
+  too far away" Jacob saw in the sandbox). New options closeY / closePull /
+  trackPull (110 / 1.0 / 0.8), picked by a full-referee sweep: 0.3/0.6 left
+  s6+s4 red; 0.7/0.8, 1.0/0.6, 130/1.0/0.8, 90/1.0/0.8 all lost lives or
+  s7_clearable; 1.0/0.8 = zero timeouts on all seeds, s6 1.52 → 3.15, s4
+  1.44 → 1.97, expert 151,470 → 181,470 with 1 life. Passive bots untouched.
+  `test/shots.html`: s4-midboss-p2 keyed on the phase latch (was a stale
+  `hp < 130 × 0.45`). Recert: 16 green / 1 red (s7_robust: three seeds end
+  at 0 lives; no timeouts anywhere); stress p99 0.13 ms, max 0.52 of 16.6;
+  determinism byte-identical. The recert entry above (r64) stands as the
+  prior state. No game code touched, no BUILD bump.
