@@ -13,7 +13,6 @@
 import { store } from './options.js';
 import { prefs, setSkin } from './render/renderer.js';
 import { SKINS } from './render/skins/index.js';
-import { setKillWeight } from './audio.js';
 
 export const EXPERIMENTS = [
   // r60 — art direction skins (renderer-only; bullets, dot, hitboxes never move)
@@ -23,22 +22,11 @@ export const EXPERIMENTS = [
   { id: 'speedPopup', label: 'SPEED popup', def: 'both', ref: 'wiki §2.6 / open Q4',
     choices: [['both', 'SPEED +1600'], ['num', '+1600'], ['word', 'SPEED (old)'], ['off', 'none']],
     apply: (v) => { prefs.speedPopup = v; } },
-  // r51 explosions — renderer-only (particle counts/positions/fx-rng untouched);
-  // always drawn below bullets, so size can grow without masking a threat (S2).
-  { id: 'fxSize', label: 'explosion size', def: '1', ref: 'wiki §10 / open Q12',
-    choices: [['1', '1× (current)'], ['1.5', '1.5×'], ['2', '2×']],
-    apply: (v) => { prefs.fxSize = +v; } },
-  { id: 'fxStyle', label: 'explosion look', def: 'classic', ref: 'wiki §10 / open Q12',
-    choices: [['classic', 'classic (current)'], ['bloom', 'bloom — halos + streak sparks'], ['heavy', 'heavy — bloom + 2nd shockwave + smoke'], ['chunky', 'chunky — Lazy Devs / CAVE recipe (r52)']],
-    apply: (v) => { prefs.fxStyle = v; } },
+  // r67: fxSize + fxStyle (r51/r52) and killAudio (r54) left the Lab — 2×, chunky, heavy shipped (open Q12/Q14 decided 2026-09-07)
   // r53 — dress the natural meta (research/explosion-and-weapon-feel §5 option 4)
   { id: 'speedDress', label: 'speed-kill reward', def: 'off', ref: 'wiki §10 / open Q13',
     choices: [['off', 'current'], ['on', 'speed kill = tier up · rush = chain + big boom · cancels pop']],
     apply: (v) => { prefs.speedDress = v === 'on' ? 1 : 0; } },
-  // r54 — kill audio weight (research §5 option 5)
-  { id: 'killAudio', label: 'kill sound', def: 'current', ref: 'wiki §10 / open Q14',
-    choices: [['current', 'current'], ['heavy', 'heavy — sub-bass thump, pitched by tier']],
-    apply: (v) => { setKillWeight(v); } },
 ];
 
 const KEY = 'speedhell.lab';

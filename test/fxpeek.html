@@ -1,29 +1,27 @@
 <!doctype html><meta charset="utf-8">
-<!-- fx peek: three explosion looks side by side at three frames (r51 lab, wiki §10).
-     node tools/peek.mjs test/fxpeek.html out.png — edit `combos` to compare sizes. --><body style="margin:0;background:#05060a">
+<!-- fx peek: the (r67: only) explosion recipe — same scene at four frames, three columns.
+     node tools/peek.mjs test/fxpeek.html out.png · ?strip=1 → one BIG burst across 12 frames. --><body style="margin:0;background:#05060a">
 <canvas id="c" width="1920" height="3416"></canvas>
 <script type="module">
 import { makeGame, startRun, explode, TIER, FAM, update, spawnEnemy } from '../src/core/game.js';
-import { draw, prefs, resetHud } from '../src/render/renderer.js';
+import { draw, resetHud } from '../src/render/renderer.js';
 const c = document.getElementById('c'), ctx = c.getContext('2d');
 const strip = new URLSearchParams(location.search).get('strip'); // ?strip=chunky → one BIG burst, 12 frames
-const combos = strip ? [[strip, 1], [strip, 1], [strip, 1]] : [['classic', 1], ['heavy', 1], ['chunky', 1]];
+const label = 'chunky 2×';
 const STRIP_F = [0, 1, 2, 3, 5, 7, 10, 14, 19, 26, 36, 50];
 const off = document.createElement('canvas'); off.width = 320; off.height = 427; const octx = off.getContext('2d');
 for (let col = 0; col < 3; col++) for (let row = 0; row < 4; row++) {
   const g = makeGame(7); startRun(g, 600); resetHud();
   for (let i = 0; i < 40; i++) update(g); // some enemies + bullets on screen
-  g.fxStyle = combos[col][0]; // r52: chunky is a SPAWN recipe in core
   if (strip) { explode(g, 160, 220, TIER.BIG, FAM.ORANGE, 14); explode(g, 70, 120, TIER.POP, FAM.ORANGE, 8); for (let i = 0; i < STRIP_F[row * 3 + col]; i++) update(g); }
   else {
     explode(g, 160, 150, TIER.BIG, FAM.ORANGE, 14); explode(g, 80, 260, TIER.POP, FAM.ORANGE, 8); explode(g, 230, 300, TIER.BIG, FAM.ORANGE, 16); explode(g, 60, 120, TIER.MED, FAM.CYAN, 10); explode(g, 250, 200, TIER.POP, FAM.ORANGE, 8);
     for (let i = 0; i < [2, 6, 14, 26][row]; i++) update(g);
   }
-  prefs.fxStyle = combos[col][0]; prefs.fxSize = combos[col][1];
   octx.setTransform(1, 0, 0, 1, 0, 0); draw(g, octx, 0);
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(off, col * 640, row * 854, 640, 854);
-  ctx.fillStyle = '#ffd24a'; ctx.font = 'bold 22px monospace'; ctx.fillText(strip ? `${strip}  f+${STRIP_F[row * 3 + col]}` : `${combos[col][0]} ${combos[col][1]}×  f+${[2, 6, 14, 26][row]}`, col * 640 + 12, row * 854 + 30);
+  ctx.fillStyle = '#ffd24a'; ctx.font = 'bold 22px monospace'; ctx.fillText(strip ? `${label}  f+${STRIP_F[row * 3 + col]}` : `${label}  f+${[2, 6, 14, 26][row]}`, col * 640 + 12, row * 854 + 30);
 }
 window.__done = true;
 </script></body>

@@ -100,12 +100,12 @@ try {
   if (plain.soundTest.display !== 'grid' || plain.soundTest.rows < 18) fails.push('sound test did not open with 18 rows: ' + JSON.stringify(plain.soundTest));
   if (plain.soundTest.topmost !== 'soundsCard') fails.push('sound test card is NOT the topmost element with the options menu open (r55 z-index bug): ' + plain.soundTest.topmost);
   // 2. ?lab page: rows injected, the link's config applied, address bar rewritten to the share link
-  const lab = await page('/index.html?lab=speedPopup:num,fxSize:2');
+  const lab = await page('/index.html?lab=speedPopup:num,speedDress:on'); // r67: fxSize left the Lab; speedDress is the second experiment now
   console.log('lab rows', lab.labRows.join(' | ') || '(none)', '· search', lab.search);
   if (!lab.labRows.length || lab.labHidden) fails.push('?lab did not inject lab rows');
   if (!lab.labRows.some((r) => r.startsWith('speedPopup=+1600'))) fails.push('?lab=speedPopup:num not applied: ' + JSON.stringify(lab.labRows));
-  if (!lab.labRows.some((r) => r.startsWith('fxSize=2×'))) fails.push('?lab fxSize:2 not applied (multi-experiment decode): ' + JSON.stringify(lab.labRows));
-  if (!lab.search.includes('speedPopup:num') || !lab.search.includes('fxSize:2')) fails.push('address bar not rewritten to the share link: ' + lab.search);
+  if (!lab.labRows.some((r) => r.startsWith('speedDress=speed kill'))) fails.push('?lab speedDress:on not applied (multi-experiment decode): ' + JSON.stringify(lab.labRows));
+  if (!lab.search.includes('speedPopup:num') || !lab.search.includes('speedDress:on')) fails.push('address bar not rewritten to the share link: ' + lab.search);
   if (fails.length) for (const f of fails) console.log('FAIL:', f);
   else { console.log('PASS: overlays hide; lab absent without ?lab, present + applied with it'); exitCode = 0; }
   ws.close();

@@ -15,16 +15,13 @@ import { SKINS } from './skins/index.js';
 // r50 lab: presentation prefs the shell may switch live (src/lab.js writes
 // them). The renderer stays DOM-free; headless harnesses get the defaults.
 // speedPopup: 'both' = SPEED +1600 · 'num' = +1600 · 'word' = SPEED · 'off'
-// fxSize: draw-size multiplier on every explosion particle (r51 experiment)
-// fxStyle: 'classic' · 'bloom' (halos, streak sparks, hotter core) · 'heavy'
-//          (bloom + second shockwave + darker longer smoke + bigger debris) ·
-//          'chunky' (r52: the Lazy Devs/CAVE recipe — spawned in core, see
-//          explodeChunky; here it means opaque shaded blobs + pixel snapping)
-// Renderer-only: particle counts, positions and the fx rng are untouched, and
-// everything still draws BELOW bullets (S2 — explosions never mask threats).
+// (r67: fxSize / fxStyle left the Lab — 2× and chunky shipped, see FX_SIZE and
+// explodeChunky in core; bloom/heavy/classic painters deleted.) Explosions
+// still draw BELOW bullets (S2 — they never mask threats).
 // speedDress: r53 — transported to core as g.fxMeta by main.js (renderer ignores it)
 // skin: r60 — which skins/*.js draws the world (setSkin below; Lab row `skin`); r62 default cute-occult
-export const prefs = { speedPopup: 'both', fxSize: 1, fxStyle: 'classic', speedDress: 0, skin: 'cute-occult' };
+export const prefs = { speedPopup: 'both', speedDress: 0, skin: 'cute-occult' };
+const FX_SIZE = 2; // r67: explosion draw-size multiplier, 2× shipped (Lab open Q12 decided 2026-09-07)
 
 // r62: cute-occult is THE look (Jacob's verdict 2026-09-05: "the most personality");
 // base = the r58 classic, kept as the contract's reference implementation.
@@ -290,7 +287,7 @@ export function drawNeedle(ctx, x, y, ang) {
 
 function drawFx(ctx, g) {
   const n = g.particles.count, items = g.particles.items;
-  const S = prefs.fxSize, bloom = prefs.fxStyle === 'bloom' || prefs.fxStyle === 'heavy', heavy = prefs.fxStyle === 'heavy'; // r51 lab
+  const S = FX_SIZE;
   // r52 chunky pass 0: white constant-width shockwave UNDER everything, then
   // opaque shaded blobs in spawn order (centre blob of each grape drawn last).
   for (let i = 0; i < n; i++) {
@@ -320,13 +317,13 @@ function drawFx(ctx, g) {
     if (q.delay > 0 || (q.kind !== FX.SMOKE && q.kind !== FX.DEBRIS)) continue;
     const a = q.life / q.max;
     if (q.kind === FX.SMOKE) {
-      ctx.globalAlpha = a * (heavy ? 0.85 : 0.7);
+      ctx.globalAlpha = a * 0.7;
       ctx.fillStyle = FX_SMOKE[q.hue];
-      ctx.beginPath(); ctx.arc(q.x, q.y, q.size * S * (1 + (1 - a) * (heavy ? 1.6 : 1.2)), 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(q.x, q.y, q.size * S * (1 + (1 - a) * 1.2), 0, 7); ctx.fill();
     } else {
       ctx.globalAlpha = Math.min(1, a * 3);
       ctx.fillStyle = FX_DEBRIS[q.hue];
-      const d = q.size * S * (heavy ? 1.3 : 1);
+      const d = q.size * S;
       ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.rot);
       ctx.fillRect(-d, -d / 2, d * 2, d);
       ctx.restore();
@@ -343,21 +340,13 @@ function drawFx(ctx, g) {
         ctx.globalAlpha = a;
         ctx.fillStyle = ramp[stop];
         const s = (1 + a * 2) * S;
-        if (bloom) { // streak along the velocity — reads as motion, not a dot
-          ctx.strokeStyle = ramp[stop]; ctx.lineWidth = s;
-          ctx.beginPath(); ctx.moveTo(q.x, q.y); ctx.lineTo(q.x - q.vx * 2.5, q.y - q.vy * 2.5); ctx.stroke();
-        } else ctx.fillRect(q.x - s / 2, q.y - s / 2, s, s);
+        ctx.fillRect(q.x - s / 2, q.y - s / 2, s, s);
         break;
       }
       case FX.FIRE: { // swells fast, then shrinks as it cools
         const r = q.size * S * (a < 0.85 ? a / 0.85 : 0.4 + (1 - a) / 0.15 * 0.6);
-        if (bloom) { // soft halo behind the fireball (capped alpha: bullets stay legible over it)
-          ctx.globalAlpha = Math.min(1, a * 1.5) * 0.12; // low: nine of these stack additively on a boss phase
-          ctx.fillStyle = ramp[2];
-          ctx.beginPath(); ctx.arc(q.x, q.y, r * 1.7, 0, 7); ctx.fill();
-        }
         ctx.globalAlpha = Math.min(1, a * 1.5) * 0.85;
-        ctx.fillStyle = ramp[1 + (((1 - a) * 2.99) | 0)]; // fire never starts white — the CORE owns the flash; overlaps bloom via 'lighter'
+        ctx.fillStyle = ramp[1 + (((1 - a) * 2.99) | 0)]; // fire never starts white — the CORE owns the flash; additive via 'lighter'
         ctx.beginPath(); ctx.arc(q.x, q.y, r, 0, 7); ctx.fill();
         break;
       }
@@ -366,11 +355,6 @@ function drawFx(ctx, g) {
           ctx.globalAlpha = 1; ctx.fillStyle = ramp[0];
           ctx.beginPath(); ctx.arc(Math.round(q.x), Math.round(q.y), q.size * S, 0, 7); ctx.fill();
           break;
-        }
-        if (bloom) { // hotter flash: a wider dim halo around the white core
-          ctx.globalAlpha = a * 0.25;
-          ctx.fillStyle = ramp[1];
-          ctx.beginPath(); ctx.arc(q.x, q.y, q.size * S * a * 1.5, 0, 7); ctx.fill();
         }
         ctx.globalAlpha = a;
         ctx.fillStyle = ramp[0];
@@ -381,10 +365,6 @@ function drawFx(ctx, g) {
         ctx.globalAlpha = a;
         ctx.strokeStyle = ramp[1]; ctx.lineWidth = (0.5 + a * 2) * S;
         ctx.beginPath(); ctx.arc(q.x, q.y, q.size * S * (1 - a) + 1, 0, 7); ctx.stroke();
-        if (heavy) { // second, wider, fainter shockwave trailing the first
-          ctx.globalAlpha = a * 0.45; ctx.lineWidth = 1;
-          ctx.beginPath(); ctx.arc(q.x, q.y, q.size * S * (1 - a) * 1.5 + 1, 0, 7); ctx.stroke();
-        }
         break;
       }
     }

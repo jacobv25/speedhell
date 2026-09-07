@@ -197,21 +197,19 @@ function noise(dur, vol, { t0 = 0, hp = 0, lp = 20000, lpEnd = 0, q = 0.7 } = {}
   if (lp < 20000) { const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = q; f.frequency.setValueAtTime(lp, t); if (lpEnd) f.frequency.exponentialRampToValueAtTime(lpEnd, t + dur); n.connect(f); n = f; }
   n.connect(g); g.connect(sfxBus); s.start(t); s.stop(t + dur + 0.02);
 }
-// r54 EXPERIMENT (lab `killAudio`, wiki §10 / open Q14): kill sounds carry
+// r54 → r67 (shipped; was lab `killAudio`, wiki §10 / open Q14): kill sounds carry
 // weight. Mark MSX on DOJ: "you hear the laser, you hear the explosion" — half
 // the feel is audio and none of the Lazy Devs episodes cover it. 'heavy' layers
 // a sub-bass thump under every explosion, pitched DOWN by tier (popcorn 100 Hz
 // → boss 60 Hz, all sliding to ~22 Hz), plus a short low-passed transient so
-// the thump has an attack. Nothing else changes; the sfx bus + compressor
+// the thump has an attack. The sfx bus + compressor
 // keep it from clipping the music.
-let killWeight = 'current';
-export function setKillWeight(v) { killWeight = v; }
 function thump(size) {
   osc('sine', 120 - 20 * size, 22, 0.2 + 0.1 * size, 0.95);
   noise(0.06, 0.45, { lp: 500 });
 }
 function explosion(size) { // size 1 = popcorn, 2 = elite, 3 = boss phase
-  if (killWeight === 'heavy') thump(size);
+  thump(size); // r67: heavy shipped (Lab open Q14 decided 2026-09-07)
   noise(0.18 * size, 0.6, { lp: 3500 * size, lpEnd: 150, q: 1.2 });
   osc('sine', 160 * size, 30, 0.22 * size, 0.7);
   if (size >= 2) { osc('square', 90, 25, 0.35, 0.25); noise(0.5 * size, 0.35, { t0: 0.04, lp: 900, lpEnd: 60 }); }

@@ -3,7 +3,7 @@
 // shell; never touches src/core. Opened from OPTIONS, which stays open (and
 // paused) underneath — this card just owns the input while it is up. Effects
 // play DRY (no music cuts/ducks — you audition the sound, not the transition)
-// and honour the live lab settings (r54 killAudio), so it is the A/B tool for
+// and honour the live lab settings (r53 speedDress), so it is the A/B tool for
 // the audio pass and the way Mark can hear one sound at a time.
 import { SFX } from './core/game.js';
 import * as audio from './audio.js';

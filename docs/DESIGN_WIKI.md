@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-07 (referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-07 (r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -513,15 +513,14 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
    a jump-scare that needs to be two?
 6. **Mid #4 exit timing** overlaps the midboss gate, contradicting its own
    comment. Fix the timing or accept the overlap as content?
-12. **Explosion size / look** (r51 lab: fxSize 1×/1.5×/2×, fxStyle classic/
-    bloom/heavy). Jacob wants them "bigger and better looking" (2026-09-04);
-    boghog already asked for "significantly bigger than the enemy". Which
-    combination, and does 2× hurt bullet reading on the boss? Testers decide
-    via `?lab=fxSize:2,fxStyle:heavy` etc.
-14. **Kill sound weight** (r54 lab `killAudio`): does a sub-bass thump under
-    kills read as CAVE weight or as mud under the music? Pitched by tier so
-    the ear can grade the kill. Audio-pass item; decide with the title-music
-    choice.
+12. **Explosion size / look** — DECIDED 2026-09-07 (r67): 2× + chunky (Lazy
+    Devs / CAVE recipe, r52) shipped as constants; classic, bloom, heavy and the
+    1×/1.5× sizes deleted with the Lab rows. Jacob's verdict after the r51–r66
+    playtests. Bullet reading on the boss was the S2 worry — chunky draws opaque
+    below bullets, budgets ≤ classic (§10 r52), so the display contract holds.
+14. **Kill sound weight** — DECIDED 2026-09-07 (r67): heavy shipped (sub-bass
+    thump under every kill, pitched by tier); the `killAudio` row and the
+    'current' (no thump) path deleted. Jacob: "kill sound should be heavy".
 13. **Speed-kill reward dressing** (r53 lab `speedDress`): should the natural
     meta's payday LOOK like a payday — tier-up explosion, rush chain, per-bullet
     cancel pops? MSX "you want the player to feel powerful" vs S2 readable
@@ -649,11 +648,12 @@ and the `#lab` panel go.
   the HOW TO card (`src/howto.js` mirrors the art); fx particle counts stay on
   `g.fxRng`.
 
-Live experiments: **speedPopup** (§2.6, open Q4) · **fxSize** + **fxStyle**
-(explosions, open Q12, r51; fxStyle gained **chunky** in r52) · **speedDress**
-(speed-kill reward dressing, open Q13, r53) · **killAudio** (kill sound
-weight, open Q14, r54). Queued: destruction sequence (after the art overhaul),
-hit impact blob, sprite-shaped debris (after art).
+Live experiments (r67): **skin** (§11, r60) · **speedPopup** (§2.6, open Q4) ·
+**speedDress** (speed-kill reward dressing, open Q13, r53). Decided and
+removed in r67: fxSize → 2×, fxStyle → chunky (Q12), killAudio → heavy (Q14) —
+the r51/r52/r54 paragraphs below stay as the record of what was tried. On the
+`feat/music-cues` branch: **musicCues** (r66, open Q16). Queued: destruction
+sequence (after the art overhaul), hit impact blob, sprite-shaped debris.
 
 **r54 "kill sound" (`audio.js` `thump`, lab `killAudio`).** 'heavy' layers a
 sub-bass sine under every explosion — 100 Hz (popcorn) / 80 Hz (elite,
@@ -1649,3 +1649,23 @@ is placement, not authoring time. Not scheduled.
   at 0 lives; no timeouts anywhere); stress p99 0.13 ms, max 0.52 of 16.6;
   determinism byte-identical. The recert entry above (r64) stands as the
   prior state. No game code touched, no BUILD bump.
+- 2026-09-07 — r67: LAB CATCH-UP (Jacob: "clean up/catch up our lab to the
+  main version. Explosion size should be 2x. Explosion look should be chunk —
+  Lazy Dev / CAVE recipe. Kill sound should be heavy. remove those from the
+  lab but keep the rest"). Per the §10 lifecycle rule: winners → constants,
+  losers deleted in the same commit. `renderer.js` FX_SIZE = 2 (prefs.fxSize
+  gone; bloom/heavy painters deleted); `game.js` `explode` = `explodeChunky`
+  (classic recipe + its TIER_CORE/FIRE/SPREAD/STAG/SMOKE tables deleted;
+  `g.fxStyle` field gone, main.js no longer mirrors it); `audio.js` thump
+  under every explosion (killWeight switch gone). Lab rows left: skin,
+  speedPopup, speedDress. `test/fxpeek.html` now peeks the one recipe;
+  `test/shell.mjs`'s multi-decode check uses speedDress instead of fxSize
+  (harness edit, not the referee). Open Q12 + Q14 marked decided. Corpus:
+  boghog — explosions "significantly bigger than the enemy" (2×) and the
+  Lazy Devs stall/cool/opaque recipe that r52 built from; MSX (DOJ) — "you
+  hear the explosion", weight is half the feel. S2 held: chunky is opaque,
+  drawn under bullets, budgets ≤ classic. Control sim: bot outcomes and
+  scores identical to the r65 certificate (fx on g.fxRng only); stress max
+  0.52 → 2.68 ms on one frame (p99 0.111, budget 16.6) — the chunky max-load
+  spawn, still 6× under budget; evidence untouched, recert whenever the next
+  design change settles. r66 is the `feat/music-cues` branch. BUILD r65 → r67.

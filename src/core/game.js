@@ -107,7 +107,6 @@ export function makeGame(seed = 1) {
     popups: makePool(32, () => ({ x: 0, y: 0, life: 0, text: '', big: 0, val: 0 })), // val: paid value (speed kills) — the renderer formats it (r50 lab)
     shake: 0, shakeMax: 0, flash: 0, cancelFlash: 0,
     hitstop: 0, fxHitstop: 0, // r8-fx: frames of world-freeze remaining; fxHitstop = frames granted per BIG/PHASE kill (0 = off)
-    fxStyle: 'classic', // r52 lab: explosion recipe chosen at SPAWN ('classic' | 'chunky'); main.js mirrors renderer prefs here — core stays DOM-free, fx rng only
     fxMeta: 0, // r53 lab: dress the natural meta — speed kills explode one tier up, rush = PHASE-tier chain + KILL_BIG, cancel walls pop per bullet (presentation only; scoring untouched)
     sfx: new Array(SFX_CAP).fill(0), sfxN: 0, // sound-event ring, drained per frame
     // instrumentation (read by sim + critics; cheap fixed-size)
@@ -226,50 +225,16 @@ function explodeChunky(g, x, y, tier, hue, r) {
   }
 }
 
-// r8-fx S4-MUST "explosions punchy": composite explosion — frame 0 puts a
-// white-hot CORE over the whole sprite plus an expanding shockwave RING
-// (≤2 startup frames), then clustered FIRE sub-bursts pop over the next
-// frames (Psikyo cluster look), SMOKE lingers, DEBRIS tumbles out, sparks fly.
+// r8-fx S4-MUST "explosions punchy" — since r67 the recipe is explodeChunky
+// above (Lazy Devs / CAVE: static flash, linear shockwave, stalling blob
+// grapes, debris, sparks); these tier tables size it.
 // Footprint is >1.5x the sprite radius at every tier [Boghog: explosions
 // significantly bigger than the enemy, varied patterns, extra debris].
 // Tiers: POP (zako, sub-part) · MED (turret, mid) · BIG (elite, midboss) · PHASE (boss) · PLAYER.
 // Per-tier particle budgets (max): 31 · 38 · 55 · ~93 · ~63. Jacob 2026-08-26: "lean bigger".
 const TIER_SC = [1.6, 1.8, 2.3, 2.8, 2.6];
-const TIER_CORE = [3, 3, 4, 5, 6];
-const TIER_FIRE = [5, 6, 9, 9, 8], TIER_SPREAD = [8, 12, 18, 22, 16], TIER_STAG = [2, 2, 2, 3, 2];
-const TIER_SMOKE = [3, 4, 6, 8, 5], TIER_DEBRIS = [7, 8, 12, 14, 12], TIER_SPARK = [14, 18, 26, 30, 30], TIER_POWER = [1.2, 1.6, 2, 2.2, 2.5];
-export function explode(g, x, y, tier, hue = FAM.ORANGE, r = 10) {
-  if (g.fxStyle === 'chunky') return explodeChunky(g, x, y, tier, hue, r);
-  const rng = g.fxRng;
-  const R = Math.max(r, 8) * TIER_SC[tier];
-  spawnFx(g, FX.CORE, x, y, 0, 0, TIER_CORE[tier], R * 1.1, hue); // white FLASH: 3-6 frames, not a blob
-  spawnFx(g, FX.RING, x, y, 0, 0, 9 + tier * 3, R * 2.4, hue);
-  for (let i = 0; i < TIER_FIRE[tier]; i++) {
-    const a = rng.range(0, 6.283), d = i === 0 ? 0 : rng.range(0, TIER_SPREAD[tier]);
-    spawnFx(g, FX.FIRE, x + Math.cos(a) * d, y + Math.sin(a) * d, rng.range(-0.6, 0.6), rng.range(-0.9, 0.1),
-      14 + rng.range(0, 10), R * rng.range(0.3, 0.55), hue, i * TIER_STAG[tier]);
-  }
-  for (let i = 0; i < TIER_SMOKE[tier]; i++) {
-    spawnFx(g, FX.SMOKE, x + rng.range(-R / 2, R / 2), y + rng.range(-R / 2, R / 2), rng.range(-0.3, 0.3), rng.range(-0.7, -0.2),
-      30 + rng.range(0, 20), R * 0.35, hue, 4 + rng.range(0, 8));
-  }
-  for (let i = 0; i < TIER_DEBRIS[tier]; i++) {
-    const a = rng.range(0, 6.283), s = rng.range(1.5, 4) * (0.8 + tier * 0.3);
-    const p = spawnFx(g, FX.DEBRIS, x, y, Math.cos(a) * s, Math.sin(a) * s - 1, 30 + rng.range(0, 20), 1.5 + rng.range(0, 2), hue, 0, 0.08);
-    if (p) { p.rot = rng.range(0, 6.283); p.vrot = rng.range(-0.4, 0.4); }
-  }
-  burst(g, x, y, TIER_SPARK[tier], hue, TIER_POWER[tier]);
-  if (tier === TIER.PHASE) { // decks stripping: a chain of secondary pops across the hull
-    for (let i = 0; i < 5; i++) {
-      const cx = x + (i - 2) * 16 + rng.range(-6, 6), cy = y + rng.range(-12, 12), dl = 6 + i * 6;
-      spawnFx(g, FX.CORE, cx, cy, 0, 0, 5, R * 0.45, hue, dl);
-      for (let k = 0; k < 3; k++) spawnFx(g, FX.FIRE, cx + rng.range(-4, 4), cy + rng.range(-4, 4), rng.range(-0.4, 0.4), rng.range(-0.8, 0), 14 + rng.range(0, 8), R * 0.3, hue, dl + k * 2);
-      for (let k = 0; k < 2; k++) spawnFx(g, FX.SMOKE, cx, cy, rng.range(-0.3, 0.3), -0.5, 30 + rng.range(0, 14), R * 0.2, hue, dl + 4);
-    }
-  } else if (tier === TIER.PLAYER) { // flame column
-    for (let i = 0; i < 6; i++) spawnFx(g, FX.FIRE, x + rng.range(-5, 5), y, rng.range(-0.3, 0.3), -1.5 - i * 0.4, 20 + rng.range(0, 8), R * 0.4, hue, 2 + i * 2);
-  }
-}
+const TIER_DEBRIS = [7, 8, 12, 14, 12], TIER_SPARK = [14, 18, 26, 30, 30], TIER_POWER = [1.2, 1.6, 2, 2.2, 2.5];
+export function explode(g, x, y, tier, hue = FAM.ORANGE, r = 10) { return explodeChunky(g, x, y, tier, hue, r); } // r67: chunky IS the explosion (open Q12 decided); the classic recipe was deleted with the Lab rows
 
 export function spawnEnemy(g, type, x, y, opts = {}) {
   const e = g.enemies.spawn(); if (!e) return null;
