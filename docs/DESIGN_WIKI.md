@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-07 (r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-07 (referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -456,7 +456,8 @@ radius so same look = same hitbox; see the open question on radii in §8).
 
 Outcomes moved (expert clears faster and scores higher; passive-human clears
 on its last life instead of one spare), so the certified run is stale —
-**referee recert pending** after Jacob's playtest.
+referee recert was pending after Jacob's playtest — **recerted 2026-09-07 at
+r64** (Jacob-authorized; certified numbers in §7 and the changelog).
 
 **Why this and not "needle = any aimed shot" (r5–r58).** Jacob pushed back on
 the old rule as genre law; research agreed: Touhou uses rice bullets in rings
@@ -480,10 +481,16 @@ Two things a reader should know:
   when a bot fires or dodges changes which random numbers later sprays draw,
   and downstream seeds can flip. A red check is not automatically a regression —
   run HEAD as a control first (memory: `speedhell-rng-stream-fragility`).
-- **As of 2026-08-27 the committed `metrics.json` is stale** (pre-r8-fx). HEAD
-  itself fails `s6_alignment` (2.07 < 3), `s4_dynamic` (1.55 < 1.6), and
-  `s7_robust` when re-run. Recert is a separate, Jacob-authorized referee
-  commit; builders never edit `test/` or `CRITIC_RUBRIC.md`.
+- **Certified 2026-09-07 at r64** (Jacob-authorized recert; `evidence/metrics.json`
+  + `evidence/shots/` regenerated together, shots replaying the certified
+  expert run). Four checks are RED on the certified run and are recorded, not
+  hidden: `s6_alignment` (aggressive/passive score ratio 1.52 < 3; bullet
+  ratio 1.44), `s4_dynamic` (passive faces 1.44× bullets < 1.6), `s7_robust`
+  (expert clears all six seeds but every seed logs a midboss timeout; 5eed42
+  also boss-p3, 0 lives), `s7_clearable` (expert clears the certified seed
+  with a midboss timeout and 0 lives spare). Whether those bars are still the
+  right bars is §8.1's question and Jacob's call; builders never edit `test/`
+  or `CRITIC_RUBRIC.md`.
 
 The bots define what "expert" means here. Jacob is not a 1CC-level player;
 "the bot can do it" is evidence about the bot.
@@ -1584,3 +1591,16 @@ is placement, not authoring time. Not scheduled.
   `synthwave` stays until its approaching-landmark technique is ported
   (Round 3 starting idea, r62). Lab row `skin` now offers cute-occult /
   synthwave / classic (r58). No design change, no rng. BUILD r63 → r64.
+- 2026-09-07 — REFEREE RECERT at r64 (Jacob-authorized, separate commit; no
+  BUILD bump — nothing in the game changed). `node test/sim.mjs` then
+  `node test/shots.mjs`: metrics + 25 shots + manifest regenerated from one
+  run; `shot-s4-midboss-p2.png` is gone because the certified expert run no
+  longer reaches midboss phase 2 before the timeout. Certified state: 13
+  checks green (stress p99 0.109 ms, max 0.547 ms of 16.6; determinism
+  byte-identical), four red — s6_alignment 1.52 (<3), s4_dynamic 1.44
+  (<1.6), s7_robust (midboss timeout on all six seeds; 5eed42 also boss-p3),
+  s7_clearable (clear, midboss timeout, 0 lives). Bot scores: expert 151,470
+  · aggressive 134,260 · passive 88,230 · blind gameover 33,550. The midboss
+  timeout on every seed is the standing signal (r25/26 400 hp override, wiki
+  §8); the r59 caste and r62 skin are now what the evidence shows. §6.3 and
+  §7 updated.
