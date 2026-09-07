@@ -75,7 +75,7 @@ async function mainRun(shots) {
     once('s1-wave3', g.stageT >= 480 && g.eBullets.count + g.enemies.count > 4);
     once('s2-turret-alley', entered.s2 && g.frame === entered.s2 + 150);
     once('s3-mid-gauntlet', entered.s3 && g.frame === entered.s3 + 230);
-    if (midboss && midboss.hp < 130 * 0.45 && !midbossHalfAt) midbossHalfAt = g.frame;
+    if (midboss && midboss.phase === 1 && !midbossHalfAt) midbossHalfAt = g.frame; // r65 referee fix: phase B latches at 45% of the TUNED hp (stage.js) — was a stale `hp < 130 * 0.45`
     once('s4-midboss-p2', midbossHalfAt && g.frame === midbossHalfAt + 50);
     once('s5-rush', entered.s5 && g.frame === entered.s5 + 200);
     once('s6-elite', entered.s6 && g.frame === entered.s6 + 260);

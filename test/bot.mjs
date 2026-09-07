@@ -5,22 +5,33 @@
 // maximizing minimum clearance. reactDelay models human reaction (S7: 120ms ≈ 7f).
 import { W, H, PLAYER } from '../src/core/game.js';
 
-export function makeBot({ aggressive, lookahead = 12, reactDelay = 0 }) {
+// r65 referee fix (Jacob-authorized, 2026-09-07): the aggressive bot used to home
+// to y = H-110 whatever it was shooting at. With shotLimit 6 / shotSpeed 9 a shot
+// from the bottom lives ~37f, so the limit capped fire at ~1 per 6f instead of
+// 1 per 3f — half DPS on the midboss/boss ("the computer player was shooting
+// from too far away"). closeY = how far below a big target (midboss/boss/part)
+// the bot now tries to sit; closePull/trackPull = the y/x homing weights while a
+// big target is on screen (0.15/0.35 otherwise). Chosen by full-referee sweep:
+// 110/1.0/0.8 → zero timeouts on all seeds, s6/s4/s7_clearable green; the
+// only red left is lives (s7_robust) — closing in costs deaths.
+export function makeBot({ aggressive, lookahead = 12, reactDelay = 0, closeY = 110, closePull = 1.0, trackPull = 0.8 }) {
   let delayed = 0;
   return (g) => {
     const p = g.player, i = g.input;
     i.fire = true; i.bomb = false; i.focus = false;
     if (reactDelay > 0 && (delayed = (delayed + 1) % (reactDelay + 1)) !== 0) return;
 
-    let target = W / 2;
+    let target = W / 2, homeTargetY = H - 110, big = false;
     if (aggressive && g.enemies.count > 0) {
-      let best = 1e9;
+      let best = 1e9, bigY = -1;
       for (let k = 0; k < g.enemies.count; k++) {
         const e = g.enemies.items[k];
         if (e.vulnAt < 0 || e.y > p.y - 40) continue;
+        if (e.type >= 4 && e.y > bigY) bigY = e.y; // midboss 4 / boss 5 / part 6
         const d = Math.abs(e.x - p.x) + Math.abs(e.y - p.y) * 0.3;
         if (d < best) { best = d; target = e.x; }
       }
+      if (bigY >= 0) { big = true; homeTargetY = Math.min(H - 110, Math.max(120, bigY + closeY)); }
     }
     let bestScore = -1e9, bestDx = 0, bestDy = 0;
     for (const dx of [-1, 0, 1]) for (const dy of [-1, 0, 1]) {
@@ -42,8 +53,8 @@ export function makeBot({ aggressive, lookahead = 12, reactDelay = 0 }) {
         }
       }
       const clearScore = Math.min(minClear, 60);
-      const homeY = -Math.abs((H - 110) - py) * 0.15;
-      const homeX = -Math.abs(target - px) * (aggressive ? 0.35 : 0.08);
+      const homeY = -Math.abs(homeTargetY - py) * (big ? closePull : 0.15);
+      const homeX = -Math.abs(target - px) * (aggressive ? (big ? trackPull : 0.35) : 0.08);
       const s = clearScore * 3 + homeY + homeX;
       if (s > bestScore) { bestScore = s; bestDx = dx; bestDy = dy; }
     }
