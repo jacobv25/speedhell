@@ -18,7 +18,7 @@ const ctx = canvas.getContext('2d');
 
 // ---------------------------------------------------------------- state
 const S = {
-  paused: false, stepOnce: false, speed: 1, mode: 'spawn',
+  paused: false, stepOnce: false, speed: 1, mode: 'spawn', slowAt: 0, // slowAt: drop to 1x when g.frame reaches it (URL ?slowAt=)
   god: true, infLives: true, infBombs: false, hitboxes: false, labels: false, sfx: true,
   bot: null, emitter: { x: W / 2, y: 80 }, repeat: false, repeatEvery: 60, lastFire: 0,
   spiralStep: 0, later: [], // scheduled sandbox actions: { at: frame, fn }
@@ -133,6 +133,7 @@ function renderShipParams() {
 }
 
 const BOTS = {
+  referee: () => makeBot({ aggressive: true, lookahead: 14, reactDelay: 0 }), // = test/sim.mjs 'expert' — with god + ∞ lives OFF and the sim seed, this IS the certified run
   expert: () => makeBot({ aggressive: true }),
   human: () => makeBot({ aggressive: true, reactDelay: 7 }),
   passive: () => makeBot({ aggressive: false }),
@@ -297,6 +298,7 @@ let last = performance.now(), acc = 0;
 function frame(now) {
   acc += (now - last) * S.speed; last = now;
   if (acc > 200) acc = 200;
+  if (S.slowAt && g.frame >= S.slowAt) { S.slowAt = 0; S.speed = 1; $('speed').value = '1'; logLine(`// slowAt: frame ${g.frame}, speed → 1x`); }
   if (S.paused) { acc = 0; if (S.stepOnce) { S.stepOnce = false; tick(); } }
   else while (acc >= STEP_MS) { tick(); acc -= STEP_MS; }
 
@@ -367,6 +369,19 @@ function readout(now) {
 }
 
 newScene(1);
+// URL presets (r64): ?stage=0&seed=12648430&bot=referee&god=0&lives=0&speed=4&slowAt=2200 replays the
+// referee's certified run live — full speed to the midboss (frame 2241), then 1x to watch it.
+{
+  const q = new URLSearchParams(location.search);
+  if (q.get('seed')) $('seed').value = q.get('seed');
+  if (q.has('stage')) stageJump(+q.get('stage') || 0); // real timeline from stageT (0 = the whole run, rng-identical to the sim)
+  else if (q.get('seed')) newScene(seedValue());
+  if (q.get('god') === '0') S.god = false;
+  if (q.get('lives') === '0') S.infLives = false;
+  if (q.get('speed')) { S.speed = +q.get('speed') || 1; $('speed').value = String(S.speed); }
+  if (q.get('slowAt')) S.slowAt = +q.get('slowAt') || 0;
+  if (q.get('bot') && BOTS[q.get('bot')]) { $('bot').value = q.get('bot'); S.bot = BOTS[q.get('bot')](); }
+}
 syncButtons();
 // devtools handle: __sandbox.g() is the live game; spawn/fire/stageJump script the scene
 window.__sandbox = { g: () => g, S, PLAYER, spawnPreset, firePattern, stageJump, clearField, newScene, ENEMIES, PATTERNS };

@@ -95,7 +95,7 @@
       <button id="infLives" class="on">∞ lives</button>
       <button id="infBombs">∞ bombs</button>
       <label>bot</label>
-      <select id="bot"><option value="">off</option><option value="expert">expert</option><option value="human">human (7f lag)</option><option value="passive">passive</option></select>
+      <select id="bot"><option value="">off</option><option value="referee">referee (sim expert)</option><option value="expert">expert</option><option value="human">human (7f lag)</option><option value="passive">passive</option></select>
     </div>
     <div class="row"><label>ship preset</label><select id="ship"></select><button id="shipReset">defaults</button></div>
     <div class="grid" id="ship-params"></div>
@@ -126,6 +126,7 @@
       <button id="jumpGo">run from here</button>
     </div>
     <div class="hint">Loads the real stage timeline at that stageT. Reset scene returns to the empty sandbox.</div>
+    <div class="hint">Watch the referee's certified run (a jump changes the rng, so this runs from the start at 4x and slows to 1x at the midboss): <a href="sandbox.html?stage=0&seed=12648430&bot=referee&god=0&lives=0&speed=4&slowAt=2200">certified midboss fight</a></div>
   </details>
 
   <details><summary>LOG (repro snippet)</summary>
