@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-05 (r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-07 (r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -1576,3 +1576,11 @@ is placement, not authoring time. Not scheduled.
   BUILD tag, this file's header/changelog, and the renderer header comment.
   Referee recert still pending (r59's bullet stream + r62's default skin).
   BUILD r59/r62 → r63.
+- 2026-09-07 — r64: LOSING SKINS RETIRED (renderer-only; Jacob's call after
+  verifying r63 in play: needle caste, cute-occult default, sound all good).
+  `neon-vector` and `graphic-pop` removed from `src/render/skins/` and the
+  registry; briefs (`docs/art-rounds/skin-<id>.md`, now headed "Retired r64")
+  and peek sheets (`docs/img/r6x-skin-<id>.png`) kept as the record.
+  `synthwave` stays until its approaching-landmark technique is ported
+  (Round 3 starting idea, r62). Lab row `skin` now offers cute-occult /
+  synthwave / classic (r58). No design change, no rng. BUILD r63 → r64.

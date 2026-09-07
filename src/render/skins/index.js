@@ -3,8 +3,9 @@
 // import + one entry here. renderer.js owns the contract (see base.js header).
 import base from './base.js';
 import cuteOccult from './cute-occult.js';
-import neonVector from './neon-vector.js';
 import synthwave from './synthwave.js';
-import graphicPop from './graphic-pop.js';
-export const SKINS = { base, 'cute-occult': cuteOccult, 'neon-vector': neonVector, synthwave, 'graphic-pop': graphicPop };
+// r64: neon-vector and graphic-pop retired (Jacob's call after the r61 playtest);
+// their briefs + peek sheets stay in docs/art-rounds + docs/img as the record.
+// synthwave stays until its approaching-landmark technique is ported (Round 3).
+export const SKINS = { base, 'cute-occult': cuteOccult, synthwave };
 export const SKIN_IDS = Object.keys(SKINS);

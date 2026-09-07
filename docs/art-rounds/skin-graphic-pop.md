@@ -1,3 +1,5 @@
+> **Retired r64 (2026-09-07).** Jacob picked cute-occult after playing the four r61 skins; this skin's code was removed from `src/render/skins/`. This brief and `docs/img/r6x-skin-graphic-pop.png` remain as the record of what was built.
+
 # Skin — graphic-pop (r60 art round)
 
 Persona 5 / Jet Set Radio poster graphics. One file: `src/render/skins/graphic-pop.js`.
