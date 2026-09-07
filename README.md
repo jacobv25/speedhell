@@ -57,4 +57,7 @@ never edit them** — that's grading your own homework.
 - `tools/peek.mjs` + `test/fxpeek.html` — headless screenshot of a harness page (the
   explosion looks side by side; `?strip=chunky` = one burst across 12 frames); eyeball
   presentation experiments before handing them off.
+- `tools/music/` — music lab: Demucs stems + beat grid (`analyze.py`) and a browser
+  marker app (`lab.html`, served by the Booth server) that writes `docs/music/<track>.cues.json`,
+  the song-timeline cue list the boss will read. See `tools/music/README.md`.
 - `evidence/` — metrics + screenshots consumed by gauntlet critics.

@@ -24,7 +24,7 @@ await mkdir(REC, { recursive: true });
 for (const f of [NOTES, REPLIES]) if (!existsSync(f)) await writeFile(f, '');
 
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
-  '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.md': 'text/plain; charset=utf-8' };
+  '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.m4a': 'audio/mp4', '.md': 'text/plain; charset=utf-8' };
 
 const stamp = () => { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`; };
 const body = (req) => new Promise((res, rej) => { let s = ''; req.on('data', (c) => { s += c; if (s.length > 8e6) req.destroy(); }); req.on('end', () => res(s)); req.on('error', rej); });
@@ -48,6 +48,12 @@ createServer(async (req, res) => {
       const name = `${safe(rec.session)}-run${Number(rec.run) || 0}.json`;
       await writeFile(join(REC, name), JSON.stringify(rec));
       return send(res, 200, { ok: true, file: `playtest/recordings/${name}` });
+    }
+    if (url.pathname === '/music/cues' && req.method === 'POST') { // music lab (tools/music/lab.html) marker file
+      const { name, data } = JSON.parse(await body(req));
+      const file = join(ROOT, 'docs', 'music', `${safe(name)}.cues.json`);
+      await writeFile(file, JSON.stringify(data, null, 1) + '\n');
+      return send(res, 200, { ok: true, file: `docs/music/${safe(name)}.cues.json` });
     }
     if (url.pathname === '/booth/replies') {
       const since = Number(url.searchParams.get('since') || 0);

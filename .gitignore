@@ -1,3 +1,7 @@
 .DS_Store
 evidence/*.png
 docs/concepts/**/*.png
+
+# music lab: derived stems + python env (regenerate with tools/music/setup.sh + analyze.py)
+assets/music/stems/
+tools/music/.venv/

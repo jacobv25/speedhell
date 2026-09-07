@@ -1,0 +1,12 @@
+{
+ "track": "insert-coin-skies.mp3",
+ "version": 1,
+ "gameOffset": 0,
+ "note": "Seeded 2026-09-05 from Jacob's first listen; times are his estimates, refine in tools/music/lab.html. gameOffset 0 = boss enters at song 0:00 (the game currently enters at 38.94 — changing that is a pending design change).",
+ "cues": [
+  {"id":"c-intro","t":0,"end":12,"kind":"intro","label":"boss intro","notes":"characters on screen, quick story / talking before the fight"},
+  {"id":"c-jam","t":13,"end":null,"kind":"phase","label":"music starts jamming","notes":"fight begins"},
+  {"id":"c-shift","t":22,"end":24,"kind":"transition","label":"flow / feel changes","notes":"switch to a different bullet pattern"},
+  {"id":"c-bass","t":32,"end":null,"kind":"pattern","label":"deep bass percussion","notes":"very large, massive circle bullets fired at the player in some pattern"}
+ ]
+}
