@@ -472,6 +472,14 @@ rewritten under Jacob's authorization; HOMAGE L6 amended.
 
 ### 6.4 Ships (r69 — Ship B as a MEASURED OPTION; Jacob retunes before the art)
 
+**Jacob's verdict (2026-09-07, first play of r69 on the branch):** "log these notes,
+i may come back and adjust the ship. but for now, i really enjoy the difficulty.
+it is much more difficult than ship A." → Ship B stays at the plan's starting
+numbers (3 / 1.5 / 1.5 at ±2.2, speed 3.2, focus 2.5, cap 9); the popcorn-rate
+red and the 2/6 robust clears are recorded, not fixed — the difficulty is the
+point for now. Retune options (±1.6 angle; 2/2/2; a Ship-B bot that closes on
+turrets + mids) stay open below; recert for Ship B pending Jacob's call.
+
 *Plan: `docs/plans/ship-b.md`. Core: `game.js SHIPS` (a volley entry is
 `[xOffset, vx, dmg]`; `g.ship` is set before `startRun(g, atT, ship)`).
 Probe: `tools/probes/ship-b-probe.mjs` (`--robust` adds the s7 seeds). Shell:
