@@ -658,7 +658,11 @@ open Q16; bar-snapped section jumps read as "a scissor cut"; keep its corrected
 `feat/beat-pulse` — **beatPulse** (r68, open Q17; pixel-identical when off,
 but the bible-capped amplitudes are imperceptible in play — "not a terrible
 idea and we will likely come back to it"; next step would be a bold setting
-to A/B). Queued: destruction
+to A/B). In progress on `design/ship-b` (r69, unmerged): Ship B
+"PRIESTESS" — core + probe + title-menu select built; Jacob's first play:
+"i really enjoy the difficulty. it is much more difficult than ship A" — kept at
+the plan's starting numbers, popcorn-rate red + 2/6 robust clears recorded not
+fixed, art (step 4) and recert pending; details in that branch's wiki §6.4. Queued: destruction
 sequence (after the art overhaul), hit impact blob, sprite-shaped debris.
 
 **r54 "kill sound" (`audio.js` `thump`, lab `killAudio`).** 'heavy' layers a
