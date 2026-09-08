@@ -88,7 +88,7 @@
   #titleMenu .trow.sel { color: #ff4fa3; }
   #titleMenu .trow.sel::before { content: '▶ '; }
   #titleMenu .trow:not(.sel)::before { content: '  '; }
-  #tPractice { color: #ffd24a; margin-left: 6px; }
+  #tPractice, #tShip { color: #ffd24a; margin-left: 6px; } /* r69: SHIP row shares the ◀▶ value look */
   #optsPanel .row.sel { outline: 1px solid #ff4fa3; outline-offset: 2px; }
   #optsPanel .row.sel label { color: #ff4fa3; }
   /* r35 how-to card */
@@ -112,6 +112,7 @@
 <div id="title" class="hide">
   <div id="titleMenu">
     <div class="trow" data-act="start">GAME START</div>
+    <div class="trow" data-act="ship">SHIP<span id="tShip">◀ WITCH ▶</span></div>
     <div class="trow" data-act="practice">PRACTICE<span id="tPractice">◀ S1 POPCORN ▶</span></div>
     <div class="trow" data-act="scores">HI-SCORES</div>
     <div class="trow" data-act="howto">HOW TO PLAY</div>

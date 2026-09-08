@@ -9,7 +9,7 @@
 // the player's words (Gow 2010: "What were you doing here? What did you feel
 // here?"), then an optional word list, then the expectation gap. "I don't
 // know" is a valid answer and still a flag.
-import { makeGame, startRun, update, W, H } from './core/game.js';
+import { makeGame, startRun, update, W, H, SHIPS } from './core/game.js';
 import { draw, resetHud } from './render/renderer.js';
 import * as audio from './audio.js';
 import { BUILD } from './version.js';
@@ -29,6 +29,8 @@ const TAGS = ['split attention', 'directional noise', 'off-motif', 'no route', '
 
 // ---------------------------------------------------------------- state
 let g = makeGame((Math.random() * 0xffffffff) >>> 0);
+// r69: ?ship=1 flies the second craft (SHIPS index); stamped on recordings + flags so the replay reproduces
+const boothShip = (() => { try { const n = +(new URLSearchParams(location.search).get('ship') || 0); return SHIPS[n] ? n : 0; } catch { return 0; } })();
 let paused = false, flagged = false, bgScroll = 0;
 let session = null, run = 0, tick = 0, inputs = [], flagN = 0, repliesSeen = 0, currentFlag = null, pollT = 0;
 let pendingReplies = 0, pendingCards = [], snapByFlag = {};
@@ -45,7 +47,7 @@ async function api(path, data) {
 })();
 
 function beginRun() {
-  audio.unlock(); startRun(g); resetHud(); audio.playMusic('stage');
+  audio.unlock(); startRun(g, 0, boothShip); resetHud(); audio.playMusic('stage');
   activeVariant = applyVariants(g); // r26: variants land here, never mid-run
   $('variantNow').textContent = 'active: ' + activeVariant;
   run++; tick = 0; inputs = [];
@@ -61,7 +63,7 @@ function packInput(i) { return (i.dx + 1) | ((i.dy + 1) << 2) | ((i.fire ? 1 : 0
 function inputsB64() { let s = ''; const a = Uint8Array.from(inputs); for (let i = 0; i < a.length; i += 0x8000) s += String.fromCharCode.apply(null, a.subarray(i, i + 0x8000)); return btoa(s); }
 async function uploadRecording(reason) {
   if (!session) return;
-  try { await api('/booth/recording', { session, run, seed: g.seed, build: BUILD, variant: activeVariant, tune: g.tune, ticks: tick, frame: g.frame, state: g.state, reason, inputs: inputsB64() }); } catch { /* offline */ }
+  try { await api('/booth/recording', { session, run, seed: g.seed, build: BUILD, ship: g.ship, variant: activeVariant, tune: g.tune, ticks: tick, frame: g.frame, state: g.state, reason, inputs: inputsB64() }); } catch { /* offline */ }
 }
 
 // ---------------------------------------------------------------- snapshot
@@ -149,7 +151,7 @@ async function sendNote(dunno) {
   if (!currentFlag) return;
   const text = dunno ? "(I don't know)" : $('text').value.trim();
   if (!text && !chosen().length && !$('expected').value.trim()) { $('status').textContent = "say anything — or press “I don't know”"; return; }
-  const note = { kind: 'flag', session, run, flag: currentFlag.flag, turn: currentFlag.turn++, seed: g.seed, build: BUILD, variant: activeVariant, tune: g.tune,
+  const note = { kind: 'flag', session, run, flag: currentFlag.flag, turn: currentFlag.turn++, seed: g.seed, build: BUILD, ship: g.ship, variant: activeVariant, tune: g.tune,
     text, words: chosen(), expected: $('expected').value.trim(), snap: currentFlag.turn === 1 ? currentFlag.snap : { frame: currentFlag.snap.frame, tick: currentFlag.snap.tick, section: currentFlag.snap.section } };
   card('you', [text, chosen().length ? `[${chosen().join(', ')}]` : '', note.expected ? `expected: ${note.expected}` : ''].filter(Boolean).join('\n'));
   $('text').value = ''; $('expected').value = ''; clearChips();

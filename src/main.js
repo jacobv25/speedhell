@@ -4,11 +4,11 @@
 // menu is the shell — retry/quit/mute/TATE live there — and the gamepad is a
 // first-class citizen: START = menu, d-pad/stick navigates it, A activates,
 // B backs out; title picker on d-pad; death screen A/shot = retry, B = title.
-import { makeGame, startRun, update, W, H } from './core/game.js';
+import { makeGame, startRun, update, W, H, SHIPS } from './core/game.js';
 import { draw, resetHud, prefs as renderPrefs } from './render/renderer.js';
 import * as audio from './audio.js';
 import { BUILD } from './version.js';
-import { initOptions, isOpen as optionsOpen, openOptions, menuNav, binds, padBinds, isBoundKey, isCapturing, capturePad } from './options.js';
+import { initOptions, isOpen as optionsOpen, openOptions, menuNav, binds, padBinds, isBoundKey, isCapturing, capturePad, store } from './options.js';
 import { initHowTo, isHowToOpen, openHowTo, closeHowTo } from './howto.js';
 import { initResults, syncReceipt, busy as resultsBusy, padNav as resultsPad, showScores } from './results.js';
 import { initLab } from './lab.js';
@@ -37,6 +37,10 @@ const SECTIONS = [
 ];
 let practiceSel = 1;   // SECTIONS[1..8] — the PRACTICE row's ◀▶ value
 let currentStart = 0;  // what retry re-enters (0 = full run)
+// r69 ship select (wiki §6.4 / §11): a title-menu row, not a Lab experiment —
+// ships are named designs. Persists like the key binds; applies to START and
+// PRACTICE alike; retry keeps the craft (startRun defaults to g.ship).
+let shipSel = (() => { const n = +store.get('speedhell.ship', 0); return SHIPS[n] ? n : 0; })();
 
 // r42 title menu (audit MUST #1 — BR/Gunvein/M2 all use list menus; the old
 // banner-with-hidden-keys was the root of the "gaps surfacing one at a time"
@@ -47,16 +51,18 @@ let titleSel = 0;
 function titleRender() {
   tRows.forEach((r, i) => r.classList.toggle('sel', i === titleSel));
   document.getElementById('tPractice').textContent = '◀ ' + SECTIONS[practiceSel].label + ' ▶';
+  document.getElementById('tShip').textContent = '◀ ' + SHIPS[shipSel].name + ' ▶';
 }
 function titleNav(act) {
   if (act === 'up' || act === 'down') { titleSel = (titleSel + (act === 'down' ? 1 : tRows.length - 1)) % tRows.length; titleRender(); return; }
   const a = tRows[titleSel].dataset.act;
   if (act === 'left' || act === 'right') {
     if (a === 'practice') { practiceSel = ((practiceSel - 1 + (act === 'right' ? 1 : SECTIONS.length - 2)) % (SECTIONS.length - 1)) + 1; titleRender(); }
+    else if (a === 'ship') { shipSel = (shipSel + (act === 'right' ? 1 : SHIPS.length - 1)) % SHIPS.length; store.set('speedhell.ship', shipSel); titleRender(); }
     return;
   }
   if (act !== 'activate') return;
-  if (a === 'start') beginRun(0);
+  if (a === 'start' || a === 'ship') beginRun(0); // r69: Enter on the SHIP row starts with that ship
   else if (a === 'practice') beginRun(SECTIONS[practiceSel].t);
   else if (a === 'scores') showScores();
   else if (a === 'howto') openHowTo();
@@ -78,7 +84,7 @@ initOptions({
 
 function beginRun(t = currentStart) { // every run-start path
   currentStart = t;
-  audio.unlock(); startRun(g, t); resetHud(); audio.playMusic('stage');
+  audio.unlock(); startRun(g, t, shipSel); resetHud(); audio.playMusic('stage');
 }
 function retryRun() { g.seed = (Math.random() * 0xffffffff) >>> 0; beginRun(); } // same start, fresh seed — restart <2s (S7)
 function quitToTitle() { // r37: back to the picker

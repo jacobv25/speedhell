@@ -182,12 +182,17 @@ export function draw(g, ctx, bgScroll) {
 
   // player shots — tall white-core bolts with the skin's player edge colour (S1);
   // the player family never shares a hue with enemy needles (r5 S2-MUST-3).
+  // r69: a spread bolt (vx ≠ 0, ship B's sides) is the SAME sprite rotated to
+  // its velocity — integer-snapped translate (bible §2), colours unchanged.
   for (let i = 0; i < g.pBullets.count; i++) {
     const b = g.pBullets.items[i], x = Math.round(b.x), y = Math.round(b.y);
+    if (b.vx) { ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(b.vx, -b.vy)); }
+    const bx = b.vx ? 0 : x, by = b.vx ? 0 : y;
     ctx.fillStyle = SHIP.shot;
-    ctx.fillRect(x - 2, y - 10, 4, 20);
+    ctx.fillRect(bx - 2, by - 10, 4, 20);
     ctx.fillStyle = WHITE;
-    ctx.fillRect(x - 1, y - 9, 2, 18);
+    ctx.fillRect(bx - 1, by - 9, 2, 18);
+    if (b.vx) ctx.restore();
   }
 
   // ⚠ ART-CHANGE NOTE (r35/r57): src/howto.js draws its bullet card through

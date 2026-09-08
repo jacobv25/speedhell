@@ -27,7 +27,7 @@ if (a === '--note') {
 const bytes = Uint8Array.from(Buffer.from(rec.inputs, 'base64'));
 if (target > bytes.length) { console.error(`tick ${target} beyond recording (${bytes.length} ticks)`); process.exit(2); }
 
-const g = startRun(makeGame(rec.seed));
+const g = startRun(makeGame(rec.seed), 0, rec.ship || 0); // r69: the tape's ship (pre-r69 tapes: ship A)
 if (rec.tune) Object.assign(g.tune, rec.tune); // r26: replay under the run's recorded variant
 const events = []; // window log: kills, deaths, bullet spawns per frame
 let prevB = 0, prevKills = 0, prevDeaths = 0;
