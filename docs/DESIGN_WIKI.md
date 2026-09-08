@@ -352,7 +352,8 @@ should be allowed to shape the boss at all is the open question (§8).
 
 ## 6. The player and the pipeline
 
-`PLAYER` (`game.js:21`): speed 3.7, focus 2.3 (instant transition — twitchy,
+`PLAYER` (`game.js:21`; since r69 the per-ship numbers live in `SHIPS`, §6.4 —
+these are ship A's): speed 3.7, focus 2.3 (instant transition — twitchy,
 speed-hell; boghog: "halving feels bad," ratio ~1.6), hit radius 3. Shots: 6 on
 screen max, one every 3f, 3 dmg — ~57.6 dps at range, **120 dps point-blank**
 because the cap only binds at range. This is the game's real risk/reward: range
@@ -468,6 +469,124 @@ differentiate by *source* (HOMAGE L6). What the genre does keep: elongated
 bullets travel along their long axis, bullets that move together look alike,
 ≤3 families, white core = hitbox — all retained. Rubric S2-MUST line
 rewritten under Jacob's authorization; HOMAGE L6 amended.
+
+### 6.4 Ships (r69 — Ship B as a MEASURED OPTION; Jacob retunes before the art)
+
+*Plan: `docs/plans/ship-b.md`. Core: `game.js SHIPS` (a volley entry is
+`[xOffset, vx, dmg]`; `g.ship` is set before `startRun(g, atT, ship)`).
+Probe: `tools/probes/ship-b-probe.mjs` (`--robust` adds the s7 seeds). Shell:
+SHIP ◀▶ row in the title menu (`src/main.js`, store key `speedhell.ship`,
+keyboard/pad/mouse like the PRACTICE row); receipt line + hi-score `ship`
+column (`src/results.js`; seed and pre-r69 rows show —); Booth tapes carry
+`ship` and `?ship=1` flies it (`src/booth.js`, `tools/booth-replay.mjs`).*
+
+**Rule.** A ship's identity is HOW it delivers damage, never how much. Every
+ship's volley totals 6 dmg and point-blank dps is 120 for both (measured
+below). Ship A (WITCH) darts and pierces; Ship B (PRIESTESS) plants and
+sweeps. **Ship 0 is the r0–r67 craft byte for byte** — its bolts carry vx 0 /
+dmg 3, `x + 0` is exact, and the probe's ship-0 runs reproduce
+`evidence/metrics.json` on all four bots (outcome, frames, score, kills,
+deaths: IDENTICAL). `PLAYER` keeps ship A's speed/shotLimit/shotDmg for the
+referee's s1 checks and the shared hitR/shotSpeed/shotEvery. `test/bot.mjs`
+reads `SHIPS[g.ship].speed` (the same 3.7 on ship A — path unchanged; the
+one non-core edit, needed so the bots dodge at the right speed on B).
+
+| | WITCH (A, certified) | PRIESTESS (B, r69 start — the plan's numbers) |
+|---|---|---|
+| move / focus speed | 3.7 / 2.3 | 3.2 / 2.5 |
+| volley | 2 straight bolts at x ± 7, 3 dmg each | centre 3 dmg + two sides 1.5 dmg at vx ± 2.2 (≈ 14°), x ± 4 |
+| shot every / shot speed | 3f / 9 | 3f / 9 |
+| on-screen cap | 6 (fires while ≤ 4) | 9 (fires while ≤ 6) — the same 3 volleys in flight |
+| dps: point-blank 27 px / 100 px / range 200 px | 120 / 120 / 57.6 | 120 / **40** / **12.3** |
+
+**Corpus clearance.** *MSX:* ship types are depth only when each has purpose
+(the DaiOuJou "everyone plays the Expert ship" complaint; his praise for the
+shot-type arrange) — B is a different route, not a stat copy. *Boghog T1:*
+"ship speed is reaction leeway, not escape" — B's −0.5 speed is paid back by
+coverage only, never by hp or bombs. *§11 rule:* every mode/ship is an honest
+design with its own scoring identity; standing conditions honoured — no
+`ENEMY_DEFS` change, no bombs/lives/scoring-math change, loot untouched.
+*Pillar 6 / rubric S2:* the spread bolt is the same sprite rotated to its
+velocity (`renderer.js`, integer-snapped) — no new colour. *HOMAGE:* DDP Type
+A/C, Deathsmiles' character shots. Pillar 3: ship select is a title-menu row,
+not a Lab experiment (§10) and not a slider.
+
+**Measured — seed C0FFEE, the four referee bots (r69 numbers):**
+
+| ship | bot | outcome | frames | score | kills | speed% | deaths | timeouts |
+|---|---|---|---|---|---|---|---|---|
+| WITCH | expert | clear | 6340 | 181,470 | 122 | 58% | 2 | 0 |
+| WITCH | aggressive-human | clear | 6771 | 179,370 | 124 | 47% | 2 | 0 |
+| WITCH | passive-human | clear | 10724 | 56,880 | 114 | 46% | 2 | 4 |
+| WITCH | blind | gameover | 2033 | 33,550 | 66 | 73% | 4 | 0 |
+| PRIESTESS | expert | clear | 6845 | 182,780 | 139 | 43% | 2 | 0 |
+| PRIESTESS | aggressive-human | clear | 8101 | 161,470 | 139 | 37% | 3 | 0 |
+| PRIESTESS | passive-human | gameover | 5444 | 61,820 | 137 | 42% | 4 | 1 |
+| PRIESTESS | blind | gameover | 2185 | 32,070 | 69 | 68% | 4 | 0 |
+
+Per-enemy-type speed kills, expert bot (made/attempts):
+
+| ship | zako | mid | turret | elite | midboss | boss | part |
+|---|---|---|---|---|---|---|---|
+| WITCH | 63/102 · 62% | 1/3 | 2/10 | — | 0/1 | 3/3 | 2/3 |
+| PRIESTESS | 53/118 · 45% | 0/4 | 3/10 | — | 0/1 | 2/3 | 2/3 |
+
+(— = no elite kill logged for either ship on this seed: both elites leave the
+screen alive under the expert bot — pre-existing, not a ship property.)
+
+s7_robust seeds, expert: WITCH clears 6/6 (avg 188k, 2.5 deaths); PRIESTESS
+clears 2/6 — facade 183,600 and feedf00d 181,220 clear, bada55 / 5eed42 /
+1234567 / ab12cd die (68–98k), avg 3.7 deaths. B's extra deaths cluster at S3
+mids and S4 midboss (two or three midboss deaths per seed vs A's one).
+
+**Honesty verdict (the plan's five checks).** expert clears ✓ · aggressive-
+human clears ✓ · expert score 100.7% of A ✓ (band ±15%) · elite+midboss+boss
+speed-kill rate 50% vs A's 75% = 67% of A ✓ (≥ 60%) · **popcorn rate 45% vs
+62% ✗.** By count B makes 53 popcorn speed kills to A's 63 while killing 118
+zako to A's 102 — the spread catches traffic (crossers/risers) A never
+touches, mostly after their 75f window, which dilutes the rate.
+
+**The finding that matters for the retune.** The plan assumed B is "half of A
+at range" (only the centre bolt lands). Measured it is a fifth: a side bolt
+that misses flies its whole ~45f to the top edge holding one of the nine cap
+slots, so at range B gets ~4 volleys/s through the centre column against A's
+~9.6. And "all three connect" only holds inside ~60 px, not 100: at 100 px the
+sides sit ±24 px out, past an elite's/midboss's hit circle, so B's dps there
+is 40, a third of A's 120. The referee bots play A's route — `closeY` 110
+applies only to midboss/boss/parts, turrets and mids are fought from the
+bottom band — so B is measured where it is weakest. Told to close (bot
+`closeY` 60 / 40, a makeBot option): 60 changes nothing (2/6 robust), 40 kills
+it (0/6) — and kills A too (3/6): the leeway cost is real for any ship.
+
+Retune options measured (scratch only, expert unless noted; nothing shipped):
+
+| variant | C0FFEE expert | aggressive | robust clears | popcorn (count · rate) | boss |
+|---|---|---|---|---|---|
+| plan 3/1.5/1.5, vx ±2.2 | clear 182,780 | clear 161,470 | 2/6 | 53 · 45% | 2/3 |
+| 2/2/2, vx ±2.2 (plan-named) | clear 183,360 | **gameover** 48,420 | 2/6 | 65 · 51% | 2/3 |
+| 3/1.5/1.5, vx ±1.6 (plan-named) | clear 161,410 (89%) | clear 171,850 | 3/6 | **67 · 61%** | 1/3 |
+| 2/2/2, vx ±1.6 | gameover 84,480 | clear 177,900 | 2/6 | 75 · 63% | — |
+| side-bolt lifetime 20 / 26 / 32f (frees cap slots) | gameover / gameover / clear 173k | clear / gameover / gameover | 2/6 · 0/6 · 2/6 | 68 · 47 · 62 | — |
+| A volley at 3.2/2.5 (speed alone) | clear 177,900 | clear 177,480 | 5/6 | 47 · 39% | 3/3 |
+
+Reading: outcomes swing clear↔gameover on tiny changes (rng-stream
+divergence), so single-seed verdicts are weak and the 6-seed corridor is the
+signal — every B variant sits at 2–3/6 against A's 6/6. Neither plan-named
+retune passes all five checks: 2/2/2 (every bolt one-shots a zako) lifts the
+popcorn count above A's but the aggressive-human dies; ±1.6 fixes popcorn by
+count and rate and keeps both clears, at 89% of A's score and a 1/3 boss on
+this seed. **Jacob's call** (three options): ship the plan's numbers as-is and
+let the recert's Ship-B bots decide; take ±1.6 (the builder's pick of the two
+named retunes); or authorise a Ship-B bot (a `closeY` that also applies to
+turrets/mids for B) so the ship is measured on its own route before any
+number moves. Enemy windows are not the lever (standing condition).
+
+**Referee recert pending (Jacob-authorized):** Ship B needs its own bot runs
+in `test/sim.mjs`; Ship A's r65 certificate stands untouched (identical).
+Not built yet by design: the second craft's art (`drawShip(…, ship)`, skins,
+HOW TO card, artpeek), SFX pitch, bible §6 row — plan steps 4–6 art, after the
+numbers settle.
+
 ## 7. The referee (how "balanced" is decided)
 
 `test/sim.mjs` runs the real core headlessly with scripted bots (expert,
@@ -760,6 +879,13 @@ Build order (boghog: hard first, then scale back; nothing before arcade is finis
 Referee cost: each mode is its own rng stream, so each needs its own bot suite and
 its own control run — a referee recert per mode, Jacob-authorized. Modes are named
 designs, not options rows: they live in a mode select, not the Lab (§10).
+
+**Ships (r69, §6.4)** are the first mode-like choice actually built: a SHIP
+◀▶ row in the title menu (never the Lab), persisted like the PRACTICE row,
+applying to START, PRACTICE and retry. Same rule as modes — each ship is an
+honest design with its own route through the same stage, never a stat scaled
+down — and the same referee cost: each ship needs its own bot runs (Ship B's
+recert pending).
 
 Story placement (same session, cheap-liberties list in `research/undertale-free-
 release.md`): the pillar's "no story beats mid-stage" holds; text lives in a pre-run
@@ -1675,3 +1801,26 @@ is placement, not authoring time. Not scheduled.
   0.52 → 2.68 ms on one frame (p99 0.111, budget 16.6) — the chunky max-load
   spawn, still 6× under budget; evidence untouched, recert whenever the next
   design change settles. r66 is the `feat/music-cues` branch. BUILD r65 → r67.
+- 2026-09-07 — r69 Ship B (PRIESTESS): SHIPS table in core, ship select
+  in the title menu, receipt/hi-score stamp, Booth ship, angled spread bolts.
+  Shipped as the plan's MEASURED OPTION (`docs/plans/ship-b.md` steps 1–3):
+  3-way spread (centre 3 + sides 1.5 at ±2.2 vx), 3.2/2.5 speed, cap 9 —
+  same 6 dmg per volley and 120 point-blank dps as A. Corpus: MSX (ship types
+  are depth only when each has purpose — DOJ's Expert-ship complaint; the
+  shot-type arrange), boghog T1 (speed is reaction leeway, paid back by
+  coverage, never hp/bombs), §11 (honest design, never a scaled number),
+  Pillar 6 / S2 (same sprite rotated, no new colour), HOMAGE (DDP Type A/C,
+  Deathsmiles). Standing conditions held: no ENEMY_DEFS / bomb / life /
+  scoring-math change, loot untouched. Ship A byte-identical — probe ship-0
+  == evidence/metrics.json on all four bots. Measured (§6.4): B expert clears
+  182,780 (100.7% of A), aggressive-human clears, big-target speed rate 67% of
+  A's, popcorn rate 45% vs 62% (FAILS the plan's check; by count 53 vs 63),
+  robust seeds 2/6 vs A's 6/6. Root cause: missed side bolts hold cap slots,
+  so range dps is 12 (a fifth of A, not the planned half) and all-three-
+  connect is ≤ ~60 px, while the referee bots fight turrets/mids from the
+  bottom band. Plan-named retunes measured, none passes all five checks
+  (±1.6 closest); three options put to Jacob in §6.4. Referee recert pending
+  for Ship B (own bot runs, Jacob-authorized); `test/bot.mjs` reads
+  `SHIPS[g.ship].speed` (ship A path unchanged). Art/audio (plan steps 4–5,
+  bible §6 row) deliberately not built until the numbers settle. Wiki: §6
+  pointer, new §6.4, §11 ships paragraph, this entry. BUILD r67 → r69.
