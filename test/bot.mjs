@@ -3,7 +3,7 @@
 // builders never edit this file.
 // Greedy dodge: sample candidate moves, project bullets N frames, pick the move
 // maximizing minimum clearance. reactDelay models human reaction (S7: 120ms ≈ 7f).
-import { W, H, PLAYER } from '../src/core/game.js';
+import { W, H, PLAYER, SHIPS } from '../src/core/game.js';
 
 // r65 referee fix (Jacob-authorized, 2026-09-07): the aggressive bot used to home
 // to y = H-110 whatever it was shooting at. With shotLimit 6 / shotSpeed 9 a shot
@@ -35,7 +35,7 @@ export function makeBot({ aggressive, lookahead = 12, reactDelay = 0, closeY = 1
     }
     let bestScore = -1e9, bestDx = 0, bestDy = 0;
     for (const dx of [-1, 0, 1]) for (const dy of [-1, 0, 1]) {
-      const spd = PLAYER.speed;
+      const spd = SHIPS[g.ship].speed; // r69: the active ship's move speed (ship A = PLAYER.speed, same 3.7 — path unchanged)
       let px = p.x, py = p.y, minClear = 1e9;
       for (let f = 1; f <= lookahead; f++) {
         px = Math.max(12, Math.min(W - 12, px + dx * spd * ((dx && dy) ? 0.707 : 1)));

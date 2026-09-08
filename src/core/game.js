@@ -23,6 +23,26 @@ export const PLAYER = {
   shotSpeed: 9, shotLimit: 6, shotEvery: 3, shotDmg: 3,
 };
 
+// r69 SHIPS (wiki §6.4, plan docs/plans/ship-b.md). The per-ship fields live
+// here; PLAYER above keeps the SHARED fields (hitR, shotSpeed, shotEvery) and,
+// for compatibility, ship A's speed/shotLimit/shotDmg (the referee's s1_scale /
+// s1_ttk_felt checks and the bot read them). A volley entry is [xOffset, vx,
+// dmg]; every ship's volley totals 6 dmg so point-blank dps (120) is identical
+// — the identity is HOW the damage is delivered, never how much (MSX: ship
+// types are depth only when each has purpose; boghog T1: speed is reaction
+// leeway, paid back by coverage, never by hp/bombs). Ship 0 is the r0–r67
+// craft, byte-identical: its bolts carry vx 0 / dmg 3 and the same offsets.
+//   WITCH     darts and pierces — 2 straight bolts, fast ship.
+//   PRIESTESS plants and sweeps — 3-way spread (centre 3, sides 1.5 at ±2.2
+//             vx ≈ 14°), slower move, faster focus, cap 9 (fires while ≤ cap−3:
+//             the same number of volleys in flight). At range a single target
+//             catches only the centre bolt (half of A's dps); at 100 px the
+//             sides sit ±24 px out, so a popcorn line dies as a line.
+export const SHIPS = [
+  { id: 'witch', name: 'WITCH', speed: 3.7, focusSpeed: 2.3, shotLimit: 6, volley: [[-7, 0, 3], [7, 0, 3]] },
+  { id: 'priestess', name: 'PRIESTESS', speed: 3.2, focusSpeed: 2.5, shotLimit: 9, volley: [[0, 0, 3], [-4, -2.2, 1.5], [4, 2.2, 1.5]] },
+];
+
 // Sound events (r7-sfx). The core stays DOM-free: it only APPENDS event ids to a
 // fixed ring (g.sfx) each frame; the browser bootstrap drains it after update()
 // and the sim harness ignores it. Bounded (SFX_CAP) — zero per-frame allocation.
@@ -66,6 +86,7 @@ export function makeGame(seed = 1) {
     input: { dx: 0, dy: 0, focus: false, fire: false, bomb: false },
     score: 0, chain: 0, speedKills: 0, kills: 0,
     stageT: 0, timeline: null, tlIndex: 0, gate: null, bossDown: false, bossKilled: false, practice: 0,
+    ship: 0, // r69: index into SHIPS, set before startRun (title menu / booth / probe); 0 = the certified craft
     // r26 variant knobs (Booth experiments): deterministic — same knobs + seed
     // + inputs = same run. 0 / 'top' = shipped ENEMY_DEFS values. The referee
     // never sets these, so certified paths are untouched by construction.
@@ -74,7 +95,7 @@ export function makeGame(seed = 1) {
 
     clearBonus: 0, clearAt: 0, endFrame: 0,
     // pools — capacities are hard caps (rubric S8)
-    pBullets: makePool(64, () => ({ x: 0, y: 0, vy: 0, alive: 0 })),
+    pBullets: makePool(64, () => ({ x: 0, y: 0, vx: 0, vy: 0, dmg: 3, alive: 0 })), // r69: vx/dmg per volley entry (ship A: 0 / 3)
     needleTier: NEEDLE_TIER, emitter: null, // r59: bullet caste by source (null = every aimed shot is a needle, the r5–r58 rule)
     eBullets: makePool(1400, () => ({ x: 0, y: 0, vx: 0, vy: 0, kind: 0, r: 3, accel: 0, curve: 0, age: 0 })),
     enemies: makePool(64, () => ({
@@ -119,9 +140,10 @@ export function makeGame(seed = 1) {
   return g;
 }
 
-export function startRun(g, atT = 0) {
+export function startRun(g, atT = 0, ship = g.ship) {
   const seed = g.seed;
   Object.assign(g, makeGame(seed));
+  g.ship = SHIPS[ship] ? ship : 0; // r69: ship choice survives the reset (retry keeps the craft); default = ship A
   g.state = 'play';
   g.timeline = buildTimeline();
   // r36 practice/section select — the sandbox's stage-jump made player-facing.
@@ -423,13 +445,13 @@ export function update(g) {
     if (!engageable && !g.warn && !g.bossDown && g.tlIndex < g.timeline.length
       && g.timeline[g.tlIndex].t - g.stageT > 30) g.stageT += 3;
   }
-  const p = g.player, inp = g.input;
+  const p = g.player, inp = g.input, S = SHIPS[g.ship]; // r69: the active ship (0 = the certified craft, same numbers as PLAYER)
 
   // --- player movement: instant response, normalized diagonals (S1) ---
   p.prevX = p.x; p.prevY = p.y;
   let dx = inp.dx, dy = inp.dy;
   if (dx !== 0 && dy !== 0) { const inv = 1 / Math.SQRT2; dx *= inv; dy *= inv; }
-  const spd = inp.focus ? PLAYER.focusSpeed : PLAYER.speed;
+  const spd = inp.focus ? S.focusSpeed : S.speed;
   p.x = Math.max(12, Math.min(W - 12, p.x + dx * spd));
   p.y = Math.max(16, Math.min(H - 16, p.y + dy * spd));
   p.focus = inp.focus;
@@ -439,17 +461,18 @@ export function update(g) {
 
   // --- player shots: on-screen cap → point-blank reward (S1) ---
   if (p.fireCd > 0) p.fireCd--;
-  if (inp.fire && p.fireCd === 0 && g.pBullets.count <= PLAYER.shotLimit - 2) {
-    for (const off of [-7, 7]) {
+  // r69: one volley = the ship's table (SHIPS); fires while a full volley fits under the cap.
+  if (inp.fire && p.fireCd === 0 && g.pBullets.count <= S.shotLimit - S.volley.length) {
+    for (const v of S.volley) {
       const b = g.pBullets.spawn(); if (!b) break;
-      b.x = p.x + off; b.y = p.y - 10; b.vy = -PLAYER.shotSpeed;
+      b.x = p.x + v[0]; b.y = p.y - 10; b.vx = v[1]; b.vy = -PLAYER.shotSpeed; b.dmg = v[2];
     }
     p.fireCd = PLAYER.shotEvery; sfx(g, SFX.SHOT);
   }
   for (let i = g.pBullets.count - 1; i >= 0; i--) {
     const b = g.pBullets.items[i];
-    b.y += b.vy;
-    if (b.y < -20) g.pBullets.killAt(i);
+    b.x += b.vx; b.y += b.vy; // ship A: vx 0 — x + 0 is exact, the certified path is unchanged
+    if (b.y < -20 || b.x < -20 || b.x > W + 20) g.pBullets.killAt(i);
   }
 
   // --- stage timeline ---
@@ -484,7 +507,7 @@ export function update(g) {
         const dxx = b.x - e.x, dyy = b.y - e.y;
         if (dxx * dxx + dyy * dyy < (e.r + 6) * (e.r + 6)) {
           g.pBullets.killAt(j);
-          e.hp -= PLAYER.shotDmg;
+          e.hp -= b.dmg; // r69: per-bolt damage (ship A: 3 = the old PLAYER.shotDmg)
           // r8-fx S4-MUST hit-flash + hit spark: 3 sparks kicked back down the
           // shot's path (the enemy visibly REACTS — Boghog) and a tiny flame lick
           e.flash = 2;
