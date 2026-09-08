@@ -651,8 +651,14 @@ and the `#lab` panel go.
 Live experiments (r67): **skin** (§11, r60) · **speedPopup** (§2.6, open Q4) ·
 **speedDress** (speed-kill reward dressing, open Q13, r53). Decided and
 removed in r67: fxSize → 2×, fxStyle → chunky (Q12), killAudio → heavy (Q14) —
-the r51/r52/r54 paragraphs below stay as the record of what was tried. On the
-`feat/music-cues` branch: **musicCues** (r66, open Q16). Queued: destruction
+the r51/r52/r54 paragraphs below stay as the record of what was tried. Parked on
+branches, unmerged (2026-09-07, Jacob): `feat/music-cues` — **musicCues** (r66,
+open Q16; bar-snapped section jumps read as "a scissor cut"; keep its corrected
+125 BPM stage grid + cues-JSON loader for the stem-layering approach) and
+`feat/beat-pulse` — **beatPulse** (r68, open Q17; pixel-identical when off,
+but the bible-capped amplitudes are imperceptible in play — "not a terrible
+idea and we will likely come back to it"; next step would be a bold setting
+to A/B). Queued: destruction
 sequence (after the art overhaul), hit impact blob, sprite-shaped debris.
 
 **r54 "kill sound" (`audio.js` `thump`, lab `killAudio`).** 'heavy' layers a
