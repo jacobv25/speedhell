@@ -9,7 +9,7 @@ stays inside it — or says explicitly where and why it doesn't.
 
 - **Every design question or change must be cleared against both corpora BEFORE
   implementing:** `docs/BOGHOG_CRAFT.md` + `docs/BOGHOG_WORKSHOP.md` (cite
-  [T#] / [WS0#]) + the boghog WS# rules in `docs/CRITIC_RUBRIC.md`, and the Mark MSX doctrine
+  [T#] / [WS0#]) + the written 101 `docs/research/bullet-hell-design-101.md` (cite [BH101 §]) + the boghog WS# rules in `docs/CRITIC_RUBRIC.md`, and the Mark MSX doctrine
   (`~/.claude/skills/mark-msx/references/philosophy.md`; deeper corpus in
   `~/Dev/mark-msx-research`), plus `docs/DESIGN_PILLARS.md` and
   `docs/HOMAGE_STUDY.md`. State what each lens says — including where it pushes

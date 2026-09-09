@@ -69,6 +69,7 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
 | `feat/music-cues` | r66 | PARKED — bar-snapped section jumps = "scissor cut"; salvage its 125 BPM grid + cues loader |
 | `feat/beat-pulse` | r68 | PARKED — pixel-identical off, imperceptible on; revive with a `bold` setting |
 | `design/ship-b` | r69 | IN PROGRESS — Ship B "PRIESTESS" (3/1.5/1.5 at ±2.2, speed 3.2, focus 2.5, cap 9); Jacob: "much more difficult than ship A", keep for now; art + Ship-B referee runs pending; popcorn-rate red + 2/6 robust recorded |
+| `feat/shot-look` | r75 | BUILT, pushed, unmerged — Lab `shotLook` current/bolt: pixel bolt + 8 px trail + muzzle strobe + impact blob (core: one gated fx spawn on fxRng); pixel-identical off; Jacob compares on its worktree port |
 | `feat/stem-layers` | r74 | BUILT, pushed, unmerged — Lab `musicLayers` (off by default): 3 layers (rhythm/lead/voice) at 32 kHz mono, 73.9 MB PCM, ramps on bar lines; Jacob listens on its worktree port |
 
 ## Left to do (most important first)
