@@ -694,6 +694,28 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     clock, the core inheriting the attack, or a retaliation burst on top?
     Measured table in §10 r73. Jacob's playtest decides; then the §5.3
     priority rule ("a part is cheap slack") is rewritten around the cost.
+    Jacob (2026-09-08): "these variations are extremely difficult for me…
+    maybe these are good variations for expert shmup players. I will
+    definitely need to consult Mark and Boghog." Both lenses, run on the
+    measured table: **MSX** — the decision is the depth (natural meta: a
+    route the game itself recognises, no external rule); a part that only
+    relieves is a "perfect tool"; inherit is the DDP/Garegga shape (the
+    structure changes, not in your favour); the designer's own comfort is
+    the beginner-bias trap — "difficulty clarifies design"; read your own
+    difficulty as data, not as the bar; novice modes keep the skeleton, so a
+    Normal that deletes the risk decision is orange juice into water.
+    **boghog** — [T2] "I balance it so that I never feel comfortable dodging
+    it myself" (the designer's discomfort IS the bar); WS inverted
+    risk/reward: riskier moves pay LESS, so parts staying at 1,000/2,000 while
+    making the fight harder is the correct inversion — do not raise their
+    value; WS roles: inherit turns the part from *pressure* into *direct
+    challenge* from a moving emitter; [T2] post-death scare attack "looks
+    scarier than it is" — burst's ring must read that way or it's a cheap
+    death; [T2] phases bleed — the inherited emitter must not double-fire
+    across the flip. Both lean **inherit**; burst only if its ring is
+    telegraphed (a 12-frame flash on the core before it fires); clock is the
+    least legible (nothing on screen says why it got faster). Playtest by
+    expert hands before the verdict; Jacob's difficulty is one data point.
 
 ## 9. Practice notes (for humans)
 
