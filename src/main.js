@@ -11,7 +11,7 @@ import { BUILD } from './version.js';
 import { initOptions, isOpen as optionsOpen, openOptions, menuNav, binds, padBinds, isBoundKey, isCapturing, capturePad } from './options.js';
 import { initHowTo, isHowToOpen, openHowTo, closeHowTo } from './howto.js';
 import { initResults, syncReceipt, busy as resultsBusy, padNav as resultsPad, showScores } from './results.js';
-import { initLab, labGet } from './lab.js';
+import { initLab } from './lab.js';
 import { initSoundTest, openSoundTest, busy as soundBusy, padNav as soundPad } from './soundtest.js';
 
 // build tag pinned bottom-right, its own element — confirms which build loaded
@@ -79,7 +79,6 @@ initOptions({
 function beginRun(t = currentStart) { // every run-start path
   currentStart = t;
   audio.unlock(); startRun(g, t); resetHud(); audio.playMusic('stage');
-  const bh = +(labGet('bossHp') || 1); g.tune.bossHp = bh === 1 ? 0 : bh; // r70 Lab experiment: boss hp multiplier — AFTER startRun (it rebuilds g, tune included)
 }
 function retryRun() { g.seed = (Math.random() * 0xffffffff) >>> 0; beginRun(); } // same start, fresh seed — restart <2s (S7)
 function quitToTitle() { // r37: back to the picker

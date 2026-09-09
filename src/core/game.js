@@ -69,7 +69,7 @@ export function makeGame(seed = 1) {
     // r26 variant knobs (Booth experiments): deterministic — same knobs + seed
     // + inputs = same run. 0 / 'top' = shipped ENEMY_DEFS values. The referee
     // never sets these, so certified paths are untouched by construction.
-    tune: { eliteHp: 0, eliteEntry: 'side', eliteEscort: 1, midbossHp: 0, bossHp: 0 }, // bossHp: r70 Lab EXPERIMENT — multiplier on every boss phase's hp (0/1 = shipped 130/134/135), set at run start // r27: side entry + escort are the shipped defaults (Booth verdict); chips roll back
+    tune: { eliteHp: 0, eliteEntry: 'side', eliteEscort: 1, midbossHp: 0, bossHp: 0 }, // bossHp: multiplier on every boss phase's hp (0/1 = shipped 390/402/405 since r71); a Booth/sandbox tune knob now, the r70 Lab row is gone // r27: side entry + escort are the shipped defaults (Booth verdict); chips roll back
     warn: 0, // r6 S3b arrival ritual: frames of WARNING remaining before the boss gate
 
     clearBonus: 0, clearAt: 0, endFrame: 0,

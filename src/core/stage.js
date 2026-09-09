@@ -24,7 +24,7 @@ export const ENEMY_DEFS = [
   /*2 turret */ { hp: 24,  value: 500,   window: 150, r: 12 },
   /*3 elite  */ { hp: 220, value: 3000,  window: 380, r: 20 }, // r27: Jacob's variant verdict — HP 220 + side entry + escort ship as defaults
   /*4 midboss*/ { hp: 400, value: 8000,  window: 700, r: 26 }, // r25 EXPERIMENT (Jacob's explicit hp override): 3x — phase B must get to exist; boghog T1: boss HP is a pattern-duration knob,
-  /*5 boss   */ { hp: 130, value: 12000, window: 600, r: 30 }, // hp = P1 hp (spawn); value
+  /*5 boss   */ { hp: 390, value: 12000, window: 600, r: 30 }, // r71: 3× (was 130) — Jacob's Lab verdict, open Q16; hp = P1 hp (spawn); value
   // r6: per-phase payout raised 9000→12000 — earned only by KILLING phases (late-kill
   // decay in scoreBossPhase melts it to ~0 at the timeout), so it widens the honest-vs-
   // passive score gap without touching the fight (S6 alignment)
@@ -56,7 +56,7 @@ export function spawnParts(g, boss) {
 }
 
 const MIDBOSS_TIMEOUT = 2100;          // r65: 35s (was 1400/23s) — Jacob's call after watching the certified fight; a timeout stays (S6: the post-bloom crosser pulse is an infinite point source)
-const BOSS_PHASE_HP = [110, 134, 135]; // HP is a pattern-duration knob [BOGHOG T1]; index 0 unused
+const BOSS_PHASE_HP = [110, 402, 405]; // r71: 3× (was 134/135) — "3x felt challenging… design for difficulty and challenge" (Jacob, 2026-09-08); // HP is a pattern-duration knob [BOGHOG T1]; index 0 unused
 // (spawn hp is ENEMY_DEFS[5].hp). P2/P3 trimmed r6.3: the camp governor's bands hold campers to
 // near-zero income (referee probes: 0 kills, pure timeouts), so HP now only needs to fit the honest
 // expert's tail under the timeout across every robust seed, with kills under the 1200f decay knee.

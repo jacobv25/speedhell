@@ -7,13 +7,15 @@ file:line pointers are to `src/core/`. Where a decision is contested or unresolv
 it says so — the "Open questions" section is the part to send to a critic.*
 
 *Companion docs: `DESIGN_PILLARS.md` (the constitution), `HOMAGE_STUDY.md` (the
-lineage laws), `BOGHOG_CRAFT.md` (craft notes), `CRITIC_RUBRIC.md` (the referee's
+lineage laws), `BOGHOG_CRAFT.md` (interview craft notes), `BOGHOG_WORKSHOP.md`
+(the SHMUP WORKSHOP digest — vocabulary, techniques, numbers the rubric can't
+hold; cite [WS0N]), `CRITIC_RUBRIC.md` (the referee's
 acceptance criteria), `ART_BIBLE.md` (drawing rules, draft 2026-09-04), and `research/` (the deep-research corpus: canon fire-
 gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger —
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-08 (r70 EXPERIMENT: boss hp 1×–3× in the Lab (open Q16); r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-08 (r71: boss hp 3× shipped — Jacob's verdict, Q16 decided; r70 EXPERIMENT: boss hp 1×–3× in the Lab; r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -281,8 +283,10 @@ dialect → clear tally 150f after the last phase.
   mirrored from both flanks (left direct, right led), P2's spirals, plus a
   radial ring beat. Two relay sub-parts fire aimed lances.
 
-Escalation per 240f rep is super-linear past rep 3 — a "timeout-rider tax"
-that only players stalling a phase ever meet. Killers resolve phases by rep 2–4.
+Escalation per 240f rep is super-linear past rep 3. Until r71 killers resolved
+phases by rep 2–4 and never met it; at 3× hp (r71: 390 / 402 / 405, Jacob's
+verdict) the expert bot's phases run ~20 / 10 / 4 s, so reps 3–5 are now part
+of every fight — the escalation is the boss's density, not a stalling tax.
 
 ### 5.3 Sub-parts (`stage.js:42`, `stage.js:201`)
 
@@ -604,12 +608,38 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
    and rounds r 3.2 while §6.2 says every bullet is 3 (dot = 6 = 3 + 3). Truth is
    5.6 / 6.2 to the dot. Unify at 3.0 (both castes move; recert) or document the
    split? Surfaced by r59.
-16. **Boss phase hp** (r70 lab `bossHp` 1×–3×). The boss dies in 5–7 s per
+16. **Boss phase hp** — DECIDED 2026-09-08 (r71): 3× (390 / 402 / 405). Jacob:
+    "3 felt the best. I think it's best we design for difficulty and
+    challenge. If it's difficult for me, it's likely normal/easy for expert
+    shmup players." Row deleted; `g.tune.bossHp` stays as a Booth/sandbox
+    knob. Open follow-ups: boss phase timeouts (24 s; P1 now runs ~20 s for
+    the bot) and the referee's expert bot, which clears 1/7 seeds at 3×.
+    Original question (r70 lab `bossHp` 1×–3×). The boss dies in 5–7 s per
     phase against the midboss's 10–29 s; its escalation never fires for a
     killer. Which multiplier makes the boss the exam and not the quiz, without
     turning it into sponge? Playtest decides; measured table in §10 r70. Tied
     to the coming decisions: parts that bite back (DDP/Blue Revolver) and
     difficulty modes (Normal = solo midboss, Hard = with traffic).
+17. (`beatPulse`, parked branch — see §10.)
+18. **Quantized aim — should stage-section aimed fire snap to sprite steps?**
+    (boghog [WS03]: arcade aim is limited to the sprite's rotation frames, which
+    reads as the enemy *leading* its shots.) Ours is exact `atan2`
+    (`patterns.js:29`); the renderer already snaps enemy headings to 32 steps
+    (`renderer.js:136`, r58). Candidates: 32 (11.25°, ≤15 px lateral error at
+    150 px — a standing player stays inside the fan) · 16 (r57's art verdict
+    was "jitter") · 8 (breaks the r59 needle promise). Boss led fire (S3b) stays
+    exact. Plan + probe + Lab row `aimBins`: `docs/plans/boghog-ws-questions.md`.
+    Pass-cooldown: verdict after the ship-b/boss-hp pass settles.
+19. **The small-hitbox trade (Q15's missing argument).** boghog [WS01]: small
+    hitboxes enlarge the play area, so difficulty must come from more/bigger
+    bullets (clutter, [WS02] readability loss) and they permit lucky dodges
+    that make strict challenges impossible. That argues against the parked
+    "3 → 2" leniency (§6.2) and for resolving Q15 as *unify at 3.0* — which
+    the dot already assumes (`renderer.js:410`; rounds at 3.2 make it lie by
+    0.2 px, a display-contract violation). MSX: shaving collision is beginner
+    bias; fixing a lying marker is not. Plan + probe (closest-approach
+    histogram: the 5.0–6.2 px shell IS the lucky-dodge count) + Lab row
+    `bulletR` (2.6/3.2 · 3.0 · 2.0): `docs/plans/boghog-ws-questions.md`.
 
 ## 9. Practice notes (for humans)
 
@@ -656,9 +686,9 @@ and the `#lab` panel go.
   the HOW TO card (`src/howto.js` mirrors the art); fx particle counts stay on
   `g.fxRng`.
 
-Live experiments (r70): **skin** (§11, r60) · **speedPopup** (§2.6, open Q4) ·
-**bossHp** (boss phase hp 1×–3×, open Q16, r70, run-start tune knob) ·
-**speedDress** (speed-kill reward dressing, open Q13, r53). Decided and
+Live experiments (r71): **skin** (§11, r60) · **speedPopup** (§2.6, open Q4) ·
+**speedDress** (speed-kill reward dressing, open Q13, r53). Decided r71: bossHp
+→ 3× (Q16; the r70 paragraph below is the record). Decided and
 removed in r67: fxSize → 2×, fxStyle → chunky (Q12), killAudio → heavy (Q14) —
 the r51/r52/r54 paragraphs below stay as the record of what was tried. Parked on
 branches, unmerged (2026-09-07, Jacob): `feat/music-cues` — **musicCues** (r66,
@@ -1721,3 +1751,35 @@ is placement, not authoring time. Not scheduled.
   modifier; hp identical across modes — modes are not a slider, Pillar 3).
   The boss-ritual plan (docs/plans/boss-ritual.md) waits behind these.
   BUILD r67 → r70 (r68/r69 = parked/in-progress branches).
+- 2026-09-08 — r71: BOSS HP 3× (design change; Jacob's Lab verdict after
+  playing 1.5× / 2× / 2.5× / 3×: "3 felt the best. I think it's best we design
+  for difficulty and challenge. If it's difficult for me, it's likely
+  normal/easy for expert shmup players. 3x felt challenging"). `ENEMY_DEFS[5]
+  .hp` 130 → 390, `BOSS_PHASE_HP` 134/135 → 402/405; parts, windows, values,
+  timeouts untouched. Lab row deleted (lifecycle rule); `g.tune.bossHp`
+  stays a Booth/sandbox knob. Corpus: boghog T1 (hp = pattern duration — the
+  phases and their rep-3+ escalation now exist for a killer); MSX — the boss
+  is the exam, and Jacob's stated target audience (expert players) is the
+  reference difficulty; the no-hp-inflation standing condition is overridden
+  by Jacob for the boss (recorded r70). Pushback recorded: the referee's
+  expert bot clears 1/7 seeds at 3× (it dies, no timeouts) — the bot is now
+  far below the target player; s7 checks will be red at the next recert
+  until the bot improves or the bars are re-read (Jacob's call, §7/§8.1);
+  phase timeouts (24 s) are within reach of a slow P1 (~20 s for the bot)
+  — extend to 35 s like the midboss, or leave as the stalling tax (Jacob).
+  Design principle recorded (Jacob, 2026-09-08): design for difficulty and
+  challenge; Jacob's own difficulty ≈ an expert's normal. Next: parts that
+  bite back, then difficulty modes. BUILD r70 → r71.
+- 2026-09-08 — DOCS: `docs/BOGHOG_WORKSHOP.md` added — the SHMUP WORKSHOP 01–06
+  digest (Jacob re-watched the series: "it seemed like we've missed stuff"; a
+  transcript-vs-repo diff confirmed the rubric kept the checkable rules and
+  dropped the vocabulary, technique catalogue, player-behaviour model and
+  numbers). Each rule carries a ✅/◐/◻ status against r67–r70 code. Two ◻ rules
+  became open questions with a builder plan (`docs/plans/boghog-ws-questions.md`,
+  Lab rows in the r70 `bossHp` run-start pattern): **Q18 quantized aim**
+  [WS03] and **Q19 the small-hitbox trade** [WS01] (which also supplies the
+  argument Q15 lacked — both lenses point at "unify at 3.0", not "shrink to
+  2"). Corpus clearance for both is written in the plan and must be restated
+  in the entry that lands the knobs. CLAUDE.md's clearance rule now cites the
+  workshop digest. No design change, no BUILD bump (r70 stands); §8 gained
+  items 17–19 (17 = pointer to the parked beatPulse Q17 in §10).
