@@ -15,7 +15,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-08 (r71: boss hp 3× shipped — Jacob's verdict, Q16 decided; r70 EXPERIMENT: boss hp 1×–3× in the Lab; r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-08 (§5.2b escalation clock written for the playtests; r71: boss hp 3× shipped — Jacob's verdict, Q16 decided; r70 EXPERIMENT: boss hp 1×–3× in the Lab; r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -283,10 +283,58 @@ dialect → clear tally 150f after the last phase.
   mirrored from both flanks (left direct, right led), P2's spirals, plus a
   radial ring beat. Two relay sub-parts fire aimed lances.
 
-Escalation per 240f rep is super-linear past rep 3. Until r71 killers resolved
-phases by rep 2–4 and never met it; at 3× hp (r71: 390 / 402 / 405, Jacob's
-verdict) the expert bot's phases run ~20 / 10 / 4 s, so reps 3–5 are now part
-of every fight — the escalation is the boss's density, not a stalling tax.
+Escalation per 240f rep is super-linear past rep 3 — see §5.2b. Until r71
+killers resolved phases by rep 2–4 and never met it; at 3× hp (r71: 390 /
+402 / 405, Jacob's verdict) the escalation is the boss's density, not a
+stalling tax.
+
+### 5.2b The escalation clock — the longer a phase lives, the harder it hits
+
+*(Written 2026-09-08 for Mark and boghog's playtests; `stage.js updateBoss`,
+the `rep` / `k` lines at the top.)* Every phase runs the same clock and
+every phase's attacks read it. The clock **restarts at zero when a phase
+begins**, so a fresh phase always opens at 1.0× however long the last one
+dragged. One **rep** = 240 f = 4 s alive in the phase.
+
+| time alive in the phase | rep | bullet-speed multiplier `k` |
+|---|---|---|
+| 0–4 s | 0 | 1.00 |
+| 4–8 s | 1 | 1.08 |
+| 8–12 s | 2 | 1.16 |
+| 12–16 s | 3 | 1.24 |
+| 16–20 s | 4 | 1.54 |
+| 20–24 s | 5 | 1.84 |
+| 24 s+ | 6+ | 2.14 → capped 2.2 |
+
+`k = min(1 + rep·0.08 + max(0, rep − 3)·0.22, 2.2)`: +8 % per rep, and an
+extra +22 % per rep past the third — the jump at 16 s is the one players
+feel. Lances are the exception, capped at 1.5× so they stay readable.
+
+What each phase does with the clock (speed × `k` unless noted):
+- **P1 (winged, rail hop):** led/direct needle fans every 46 f grow 4 → 8
+  bullets (+1 per rep); laned arc walls at t=110 and t=200 gain a bullet per
+  rep; lance volleys +1 per rep to 7 (speed cap 1.5×); a **third wall at
+  t=155 unlocks at rep 4**.
+- **P2 (shed armor, sweep):** twin spirals speed up, grow an extra arm at
+  rep 3 and again at rep 4; a **counter-spiral spinning the other way
+  unlocks at rep 3**. The armor-node part is the phase's only aimed emitter.
+- **P3 (bare core, sweep + bob):** the ring beat grows 14 → 22 bullets
+  (+2 per rep to rep 4) and speeds up; the flank lances add a bullet per rep
+  to 8 (speed cap 1.5×); spirals as P2.
+
+**Timeout (`BOSS_PHASE_TIMEOUT` 1450 f = 24 s from vulnerable):** the boss
+announces a flee (popup + departure fx, r22), the phase ends paying nothing
+and cancelling nothing, and the next phase begins on a fresh clock. **Parts
+are per phase:** each phase spawns its own and a dead part has no effect on
+the next phase (the piece that changes when parts bite back — Jacob's next
+item).
+
+Measured at r71 (3× hp), the referee's expert bot, phases it finished: P1
+14–26 s (times out on 2 of 7 seeds), P2 ~10 s, P3 ~10 s; it survives the
+whole boss on 2 of 7 seeds with 0 lives. Jacob's target player is above the
+bot (§8 Q16). Watch the certified run live: `sandbox.html?stage=0&seed=
+12648430&bot=referee&god=0&lives=0&speed=4&slowAt=4680` (4× to the boss,
+then 1×; P pause, `.` step, `[` `]` speed).
 
 ### 5.3 Sub-parts (`stage.js:42`, `stage.js:201`)
 
