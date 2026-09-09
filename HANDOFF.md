@@ -8,7 +8,7 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
 
 ## State
 
-- **`main` == `design/needle-tier` at r77** (r77 = heavy shot shipped, Jacob: "heavy is obviously the best"; feat/shot-look merged), pushed to GitHub
+- **`main` == `design/needle-tier` at r78** (r78 = campaign INFRASTRUCTURE merged — Jacob chose the stages 2–5 route on 2026-09-09, "getting really tired of playtesting"; r77 = heavy shot shipped), pushed to GitHub
   (`jacobv25/speedhell`). Fast-forward main after every commit on
   design/needle-tier (a clean `play-main` worktree exists for that).
 - **Two Claude sessions share this working tree.** As of this rewrite the
@@ -16,7 +16,7 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
   `docs/plans/boghog-ws-questions.md`, `docs/BOGHOG_WORKSHOP.md` (+ edits to
   `CLAUDE.md`, `README.md`). Don't commit or revert another session's files;
   `git add` by name. Check `BUILD` + the wiki changelog before taking a round
-  number (next free on main: **r78** — r74 is `feat/stem-layers`).
+  number (next free on main: **r79** — r74 is `feat/stem-layers`).
 - **Referee:** last certificate r65 (expert bot fixed to close on big
   targets). Since then r71 (boss hp 3×), r72 (boss phase timeout 35 s) and
   r73's experiment changed outcomes; at 3× the bot clears 1–2 of 7 seeds and
@@ -73,6 +73,17 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
 
 ## Left to do (most important first)
 
+0. **CAMPAIGN (Jacob's chosen route, 2026-09-09).** r78 = infrastructure
+   (wiki §12): `src/core/stages/s1.js` + `stages/index.js` (`STAGES = [s1]`),
+   `g.level`, `startRun(g, atT, level)`, `nextStage` carry-over (rng continuous),
+   dormant stage-clear → receipt → briefing → next flow, stage select on PRACTICE
+   once >1 stage, Booth tapes carry `level`, `?level=N`. Stage 1 byte-identical
+   (probe `tools/probes/campaign-probe.mjs`). **Before stage 2 content, Jacob
+   decides:** extend rule (plan §5: A1 = one extend per loop at an announced
+   score ≈ 400k, recommended), the Q8 suicide-for-bombs price, the Pillars
+   "V1 = one full stage" amendment (his words), stock bonus per stage vs once,
+   the S5 amendment for stage 3's elite pair. Then stage 2 (THE BONE RAIL,
+   plan §3) as its own pass with a Booth debrief + recert + cooldown.
 1. **Jacob's TODO — difficulty modes.** Playtest more, then write what
    Normal and Hard each do at every section (S1…S8). Modes are named
    designs, not sliders (Pillar 3 / §11): boss hp stays 3× on both; parts
