@@ -1,0 +1,56 @@
+<!doctype html><meta charset="utf-8">
+<!-- shot peek (r75 → r77, wiki §10 / Q22 decided): ONE stage frame mid-volley — the referee's expert bot from
+     s2 on, captured on the first frame where a volley fires AND a shot lands inside the crop with the ship
+     visible (not invuln-blinking) — at 2x, plus a 4x crop around the ship so bolt + echo + trail + muzzle flame +
+     impact blob can be read pixel by pixel. Seed C0FFEE lands on the s4 midboss (the bot only closes on big targets).
+       node tools/peek.mjs tools/shotpeek.html       docs/img/r77-shot.png 1160x900
+       node tools/peek.mjs 'tools/shotpeek.html?bw=1' out.png                1160x900   (desaturated — the bible §3 / boghog black-and-white readability check)
+     r77: the ?shot= switch went with the Lab row (one recipe now: the shipped shot, was r76 `heavy`). The frame
+     matches the r75/r76 sheets (same seed, same g.rng — the shot's fx live on fxRng only). -->
+<body style="margin:0;background:#05060a">
+<canvas id="c" width="1160" height="900"></canvas>
+<script type="module">
+import { makeGame, startRun, update, SFX, W, H } from '../src/core/game.js';
+import { draw, resetHud, prefs } from '../src/render/renderer.js';
+import { makeBot } from '../test/bot.mjs';
+const Q = new URLSearchParams(location.search), BW = Q.get('bw') === '1';
+const c = document.getElementById('c'), ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = false;
+const label = (t, x, y) => { ctx.fillStyle = '#ffd24a'; ctx.font = 'bold 18px monospace'; ctx.textAlign = 'left'; ctx.fillText(t, x, y); };
+const off = document.createElement('canvas'); off.width = W; off.height = H; const octx = off.getContext('2d');
+const desat = () => { if (!BW) return; const im = octx.getImageData(0, 0, W, H), d = im.data; for (let i = 0; i < d.length; i += 4) { const l = Math.round(0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]); d[i] = d[i + 1] = d[i + 2] = l; } octx.putImageData(im, 0, 0); };
+const g = makeGame(0xC0FFEE); startRun(g, 720); const bot = makeBot({ aggressive: true, lookahead: 14, reactDelay: 0 });
+resetHud();
+const stamp = () => { for (let i = 0; i < g.sfxN; i++) if (g.sfx[i] === SFX.SHOT) { prefs.muzzlePrev = prefs.muzzleAt; prefs.muzzleAt = g.frame; prefs.muzzleSide ^= 1; return true; } return false; };
+const CW = 120, CH = 200; // crop (field px): ship at the bottom, the target above
+const stub = { next: () => 0.5, range: (a, b) => (a + b) / 2 };
+function render(warm) { // warm = the per-frame draw that keeps the shot's draw-only state (jitter, scorch) honest
+  const real = g.rng; g.rng = stub; octx.setTransform(1, 0, 0, 1, 0, 0);
+  draw(g, octx, g.stageT * 1.05); let ms = 0;
+  if (!warm) { const t0 = performance.now(); for (let i = 0; i < 60; i++) draw(g, octx, g.stageT * 1.05); ms = (performance.now() - t0) / 60; }
+  g.rng = real; return ms;
+}
+let found = false; const seen = [];
+for (let f = 0; f < 6000 && g.state === 'play'; f++) {
+  let fired = false, hit = false;
+  bot(g); update(g);
+  for (let i = 0; i < g.sfxN; i++) { if (g.sfx[i] === SFX.SHOT) fired = true; if (g.sfx[i] === SFX.HIT) hit = true; }
+  stamp(); // main.js does this from the ring before audio.drain
+  if (g.stageT >= 780) render(true);
+  if (!(fired && hit) || g.stageT < 800 || g.player.invuln > 0) continue; // a blink-off frame hides the ship AND the muzzle
+  const p = g.player, x0 = Math.round(p.x) - CW / 2, y0 = Math.round(p.y) + 30 - CH;
+  let inCrop = false;
+  for (let i = 0; i < g.enemies.count; i++) { const e = g.enemies.items[i]; if (e.flash !== 2) continue; seen.push([g.frame, Math.round(e.x - p.x), Math.round(e.y - p.y)]); if (e.x > x0 + 15 && e.x < x0 + CW - 15 && e.y > y0 + 10 && e.y < y0 + CH - 60) inCrop = true; }
+  if (!inCrop) continue;
+  found = true;
+  const ms = render(); desat();
+  window.__perf = { frame: g.frame, stageT: g.stageT, shots: g.pBullets.count, particles: g.particles.count, draw: +ms.toFixed(2) };
+  ctx.drawImage(off, 0, 40, W * 2, H * 2);
+  ctx.drawImage(off, x0, y0, CW, CH, 660, 40, CW * 4, CH * 4);
+  ctx.strokeStyle = '#ffd24a'; ctx.lineWidth = 1; ctx.strokeRect(x0 * 2 + 0.5, y0 * 2 + 40.5, CW * 2, CH * 2);
+  label(`shot (r77)${BW ? ' (B&W)' : ''} · t=${g.stageT} f=${g.frame} · shots ${g.pBullets.count} · draw ${ms.toFixed(2)} ms`, 10, 26);
+  label(`4x crop ${CW}x${CH} around the ship`, 660, 26);
+  break;
+}
+if (!found) { label('no mid-volley frame found', 10, 26); window.__err = 'no frame'; window.__result = seen.slice(0, 40); }
+window.__done = true;
+</script></body>

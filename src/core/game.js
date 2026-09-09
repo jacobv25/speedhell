@@ -482,6 +482,7 @@ export function update(g) {
     }
     // player shots vs enemy
     if (e.vulnAt >= 0) {
+      let hits = 0; // r75: shots landing on THIS enemy this frame — only the impact blob below reads it
       for (let j = g.pBullets.count - 1; j >= 0; j--) {
         const b = g.pBullets.items[j];
         const dxx = b.x - e.x, dyy = b.y - e.y;
@@ -496,6 +497,20 @@ export function update(g) {
             spawnFx(g, FX.SPARK, b.x, b.y, Math.cos(a) * s, Math.sin(a) * s, 8 + g.fxRng.range(0, 6), 1, FAM.ORANGE);
           }
           spawnFx(g, FX.FIRE, b.x, b.y - 2, 0, -0.5, 8, 4, FAM.ORANGE);
+          // r75/r76 → r77 (shipped, was Lab shotLook): IMPACT BLOB — an opaque flare at the contact point,
+          // sized by shots landing on this enemy this frame (1 → 4px, 2 → 6px, 3+ → 8px: point-blank reads as a
+          // beam). DOJ "every hit is answered" (research 2026-09-04 §2, option 2). FX.CORE with ck=2 — the
+          // renderer draws it opaque, pixel-disc, in the player family. fxRng only (a 1px jitter so a held
+          // point-blank stream shimmers). The blob lives SIX drawn frames (life 7 — updateFx ticks it once
+          // before its first draw; the renderer decays it 8/6/4/3/2/1 px) and TWO sparks kick UP off the contact
+          // (the Lazy Devs splash rides on the enemy; the r8 three kick down).
+          hits++;
+          const q = spawnFx(g, FX.CORE, b.x + g.fxRng.range(-1, 1), b.y - 1, 0, 0, 7, hits < 3 ? 1 + hits : 4, FAM.WHITE);
+          if (q) q.ck = 2;
+          for (let k = 0; k < 2; k++) {
+            const a = g.fxRng.range(3.6, 5.8), s = g.fxRng.range(1, 2.5); // upward fan (screen -y), player family
+            spawnFx(g, FX.SPARK, b.x, b.y, Math.cos(a) * s, Math.sin(a) * s, 6 + g.fxRng.range(0, 6), 1, FAM.WHITE);
+          }
           sfx(g, SFX.HIT);
           if (g.player.bombActive > 0) e.hp -= 0.5;
           if (e.hp <= 0) { if (e.type === 5) scoreBossPhase(g, e); else killEnemy(g, e, i); break; }

@@ -7,9 +7,12 @@
 <body style="margin:0;background:#05060a">
 <canvas id="c" width="1920" height="1400"></canvas>
 <script type="module">
-import { makeGame, startRun, update, stressScene, W, H } from '../src/core/game.js';
-import { draw, drawEnemy, drawPlayer, resetHud, setSkin } from '../src/render/renderer.js';
+import { makeGame, startRun, update, stressScene, SFX, W, H } from '../src/core/game.js';
+import { draw, drawEnemy, drawPlayer, resetHud, setSkin, prefs } from '../src/render/renderer.js';
 setSkin(new URLSearchParams(location.search).get('skin') || 'cute-occult'); // r60: node tools/peek.mjs 'tools/artpeek.html?skin=neon-vector' out.png
+// r75/r76 had ?shot=current|bolt|heavy (the Lab shotLook pref); r77 shipped one shot and the switch went. The
+// max-load scene always FIRES now (6 shots + impact blobs + muzzle in flight — the muzzle stamps carry the
+// barrel side like main.js), so its draw time includes the shipped shot. Earlier sheets (≤ r73) did not fire.
 import { makeBot } from '../test/bot.mjs';
 const c = document.getElementById('c'), ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = false;
 const label = (t, x, y) => { ctx.fillStyle = '#ffd24a'; ctx.font = 'bold 18px monospace'; ctx.textAlign = 'left'; ctx.fillText(t, x, y); };
@@ -59,8 +62,14 @@ const yield_ = () => new Promise((r) => setTimeout(r, 0));
 }
 {
   const g = makeGame(7); g.state = 'play'; startRun(g); g.timeline = []; g.tlIndex = 0; stressScene(g); resetHud();
-  for (let f = 0; f < 45; f++) update(g);
-  shot(g, 1410, 680, 'max-load b=' + g.eBullets.count, 'maxload');
+  g.input.fire = true;
+  const stub2 = { next: () => 0.5, range: (a, b) => (a + b) / 2 };
+  for (let f = 0; f < 45; f++) {
+    update(g);
+    for (let i = 0; i < g.sfxN; i++) if (g.sfx[i] === SFX.SHOT) { prefs.muzzlePrev = prefs.muzzleAt; prefs.muzzleAt = g.frame; prefs.muzzleSide ^= 1; break; }
+    if (f > 30) { const real = g.rng; g.rng = stub2; draw(g, octx, g.frame * 1.05); g.rng = real; } // warm the shot's draw-only state (per-bolt jitter/side, scorch dots)
+  }
+  shot(g, 1410, 680, 'max-load b=' + g.eBullets.count + ' s=' + g.pBullets.count, 'maxload');
 }
 window.__done = true;
 </script></body>

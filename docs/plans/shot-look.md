@@ -1,5 +1,15 @@
 # Plan — Shot look: a bolt, not a rectangle (Lab `shotLook`)
 
+## Verdict r77
+
+**Jacob (2026-09-09): "heavy is obviously the best."** Shipped as THE shot in
+r77 — `heavy` became the constant (`renderer.js` `drawShots`), `current` and
+`bolt` were deleted with the Lab row, the impact blob + up-sparks are
+unconditional in the hit block (`fxRng` only), the hit click is always on, and
+the HOW TO card shows the bolt (`drawShot`). Record: wiki §10 r77, Q22 DECIDED,
+changelog 2026-09-09. Peeks `docs/img/r77-shot.png`, `docs/img/r77-howto-card.png`.
+The sections below are the plan as it was built (r75, r76).
+
 *Written 2026-09-09 for a builder agent. Branch: new `feat/shot-look` from
 `main` (r73). Jacob: "the shot feels like a pea shooter. Not so much the DPS
 but visually, it looks like a simple rectangle being fired." Read `CLAUDE.md`,
@@ -68,3 +78,57 @@ Lab row `shotLook`: `current` (default; today's 4×20 rect + 2×18 white core)
 
 Files touched (core diff pasted verbatim); the two PNGs; draw time; BUILD;
 wiki sections changed; what only eyes in motion can judge.
+
+## r76 heavy (built 2026-09-09, same branch)
+
+Jacob on r75: "better but still a pea shooter." Third choice `heavy` on the
+same Lab row = `bolt` + the six recipes of
+`docs/research/player-shot-juice-2026-09-09.md` in the frame study's revised
+order (§8). `current` and `bolt` untouched (0 differing pixels, shotpeek
+before/after). Values as shipped (starting points for Jacob's play, not
+verdicts):
+
+1. **Muzzle** (`drawBoltsHeavy`, `FLARE_ROWS`, `flareSprite`): a flame per
+   barrel, 10×12 px with its rim — rows tip→base 2/4/4/6/6/8/8/8/6/4 wide,
+   white core inside a `SHIP.shot` edge inside a `SHIP.shade` rim — base on the
+   barrel mouth (x±7, y−12); 4 frames: 10×12 → 10×12 licked (fatter base) →
+   8×8 → 4×5. Alternates barrels per volley: `main.js` stamps
+   `prefs.muzzlePrev` and toggles `prefs.muzzleSide` on `SFX.SHOT`; the
+   previous volley's flare finishes on the other barrel. Follows the invuln
+   blink; play state only. Drawn last of the shot pass, still under enemy bullets.
+2. **Bolt + echo + trail** (`HEAVY_ROWS`, `heavySprite`): 6×28 — 2-row rim
+   tip, 4-row 4 px white head in a 1 px `SHIP.shade` rim, 12-row body (violet +
+   white spine), 4 rows narrowing, 2 rows of 2 px body, 4-row 2 px tail; drawn
+   at dy −10…17 so the head sits where the r75 head sat. Echo: the same sprite
+   at y+32 (4 px behind the tail), alpha 0.5. Trail: four 3×4 ghosts at y+50,
+   +54, +58, +62, alpha 0.6 / 0.4 / 0.25 / 0.12. Bolt, echo and ghosts are
+   clipped above the barrel line (py − 12). Width 6 (the study says width is
+   optional; the 4 px head asked for it).
+3. **Messier stream**: ±1 px x-jitter per bolt from a hash of the frame it was
+   first seen + its barrel (`BOLT_STATE` WeakMap on the pooled object — a new
+   bolt is recognised by `b.y === p.y − 10 − 9` or by y jumping down on slot
+   reuse); the right rail is drawn 9 px (one frame) behind the left. Draw only;
+   `b.x`/`b.y` untouched.
+4. **Layered impact**: core — inside the existing `if (g.fxShot)` gate, life
+   `heavy ? 7 : 3` (seven = six drawn frames) and two `FX.SPARK` kicked up
+   (angle 3.6–5.8 rad, speed 1–2.5, life 6–12, `FAM.WHITE`), all `g.fxRng`;
+   renderer pass 3 — diameters `[8, 6, 4, 3, 2, 1]` by drawn frame at the 3-hit
+   size, scaled by hits (`round(d · size / 4)`, min 1), odd sizes as centred
+   squares, 1 px `FX_RAMP[0][3]` rim; a 1 px `SHIP.dark` scorch dot at the
+   contact offset riding the enemy for 10 frames (`SCORCH` list, ≤ 64,
+   dropped when the enemy is gone or its pool slot reused; drawn from
+   `drawScorch` at the top of `drawFx`, under every fx). Hit-flash: core field
+   `e.flash`, already 2 frames — left as is.
+5. **Hit-sound weight** (`audio.js`): `setHitWeight(on)` from the Lab row;
+   `SFX.HIT` keeps the 300→120 Hz triangle tick (0.04 s, 0.18) and adds a
+   25 ms 150 Hz sine at 0.09 (−6 dB) once per `drain()` call (one per frame).
+6. **Shimmer**: two cached sprites (`heavy0` 1 px spine, `heavy1` 2 px), chosen
+   by `g.frame & 1`.
+
+Core diff vs r75: the gated block only. Control sim identical to HEAD
+(determinism `7022:81960:144:0:-1`, evidence/ untouched). Draw time (artpeek
+max-load, three runs): current 1.66–1.70 ms, bolt 1.74, heavy 1.78–1.79.
+Sheets: `docs/img/r76-shot-heavy.png`, `docs/img/r76-shot-three.png`
+(`tools/shotpeek.html?shot=three` — three games in lockstep, one frame),
+`docs/img/r76-shot-heavy-bw.png` (`&bw=1`, the black-and-white check). BUILD
+r76. `src/howto.js` untouched.

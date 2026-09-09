@@ -32,6 +32,7 @@ export const EXPERIMENTS = [
   { id: 'speedDress', label: 'speed-kill reward', def: 'off', ref: 'wiki §10 / open Q13',
     choices: [['off', 'current'], ['on', 'speed kill = tier up · rush = chain + big boom · cancels pop']],
     apply: (v) => { prefs.speedDress = v === 'on' ? 1 : 0; } },
+  // r75/r76 shotLook (current / bolt / heavy) left the Lab in r77: heavy shipped as THE shot (open Q22 decided 2026-09-09)
 ];
 
 const KEY = 'speedhell.lab';
