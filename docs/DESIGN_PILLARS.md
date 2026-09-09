@@ -6,8 +6,12 @@ the mark-msx-research corpus (The Electric Underground) and boghog-research corp
 
 **Identity:** A Japanese-style vertical bullet-hell shmup in the Psikyo lineage —
 "speed hell": fast bullets, aimed-heavy patterns, short dense runs, speed-kill scoring.
-Browser (JS + Canvas2D), keyboard + gamepad. V1 = one full stage: waves → midboss →
-waves → 3-phase boss, 1CC-able in ~4–5 minutes by a practiced player.
+Browser (JS + Canvas2D), keyboard + gamepad. V1 = a **five-stage campaign** on the
+Psikyo clock (amended 2026-09-09 — Jacob: "we are expanding this into five stages"; was
+"one full stage"): every stage is waves → midboss → waves → a multi-form boss, 1'30"–2'15"
+for an expert, about ten minutes to 1CC loop 1. Stage 1 shipped first as the vertical
+slice and is the template; each further stage adds one new enemy niche, one place, one
+boss dialect — never a stage multiplier (plan: `docs/plans/campaign-five-stages.md`).
 
 ## Pillars
 

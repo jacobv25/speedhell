@@ -79,8 +79,9 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
    dormant stage-clear → receipt → briefing → next flow, stage select on PRACTICE
    once >1 stage, Booth tapes carry `level`, `?level=N`. Stage 1 byte-identical
    (probe `tools/probes/campaign-probe.mjs`). **Decided r79:** extend rule A1 (one per loop at 400,000, announced on the
-   HUD) and the Q8 price (death refills one bomb). **Still Jacob's before
-   stage 2 content:** the Pillars
+   HUD) and the Q8 price (death refills one bomb). **Also decided 2026-09-09:** Pillars Identity line = five-stage campaign
+   (his words); stock bonus pays per stage (as built). **Still Jacob's before
+   stage 2 content:** (nothing blocking) the Pillars
    "V1 = one full stage" amendment (his words), stock bonus per stage vs once,
    the S5 amendment for stage 3's elite pair. Then stage 2 (THE BONE RAIL,
    plan §3) as its own pass with a Booth debrief + recert + cooldown.

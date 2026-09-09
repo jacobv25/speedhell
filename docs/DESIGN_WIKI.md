@@ -1308,7 +1308,7 @@ trick, flow-only) the final tally is today's `'clear'` — `clear:16526:306240:2
 stage 2 alone 8 125 f / 154 960, zero timeouts. Stage 2 on the continued stream is a *different* run
 than a fresh stage 1 (no reseed).
 
-**Decided r79 (Jacob, 2026-09-09): extend rule A1 and the Q8 price (one bomb on death).** **Still Jacob's:** (the extend rule was plan §5 A1–A3 — A1 chosen)
+**Decided r79 (Jacob, 2026-09-09): extend rule A1 and the Q8 price (one bomb on death).** **Also decided 2026-09-09: the Pillars Identity line now reads "V1 = a five-stage campaign" (Jacob's amendment, his words), and the stock bonus pays PER STAGE (Jacob: "that's pretty common for every shmup I've ever played") — the r78 plumbing already runs the tally at every stage, so nothing changes in code.** **Still Jacob's:** (the extend rule was plan §5 A1–A3 — A1 chosen)
 and the Q8 suicide-for-bombs price (§5 B) *before stage 2 is built*; the Pillars
 identity line "V1 = one full stage" (this pass does not edit the pillars); the
 per-stage vs once stock bonus above; the S5 rubric amendment the Twin Moths need
@@ -2374,6 +2374,16 @@ per-stage vs once stock bonus above; the S5 rubric amendment the Twin Moths need
   anything is built; decisions it forces first: Q8 (suicide-for-bombs ×5) and an
   extend rule (options A1–A3). No design change today, no BUILD bump, §11
   roadmap unchanged until he rules.
+- 2026-09-09 — PILLARS AMENDED + STOCK BONUS PER STAGE (decisions, no build).
+  Jacob: "go ahead and fix the line. we are expanding this into five stages" →
+  `docs/DESIGN_PILLARS.md` Identity: "V1 = one full stage" → "V1 = a five-stage
+  campaign on the Psikyo clock", stage 1 the template, one new niche / place /
+  boss dialect per stage, never a stage multiplier ("V1 has one loop" stands).
+  Stock bonus: pays at every stage's tally (Jacob: "pay a bonus per stage,
+  that's pretty common for every shmup I've ever played") — as the r78
+  plumbing already does; boghog WS06 stage-end bonus archetype; S6 garnish
+  sizing unchanged (lives × 1,000 + bombs × 500 per stage). Stage 2 content
+  (THE BONE RAIL) is now unblocked.
 - 2026-09-09 — r79: EXTEND RULE A1 + ONE-BOMB DEATH REFILL (design changes;
   Jacob: "let's go with the extend rule A1 and fix the bomb price").
   `game.js EXTEND_AT = 400000`: the loop's ONE extend the first frame score
