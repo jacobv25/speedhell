@@ -743,6 +743,23 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     mobility reading. Fix shape (Jacob's call): stagger the two sides (one
     side first, the other a beat later), or bring risers in at the lane
     edges (x ≈ 60 / W−60) rather than the screen edges. Modes lever too.
+22. **The player shot looks like a pea shooter** (Jacob, 2026-09-09: "Not so
+    much the DPS but visually, it looks like a simple rectangle being fired").
+    Today (`renderer.js` ~185): a 4×20 rect in the skin's edge colour with a
+    2×18 white core, no muzzle, no trail, and a hit answered by 3 sparks + one
+    fire puff (`game.js` ~491). Corpus: boghog WS05 player shots — fast ✅,
+    tall ✅, **"thick, detailed, juicy splash with good value contrast; always
+    check in motion"** ◐ (rubric S1 says fast/tall only); WS follow-through —
+    "fast, dense player shots also smooth motion because players read ship
+    position off them" (no options in the game, so the shot stream carries the
+    load); research `explosion-and-weapon-feel-2026-09-04.md` — DOJ "weapons
+    are visually huge relative to their numbers", "every hit is answered"
+    (option 2, the hit impact blob, is still unbuilt). Renderer-only; art
+    bible §5/§6 task (pixel bolt with a bright head, a 2-frame muzzle flash on
+    the ship, a short fading tail, an impact blob sized by shots landing per
+    frame). Lab row `shotLook` (current / bolt) per Jacob's "add it to the
+    Lab" rule, even though no gameplay changes; Ship B's angled bolts get the
+    same sprite rotated. Not DPS, not cap, not colour family (S2).
 
 ## 9. Practice notes (for humans)
 
