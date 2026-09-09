@@ -15,7 +15,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-08 (§5.2b escalation clock written for the playtests; r71: boss hp 3× shipped — Jacob's verdict, Q16 decided; r70 EXPERIMENT: boss hp 1×–3× in the Lab; r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-08 (r72: boss phase timeout 24s → 35s; §5.2b escalation clock written for the playtests; r71: boss hp 3× shipped — Jacob's verdict, Q16 decided; r70 EXPERIMENT: boss hp 1×–3× in the Lab; r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -322,15 +322,16 @@ What each phase does with the clock (speed × `k` unless noted):
   (+2 per rep to rep 4) and speeds up; the flank lances add a bullet per rep
   to 8 (speed cap 1.5×); spirals as P2.
 
-**Timeout (`BOSS_PHASE_TIMEOUT` 1450 f = 24 s from vulnerable):** the boss
+**Timeout (`BOSS_PHASE_TIMEOUT` 2100 f = 35 s from vulnerable; r72 — was 1450 f / 24 s):** the boss
 announces a flee (popup + departure fx, r22), the phase ends paying nothing
 and cancelling nothing, and the next phase begins on a fresh clock. **Parts
 are per phase:** each phase spawns its own and a dead part has no effect on
 the next phase (the piece that changes when parts bite back — Jacob's next
 item).
 
-Measured at r71 (3× hp), the referee's expert bot, phases it finished: P1
-14–26 s (times out on 2 of 7 seeds), P2 ~10 s, P3 ~10 s; it survives the
+Measured at r71 (3× hp, 24 s timeout), the referee's expert bot, phases it
+finished: P1 14–26 s (timed out on 2 of 7 seeds — the reason for r72's 35 s),
+P2 ~10 s, P3 ~10 s; it survives the
 whole boss on 2 of 7 seeds with 0 lives. Jacob's target player is above the
 bot (§8 Q16). Watch the certified run live: `sandbox.html?stage=0&seed=
 12648430&bot=referee&god=0&lives=0&speed=4&slowAt=4680` (4× to the boss,
@@ -1818,6 +1819,18 @@ is placement, not authoring time. Not scheduled.
   Design principle recorded (Jacob, 2026-09-08): design for difficulty and
   challenge; Jacob's own difficulty ≈ an expert's normal. Next: parts that
   bite back, then difficulty modes. BUILD r70 → r71.
+- 2026-09-08 — r72: BOSS PHASE TIMEOUT 24s → 35s (design change; Jacob: "let's
+  go with 35s for the boss phase timeout", after the r71 3× hp verdict).
+  `BOSS_PHASE_TIMEOUT` 1450 → 2100, matching the midboss (r65). Reason: at
+  3× hp the referee's expert bot — shooting the whole time — timed out P1 on
+  2 of 7 seeds (25.8 s), throwing away the 12,000 phase value for being slow
+  in a fight Jacob deliberately made longer; the escalation clock (§5.2b,
+  1.84× at 20 s, 2.2× cap) is now the stalling tax, so the timeout only has
+  to catch a true passive rider. Corpus: rubric S6 "no milking — every boss
+  phase has a timeout" still holds (35 s, not removed); boghog T2 the stage
+  does not wait — the boss gate is the run's end anyway; MSX — timeouts are
+  scoring integrity, and a killer should not meet one. Control sim at r72:
+  see the recert when authorized. BUILD r71 → r72.
 - 2026-09-08 — DOCS: `docs/BOGHOG_WORKSHOP.md` added — the SHMUP WORKSHOP 01–06
   digest (Jacob re-watched the series: "it seemed like we've missed stuff"; a
   transcript-vs-repo diff confirmed the rubric kept the checkable rules and
@@ -1831,3 +1844,17 @@ is placement, not authoring time. Not scheduled.
   in the entry that lands the knobs. CLAUDE.md's clearance rule now cites the
   workshop digest. No design change, no BUILD bump (r70 stands); §8 gained
   items 17–19 (17 = pointer to the parked beatPulse Q17 in §10).
+- 2026-09-08 — DOCS: `docs/plans/campaign-five-stages.md` — Jacob asked for a plan
+  for four more stages ("i know we were planning on only a two loop game but i
+  wanna see what u can come up with"). Proposal: a five-stage Psikyo-clock
+  campaign (S2 Bone Rail = ground layer · S3 Candle Sea = formations + elite-pair
+  set-piece climax · S4 Blood Gate = wall pods / risers / armoured Warden, the
+  strict stage · S5 Great Altar = returning-midboss gauntlet + four-form finale),
+  loop 2 = revenge-dot bullet-diff of all five behind a Ketsui-style seal. One
+  niche, one place, one midboss gimmick, one boss dialect per stage; zero new hp
+  tiers; speed-kill unchanged. Corpus clearance (MSX, boghog T1/T2/T3/WS03–06,
+  HOMAGE L1–L8, ZeroRanger) is in the plan with the pushback. Needs Jacob's
+  override on the Pillars identity line ("V1 = one full stage") and on §11 before
+  anything is built; decisions it forces first: Q8 (suicide-for-bombs ×5) and an
+  extend rule (options A1–A3). No design change today, no BUILD bump, §11
+  roadmap unchanged until he rules.

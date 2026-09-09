@@ -60,7 +60,7 @@ const BOSS_PHASE_HP = [110, 402, 405]; // r71: 3× (was 134/135) — "3x felt ch
 // (spawn hp is ENEMY_DEFS[5].hp). P2/P3 trimmed r6.3: the camp governor's bands hold campers to
 // near-zero income (referee probes: 0 kills, pure timeouts), so HP now only needs to fit the honest
 // expert's tail under the timeout across every robust seed, with kills under the 1200f decay knee.
-export const BOSS_PHASE_TIMEOUT = 1450; // ~24s per phase — passive dodging times out
+export const BOSS_PHASE_TIMEOUT = 2100; // r72: 35s per phase (was 1450/24s) — at 3× hp a shooting player's P1 brushed 24s; the escalation clock (§5.2b) is the stalling tax now
 
 // r18 fire gating — the canon's three gates, replacing the "enemy must be 40px
 // ABOVE the player" rule that muted all 17 fire sites (boss included) for a
