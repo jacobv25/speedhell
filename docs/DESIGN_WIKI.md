@@ -15,7 +15,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-08 (r73 EXPERIMENT: boss parts bite back — clock / inherit / burst in the Lab (open Q17); r72: boss phase timeout 24s → 35s; §5.2b escalation clock written for the playtests; r71: boss hp 3× shipped — Jacob's verdict, Q16 decided; r70 EXPERIMENT: boss hp 1×–3× in the Lab; r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-09 (r75 EXPERIMENT: the player shot as a BOLT — pixel bolt + trail + muzzle strobe + impact blob in the Lab (open Q22); r73 EXPERIMENT: boss parts bite back — clock / inherit / burst in the Lab (open Q17); r72: boss phase timeout 24s → 35s; §5.2b escalation clock written for the playtests; r71: boss hp 3× shipped — Jacob's verdict, Q16 decided; r70 EXPERIMENT: boss hp 1×–3× in the Lab; r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -760,6 +760,10 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     frame). Lab row `shotLook` (current / bolt) per Jacob's "add it to the
     Lab" rule, even though no gameplay changes; Ship B's angled bolts get the
     same sprite rotated. Not DPS, not cap, not colour family (S2).
+    **Built r75, Lab row `shotLook` (current / bolt), 2026-09-09** — §10 r75
+    paragraph has the pixels, the peeks (`img/r75-shot-current.png` /
+    `img/r75-shot-bolt.png`) and the corpus reading; verdict pending Jacob's
+    play. The HOW TO card is untouched until the row is decided.
 
 ## 9. Practice notes (for humans)
 
@@ -806,10 +810,11 @@ and the `#lab` panel go.
   the HOW TO card (`src/howto.js` mirrors the art); fx particle counts stay on
   `g.fxRng`.
 
-Live experiments (r73): **skin** (§11, r60) · **speedPopup** (§2.6, open Q4) ·
+Live experiments (r75): **skin** (§11, r60) · **speedPopup** (§2.6, open Q4) ·
 **bossParts** (parts bite back: current / clock / inherit / burst, open Q17,
 r73, run-start tune knob) · **speedDress** (speed-kill reward dressing, open
-Q13, r53). Decided r71: bossHp
+Q13, r53) · **shotLook** (the player shot as a bolt: current / bolt, open Q22,
+r75, live). Decided r71: bossHp
 → 3× (Q16; the r70 paragraph below is the record). Decided and
 removed in r67: fxSize → 2×, fxStyle → chunky (Q12), killAudio → heavy (Q14) —
 the r51/r52/r54 paragraphs below stay as the record of what was tried. Parked on
@@ -824,7 +829,64 @@ to A/B). In progress on `design/ship-b` (r69, unmerged): Ship B
 "i really enjoy the difficulty. it is much more difficult than ship A" — kept at
 the plan's starting numbers, popcorn-rate red + 2/6 robust clears recorded not
 fixed, art (step 4) and recert pending; details in that branch's wiki §6.4. Queued: destruction
-sequence (after the art overhaul), hit impact blob, sprite-shaped debris.
+sequence (after the art overhaul), sprite-shaped debris (the hit impact blob
+landed in r75 as part of `shotLook`).
+
+**r75 "shot look" (renderer `drawBolts` + fx pass 3, core `g.fxShot`, lab
+`shotLook`, live).** Jacob (2026-09-09): "the shot feels like a pea shooter.
+Not so much the DPS but visually, it looks like a simple rectangle being fired"
+(open Q22; plan `docs/plans/shot-look.md`). `current` is the r57 4×20 rect in
+the skin's `SHIP.shot` with a 2×18 white core — untouched, pixel-identical
+(artpeek before/after: 0 differing pixels outside the timing labels). `bolt`
+is four things, all presentation: **(1) the bolt** — one cached 5×20 pixel
+sprite (`BOLT_ROWS`, bible §2 grid): a 1 px rim tip, a 3 px WHITE head inside
+a 1 px darker rim (`SHIP.shade`), a violet body (`SHIP.shot`) with a 1 px white
+spine narrowing at row 12, a 2 px violet tail — same 20 px height, same
+9 px/frame, same x±7 barrels; **(2) the trail** — two stepped ghosts of the
+tail below it (2×4 at alpha 0.5, 2×4 at alpha 0.25 — the bible's fx-halo
+exception, capped), 8 px, integer-snapped, drawn before the bolts so every
+bolt covers its own; **(3) the muzzle strobe** — `main.js` stamps
+`prefs.muzzleAt = g.frame` whenever the sound ring carries `SFX.SHOT` (read
+before `audio.drain` empties it), the renderer draws a 5×3 white flash on each
+barrel mouth (x±7, y−12) that frame and a 3×2 ember the next; follows the
+invuln blink, play state only, no core change; **(4) the impact blob** — the
+research's option 2, "every hit is answered": in the hit block, `if
+(g.fxShot)` spawns an `FX.CORE` particle with `ck = 2` at the contact point,
+3 frames, radius 2 / 3 / 4 (4 / 6 / 8 px) by shots landing on *that enemy
+this frame* (a local `hits` counter next to the loop; point-blank pairs read
+as a beam); the renderer draws it in its own final fx pass as an opaque white
+pixel disc inside a 1 px dark-violet rim (`FX_RAMP[0][3]`) — on top of the
+r8 sparks + fire puff, still under player shots and enemy bullets. `g.fxShot`
+is mirrored from the pref each frame exactly like `g.fxMeta`; default 0 =
+not one spawn, not one `fxRng` pull; the spawn's 1 px x-jitter is `g.fxRng`.
+Control sim identical to r73 (every outcome, score, frame count, determinism
+`7022:81960:144:0:-1`). Draw time, max-load scene with 6 shots + blobs in
+flight: current 1.64 / 1.65 ms, bolt 1.71 / 1.72 ms (+0.07; boss P2 panel
+0.33 → 0.46). Peeks: `img/r75-shot-current.png` / `img/r75-shot-bolt.png`
+(`tools/shotpeek.html?shot=…`, the same s8 boss-arrival frame, 2× + a 4×
+crop). **Corpus:** boghog WS05 player shots — fast ✅ tall ✅ (unchanged) and
+now "thick, detailed, juicy splash with good value contrast" (the white head
++ dark rim is the value contrast; the rect had none); WS follow-through —
+"fast, dense player shots smooth motion because players read ship position
+off them": the trail is the follow-through the ship has no options to carry;
+DOJ (research §2) "weapons are visually huge relative to their numbers" and
+"every hit is answered — a bright flare at the contact point"; rubric S1
+(fast, tall, the shot cap and point-blank economy untouched — no DPS, cap or
+hitbox change) and S2 (colour family unchanged: violet + white, player-only;
+draw order unchanged, bolt and blob below every enemy bullet; the blob is
+opaque so the additive fire puff never blows it to a white disc). **Pushback
+recorded:** WS02 "reduce value contrast of player shots" — the bolt has LESS
+white than the rect (9 px head + spine vs a 2×18 core), but the muzzle strobe
+adds two white blocks 2 of every 3 frames while firing; the peek can't say
+whether that reads as life or as noise — only motion can. Bible §2.5 "no
+globalAlpha on sprite fills": the trail uses it (the fx-halo exception) —
+if it reads soft, the fallback is two solid `SHIP.shade` ghosts. Bible §5's
+same-commit HOW TO rule: `src/howto.js` stays on the rect until the row is
+decided (it never drew the player shot; the card follows the winner).
+**What only eyes in motion can judge:** whether the 5×20 bolt reads "thick"
+at 9 px/frame; whether the strobe + 8 px trail make the stream feel like a
+weapon or a flicker; whether the blob answers "is my damage landing" on a
+white-flashing hull. Verdict → constant, row deleted (lifecycle rule).
 
 **r73 "boss parts" (core `g.tune.partBite`, lab `bossParts`, run start).** Jacob
 (2026-09-08): "I don't think killing the parts should make the boss easier. In
@@ -1952,6 +2014,25 @@ is placement, not authoring time. Not scheduled.
   in the entry that lands the knobs. CLAUDE.md's clearance rule now cites the
   workshop digest. No design change, no BUILD bump (r70 stands); §8 gained
   items 17–19 (17 = pointer to the parked beatPulse Q17 in §10).
+- 2026-09-09 — r75 EXPERIMENT: THE PLAYER SHOT AS A BOLT in the Lab (open Q22).
+  Jacob: "the shot feels like a pea shooter… visually, it looks like a simple
+  rectangle being fired." Lab row `shotLook` (current / bolt, live): a 5×20
+  pixel bolt (white 3 px head, dark rim, violet body + white spine, 2 px
+  tail), an 8 px stepped trail, a 2-frame muzzle strobe on both barrels
+  (shell-side, off the `SFX.SHOT` ring), and the hit IMPACT BLOB (research
+  option 2 — the one core touch: `g.fxShot` mirrored like `g.fxMeta`, a gated
+  `FX.CORE ck=2` spawn in the hit block, `g.fxRng` only). Default
+  pixel-identical to r73 (0 differing pixels, artpeek before/after); control
+  sim identical (determinism `7022:81960:144:0:-1`); max-load draw 1.64 →
+  1.71 ms. Corpus: boghog WS05 player shots ("thick, detailed, juicy splash
+  with good value contrast; always check in motion"), WS follow-through (the
+  shot stream carries the ship's motion — no options), DOJ "weapons visually
+  huge" / "every hit is answered", rubric S1 (fast, tall, economy untouched)
+  and S2 (family + draw order unchanged). Pushback: WS02 value contrast of
+  player shots (the strobe adds white 2 of 3 frames); bible §2.5 alpha (the
+  trail uses the fx-halo exception). No DPS, cap, hitbox, speed or colour
+  change; `src/howto.js` untouched until the verdict. Details §10 r75, Q22
+  gets its built line. BUILD r73 → r75 (r74 = `feat/stem-layers`).
 - 2026-09-08 — DOCS: `docs/plans/campaign-five-stages.md` — Jacob asked for a plan
   for four more stages ("i know we were planning on only a two loop game but i
   wanna see what u can come up with"). Proposal: a five-stage Psikyo-clock
