@@ -97,6 +97,27 @@ Suggested Lab shape: extend `shotLook` with a third choice **`heavy`** = recipes
 - **Hit-stop for rapid fire**: the hit-stop literature is fighting-game and single-impact; there is no source that measures it on a shot stream. [6]
 - **Sound**: no source gives hit-sound layering numbers; §6.5 is an inference from the tutorial's per-frame rule and boghog's "make damage sounds more powerful".
 
+## 8. Frame study — what the arcade games actually draw (added 2026-09-09, same day)
+
+Jacob asked whether we could look at the real sprites instead of reading about them. Ripped sprite sheets for these games do not include the player shot (The Spriters Resource has DoDonPachi's intermissions and fire effects, and Strikers 1945's bosses only), so this is from frame grabs: 20–30-second slices of public 60 fps clears were downloaded with yt-dlp, the play area was scaled back to the arcade's native resolution (240×320, or 224×320 for Psikyo), and consecutive frames were zoomed 3–5× with a pixel grid and read by eye. Sizes are ±1 px; the video compression softens edges. Clips: DoDonPachi DaiOuJou Black Label 1-ALL (q22WEFTgp4A), Strikers 1945 II (IFB5YQimh8U), Battle Garegga (kWZuoe9helQ), Ketsui (Q5vxV-srHyQ; 30 fps upload, player mostly in laser), Mushihimesama (cabinet video, unusable).
+
+| game (native field) | ship width | bolt sprite | how many volleys visible | muzzle | impact |
+|---|---|---|---|---|---|
+| **DaiOuJou** Type-A (240×320) | ~20 px | thin pale needle ~2 × 12–14 px with a small red-orange glow at its base; two per volley plus option shots | 3–4 volleys in a column | **huge**: an orange-yellow flame ~12 × 17 to 13 × 22 px at *each option pod*, i.e. each flare is more than half the ship's width, and it flickers frame to frame (present on one side, then the other, then centre) | large orange fireballs on kills; hit sparks small and white |
+| **Strikers 1945 II** (224×320) | ~24 px | blue streak with a white core, ~2–3 × 14 px, fired as stacked *pairs* per barrel (two shots ~4 px apart) | 3–4 pairs in a column at once | not visible in the frame caught (small or none) | orange-red fireballs ~28 px on turrets |
+| **Battle Garegga** (240×320) | ~22 px | **thick golden bolt ~4 × 30 px**, two rails, plus small ~2 × 6 darts from the options | 2 bolt pairs + option darts | a white-yellow flame ~14 px wide at the biplane's nose on the firing frame | yellow-white bursts on the tank ~10 px, big fireballs on kills |
+| **Ketsui** (240×320) | ~22 px | (laser in most frames) | — | large orange-white flare at the nose while firing, ~12 px | — |
+
+What the frames change in the recipes:
+
+- **Bolt width is not the problem.** Three of four games fire needles as thin as ours or thinner (2–3 px). Garegga is the exception and its 4 × 30 bolt is *long*, not wide. So recipe 1's width increase is optional; the length and the trail are what matter.
+- **The muzzle is the biggest gap.** DaiOuJou's flare is roughly half the ship's width and lives at both option pods every frame the button is held; Garegga and Ketsui flare the nose at ~12–14 px. Ours is 5 × 3 for two frames. Recipe 3 should be re-scoped: a flame-shaped flare **~10 × 12 px** per barrel (about a third of our 28 px ship), alternating barrels per volley so it flickers, 3–4 frames each — not a 7 × 4 dot.
+- **Volleys on screen.** The arcade games keep 3–4 volleys visible in a column. Our cap of 6 shots at 9 px/frame with a 3-frame cadence puts only 3 volleys (27 px apart) in flight; the ghosts in recipe 1 are what fake a fourth.
+- **Psikyo's trick is the pair.** Each barrel fires two shots 4 px apart, so a single volley already reads as a cluster. A drawn-only "echo" (a second, dimmer bolt 4 px behind each real one) would copy this without touching the cap or damage — it is a variant of recipe 1's trail.
+- **Impact.** The games answer hits with sparks that are small, and answer *kills* with fireballs far bigger than the sprite. Our r67 chunky explosions already do the kill part; recipe 4's longer blob is the right size for the hit part.
+
+Revised order: (1) muzzle flare at flame size, alternating barrels; (2) bolt length + trail/echo; (3) messier stream; (4) layered impact; (5) hit-sound weight; (6) shimmer.
+
 ## Sources
 
 1. boghog, *Bullet Hell Shmup Design 101* (Google Doc; logged in the repo as `docs/research/bullet-hell-design-101.md`; mirrored at https://shmups.wiki/library/Boghog's_bullet_hell_shmup_101).
