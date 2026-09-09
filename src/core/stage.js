@@ -398,10 +398,23 @@ function pickSafeX(e) {
 
 export function updateBoss(g, e) {
   g.emitter = e; // r59: needle-tier context (see patterns.js fire)
-  const phase = e.phase, rep = e.fireT / 240 | 0;
+  const phase = e.phase; let rep = e.fireT / 240 | 0;
   // escalation per cycle (S3); super-linear past rep 3 — killers resolve phases
   // by rep 2-4, so the steep tail is what riding a timeout costs (S4/S6, r3)
-  const k = Math.min(1 + rep * 0.08 + Math.max(0, rep - 3) * 0.22, 2.2);
+  // r73 EXPERIMENT (Lab `bossParts`, open Q17): parts bite back. Jacob: "I don't
+  // think killing the parts should make the boss easier. In DoDonPachi and in
+  // Blue Revolver, destroying the parts often makes the fight harder!" Variant
+  // 1/3: each dead part advances the escalation clock one rep (fireT += 240
+  // keeps t, bumps rep → faster + denser for the rest of the phase). Variant 3
+  // also answers the kill with a retaliation ring. Variant 2/3: the core
+  // INHERITS the dead part's emitter, denser (see the phase blocks).
+  const bite = g.tune.partBite | 0;
+  if (bite && e.partKills > e.partSeen) {
+    const n = e.partKills - e.partSeen; e.partSeen = e.partKills;
+    if (bite === 1 || bite === 3) { e.fireT += 240 * n; rep = e.fireT / 240 | 0; }
+    if (bite === 3 && mayFire(g, e)) ring(g, e.x, e.y, 16, 1.6, g.rng.range(0, 0.3));
+  }
+  const k = Math.min(1 + (e.fireT / 240 | 0) * 0.08 + Math.max(0, (e.fireT / 240 | 0) - 3) * 0.22, 2.2);
   if (e.age < 90) { // gravitas entrance — the one allowed pause. The wing pods
     // deploy on the last beat, so the spawn-frame field is bare (S3b arrival
     // ritual: no live enemies but the boss itself at spawn).
@@ -627,6 +640,8 @@ export function updateBoss(g, e) {
       // (killers resolve by rep 3-4) — extra EMISSIONS, not just speed: faster
       // bullets leave the screen sooner, so speed-k alone never densifies (r3)
       if (rep >= 4 && t === 155) arcWall(g, e.x, e.y + 10, 13 + rep, 1.9, 1.6 * k, 5 + ((g.rng.next() * 3) | 0), 2);
+      if (bite >= 2 && e.partKills >= 1 && t % 100 === 35) lanceVolley(g, e.x - 20, e.y + 14, 5, 3.3 * Math.min(k, 1.5), 0.015, vLead); // r73 inherit: the dead pod's lance, from the core, 5 not 4
+      if (bite >= 2 && e.partKills >= 2 && t % 100 === 85) lanceVolley(g, e.x + 20, e.y + 14, 5, 3.3 * Math.min(k, 1.5), 0.015, vLead);
     }
   } else if (phase === 1) {  // P2: shed-armor form — PURE twin spirals on a wide slow
     // sweep (the phase's boss-only dialect, undiluted); the spray lives in the
@@ -658,6 +673,7 @@ export function updateBoss(g, e) {
       if (t % 28 === 10) twinSpiral(g, e.x, e.y + 8, (e.fireT * 0.11) % 6.28, 3 + (rep > 2 ? 1 : 0) + (rep > 3 ? 1 : 0), 1.35 * k, 1, 0.012);
       if (rep >= 3 && t % 30 === 22) twinSpiral(g, e.x, e.y + 8, (e.fireT * 0.13 + 1.7) % 6.28, 2, 1.6 * k, -1, 0.012); // timeout-rider tax: counter-spiral
       if (rep >= 4 && t % 60 === 0) spray(g, e.x, e.y + 14, 10, 1.1, 2.0, 3.1); // timeout-rider tax
+      if (bite >= 2 && e.partKills >= 1 && t % 56 === 40) spray(g, e.x, e.y + 14, 10, 0.7, 2.0, 3.1, vLead); // r73 inherit: the dead node's spray from the core, wider + 10
     }
   } else {                   // P3: desperation MEDLEY (r6 S3b) — bare-core form
     // recombining ONLY the earlier signatures: P1's lances (mirrored, scissoring
@@ -695,6 +711,8 @@ export function updateBoss(g, e) {
       // core lance, led: sustained pressure between the flank pairs
       if (t % 30 === 8) twinSpiral(g, e.x, e.y + 8, (e.fireT * 0.11) % 6.28, 2 + (rep > 2 ? 1 : 0), 1.4 * k, 1, 0.012); // P2's dialect
       if (rep >= 3 && (t === 100 || t === 190)) ring(g, e.x, e.y, 14, 1.5, g.rng.range(0, 0.3)); // timeout-rider tax
+      if (bite >= 2 && e.partKills >= 1 && t % 120 === 30) lanceVolley(g, e.x - 12, e.y + 10, 5, 3.1 * Math.min(k, 1.5), 0.015, vLead); // r73 inherit: dead relay's aimed lance, from the core
+      if (bite >= 2 && e.partKills >= 2 && t % 120 === 90) lanceVolley(g, e.x + 12, e.y + 10, 5, 3.1 * Math.min(k, 1.5), 0.015, vLead);
     }
   }
 
@@ -725,7 +743,7 @@ export function advanceBossPhase(g, e, killed, fade = 1) {
   // final phase resolved: scoring already granted by scoreBossPhase, so despawn
   // silently (dead=1) either way; gate opens, clear sequence begins.
   if (e.phase >= 2) { e.dead = 1; g.gate = null; g.bossDown = true; g.bossKilled = killed; return; }
-  e.phase++; e.fireT = 0;
+  e.phase++; e.fireT = 0; e.partKills = 0; e.partSeen = 0; // r73: parts are per phase
   e.hp = g.tune.bossHp ? Math.round(BOSS_PHASE_HP[e.phase] * g.tune.bossHp) : BOSS_PHASE_HP[e.phase]; // r70 Lab experiment: phase hp multiplier (open Q16)
   e.prevHp = e.hp; e.campT = 0; e.latchX = -1e9; e.latchX2 = -1e9; e.latchN = 0;
   e.grindHp = 0; e.latchT = 0; // fresh serve ration + grind account + refund price

@@ -69,7 +69,7 @@ export function makeGame(seed = 1) {
     // r26 variant knobs (Booth experiments): deterministic — same knobs + seed
     // + inputs = same run. 0 / 'top' = shipped ENEMY_DEFS values. The referee
     // never sets these, so certified paths are untouched by construction.
-    tune: { eliteHp: 0, eliteEntry: 'side', eliteEscort: 1, midbossHp: 0, bossHp: 0 }, // bossHp: multiplier on every boss phase's hp (0/1 = shipped 390/402/405 since r71); a Booth/sandbox tune knob now, the r70 Lab row is gone // r27: side entry + escort are the shipped defaults (Booth verdict); chips roll back
+    tune: { eliteHp: 0, eliteEntry: 'side', eliteEscort: 1, midbossHp: 0, bossHp: 0, partBite: 0 }, // partBite: r73 Lab EXPERIMENT — 0 current (dead part = its emitter gone) · 1 'clock' (+1 rep per dead part) · 2 'inherit' (core takes the part's emitter, denser) · 3 'burst' (retaliation ring, then inherit) // bossHp: multiplier on every boss phase's hp (0/1 = shipped 390/402/405 since r71); a Booth/sandbox tune knob now, the r70 Lab row is gone // r27: side entry + escort are the shipped defaults (Booth verdict); chips roll back
     warn: 0, // r6 S3b arrival ritual: frames of WARNING remaining before the boss gate
 
     clearBonus: 0, clearAt: 0, endFrame: 0,
@@ -249,6 +249,7 @@ export function spawnEnemy(g, type, x, y, opts = {}) {
   e.latchX = -1e9; e.latchX2 = -1e9; e.latchN = 0; e.trackT = 0; e.pxEma = g.player.x;
   e.grazeT = 0; e.grindHp = 0; e.lastDir = 0; e.monoT = 0; e.latchT = 0; e.stillRun = 0; e.flash = 0; e.bloomed = 0;
   e.vulnAt = -1; e.armorUntil = 0; // vuln set once on-screen (top dead zone + intro armor)
+  e.partKills = 0; e.partSeen = 0; // r73: parts killed this phase (killEnemy counts, updateBoss reacts)
   // r6.4: the boss's entrance armor lives HERE, not in the timeline event, so
   // every spawn path (referee camp probes included) gets the untouchable 90f
   // descent. (r6.3 shipped this line BEFORE the armorUntil reset above — the
@@ -281,6 +282,7 @@ function killEnemy(g, e, idx) {
   }
   g.score += v; g.kills++;
   g.stats.killLog.push({ t: e.type, f: aliveFrames, s: speed ? 1 : 0 });
+  if (e.type === 6) for (let i = 0; i < g.enemies.count; i++) { const b = g.enemies.items[i]; if (b.type === 5 && b.phase === e.phase) b.partKills++; } // r73: parts bite back (stage.js updateBoss reads partKills)
   const big = e.type === 3 || e.type === 4; // elite/midboss get the shake (S4);
   // boss sub-parts (type 6) pop like popcorn — shake stays reserved (S4-SHOULD)
   const med = e.type === 1 || e.type === 2; // turret / mid: heavier than popcorn, no shake

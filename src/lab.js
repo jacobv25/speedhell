@@ -25,6 +25,10 @@ export const EXPERIMENTS = [
   // r67: fxSize + fxStyle (r51/r52) and killAudio (r54) left the Lab — 2×, chunky, heavy shipped (open Q12/Q14 decided 2026-09-07)
   // r53 — dress the natural meta (research/explosion-and-weapon-feel §5 option 4)
   // r70 bossHp (1×–3×) left the Lab in r71: 3× shipped as the constant (open Q16 decided 2026-09-08)
+  // r73 EXPERIMENT — boss parts bite back (run-start tune knob → g.tune.partBite; open Q17)
+  { id: 'bossParts', label: 'boss parts (next run)', def: 'current', ref: 'wiki §10 / open Q17',
+    choices: [['current', 'current — a dead part takes its attack with it'], ['clock', 'angrier — each dead part +1 rep on the escalation clock'], ['inherit', 'inherit — the core takes the part\'s attack, denser'], ['burst', 'burst — retaliation ring + angrier + inherit']],
+    apply: () => {} },
   { id: 'speedDress', label: 'speed-kill reward', def: 'off', ref: 'wiki §10 / open Q13',
     choices: [['off', 'current'], ['on', 'speed kill = tier up · rush = chain + big boom · cancels pop']],
     apply: (v) => { prefs.speedDress = v === 'on' ? 1 : 0; } },

@@ -15,7 +15,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-08 (r72: boss phase timeout 24s → 35s; §5.2b escalation clock written for the playtests; r71: boss hp 3× shipped — Jacob's verdict, Q16 decided; r70 EXPERIMENT: boss hp 1×–3× in the Lab; r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-08 (r73 EXPERIMENT: boss parts bite back — clock / inherit / burst in the Lab (open Q17); r72: boss phase timeout 24s → 35s; §5.2b escalation clock written for the playtests; r71: boss hp 3× shipped — Jacob's verdict, Q16 decided; r70 EXPERIMENT: boss hp 1×–3× in the Lab; r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -689,6 +689,11 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     bias; fixing a lying marker is not. Plan + probe (closest-approach
     histogram: the 5.0–6.2 px shell IS the lucky-dodge count) + Lab row
     `bulletR` (2.6/3.2 · 3.0 · 2.0): `docs/plans/boghog-ws-questions.md`.
+17. **Parts that bite back** (r73 lab `bossParts`: current / clock / inherit /
+    burst). Which way should a dead part make the boss harder — a faster
+    clock, the core inheriting the attack, or a retaliation burst on top?
+    Measured table in §10 r73. Jacob's playtest decides; then the §5.3
+    priority rule ("a part is cheap slack") is rewritten around the cost.
 
 ## 9. Practice notes (for humans)
 
@@ -735,8 +740,10 @@ and the `#lab` panel go.
   the HOW TO card (`src/howto.js` mirrors the art); fx particle counts stay on
   `g.fxRng`.
 
-Live experiments (r71): **skin** (§11, r60) · **speedPopup** (§2.6, open Q4) ·
-**speedDress** (speed-kill reward dressing, open Q13, r53). Decided r71: bossHp
+Live experiments (r73): **skin** (§11, r60) · **speedPopup** (§2.6, open Q4) ·
+**bossParts** (parts bite back: current / clock / inherit / burst, open Q17,
+r73, run-start tune knob) · **speedDress** (speed-kill reward dressing, open
+Q13, r53). Decided r71: bossHp
 → 3× (Q16; the r70 paragraph below is the record). Decided and
 removed in r67: fxSize → 2×, fxStyle → chunky (Q12), killAudio → heavy (Q14) —
 the r51/r52/r54 paragraphs below stay as the record of what was tried. Parked on
@@ -752,6 +759,32 @@ to A/B). In progress on `design/ship-b` (r69, unmerged): Ship B
 the plan's starting numbers, popcorn-rate red + 2/6 robust clears recorded not
 fixed, art (step 4) and recert pending; details in that branch's wiki §6.4. Queued: destruction
 sequence (after the art overhaul), hit impact blob, sprite-shaped debris.
+
+**r73 "boss parts" (core `g.tune.partBite`, lab `bossParts`, run start).** Jacob
+(2026-09-08): "I don't think killing the parts should make the boss easier. In
+DoDonPachi and in Blue Revolver, destroying the parts often makes the fight
+harder! You get more points but at the risk of dying because you made the boss
+more difficult." Today a dead part takes its emitter with it (§5.3: "structure
+changes as you win" — the DDP line read as relief). Three variants, values
+(1,000 / 2,000 speed) and windows untouched: **clock** — each dead part
+advances the phase's escalation clock one rep (`fireT += 240`: same beat
+position, faster + denser for the rest of the phase); **inherit** — the core
+takes over the dead part's emitter, denser (P1 pod lance → core lance ×5 at
+the pod's cadence; P2 node spray → core spray, wider, 10; P3 relay lance →
+core aimed lance ×5); **burst** — a 16-bullet retaliation ring on the kill,
+then clock + inherit. Corpus: DDP / Blue Revolver / Garegga (parts change
+the pattern, often for the worse — HOMAGE lineage); MSX natural meta — a
+route with a cost, chosen by skilled players, no scoring math touched;
+boghog — parts as a routing layer [T#], hp untouched (T1). Pushback: S2 —
+the retaliation ring must read as one group (it is: one `ring`, 1.6 speed,
+under `mayFire`); the referee's rng stream shifts only when the knob is on.
+Measured, 7 seeds, invulnerable expert bot (phase length · avg/max bullets):
+current P1 31.5 s · 25/53, P2 12.5 s · 48/94, P3 10.6 s · 38/90; clock 28.0 ·
+26/58, 13.3 · 55/121, 10.1 · 39/90; inherit 29.9 · 30/59, 14.5 · 61/152, 9.7 ·
+35/70; burst 28.8 · 32/69, 13.0 · 61/133, 11.1 · 48/117. Mortal expert deaths
+in P1: current 1.1, clock 1.9, inherit 1.0, burst 2.1 (it kills both pods on
+every seed). The bot clears 0–1 of 7 at 3× hp under every variant — bot
+ceiling, not a verdict. Jacob plays all four; verdict → constant, row deleted.
 
 **r70 "boss hp" (core `g.tune.bossHp`, lab `bossHp`, run start).** Multiplier on
 the boss's spawn hp (130) and `BOSS_PHASE_HP` (134/135); 0/1 = shipped. Jacob
@@ -1831,6 +1864,15 @@ is placement, not authoring time. Not scheduled.
   does not wait — the boss gate is the run's end anyway; MSX — timeouts are
   scoring integrity, and a killer should not meet one. Control sim at r72:
   see the recert when authorized. BUILD r71 → r72.
+- 2026-09-08 — r73 EXPERIMENT: BOSS PARTS BITE BACK in the Lab (open Q17).
+  Jacob's second boss observation: killing parts makes the boss easier; DDP /
+  Blue Revolver make it harder, points at the risk of a harder fight. Three
+  variants behind the run-start knob `g.tune.partBite` (Lab row `bossParts`):
+  clock (+1 rep per dead part), inherit (the core takes the emitter, denser),
+  burst (retaliation ring + both). Bookkeeping only in `killEnemy`
+  (`boss.partKills`), reactions in `updateBoss`, reset per phase. Default
+  byte-identical to r72 (control sim). Values, windows, hp, timeouts
+  untouched. Measured table + corpus in §10 r73. BUILD r72 → r73.
 - 2026-09-08 — DOCS: `docs/BOGHOG_WORKSHOP.md` added — the SHMUP WORKSHOP 01–06
   digest (Jacob re-watched the series: "it seemed like we've missed stuff"; a
   transcript-vs-repo diff confirmed the rubric kept the checkable rules and
