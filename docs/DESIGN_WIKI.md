@@ -731,6 +731,18 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     Normal — a modes lever) or an S5 MUST breach (sequence everywhere)? No
     referee check covers simultaneous elites today. Q18–Q20 are taken on
     branches / plans, hence 21.
+    **Addendum (Jacob, same day) — far-side popcorn at the same time:** "I love
+    popcorn enemies, they make the player feel powerful, but them coming in at
+    the same time at the far sides of the screen doesn't feel good." Where:
+    `risers(t, 4)` — four popcorn from the bottom alternating x = 40 / W−40
+    every 18 f, used at 2470 and 2660 (S5 rush) and 3290 (S6, the elite's
+    lane attacked from behind); `zakoGroup(420, −1)` + `zakoGroup(420, +1)`
+    (S1 rep 2, both sides at once); the crossers are one side at a time.
+    WS05: "nothing too near the edges (trap)"; spawn on opposite sides OR
+    leave a lane gap — both far edges at once is the trap reading, not the
+    mobility reading. Fix shape (Jacob's call): stagger the two sides (one
+    side first, the other a beat later), or bring risers in at the lane
+    edges (x ≈ 60 / W−60) rather than the screen edges. Modes lever too.
 
 ## 9. Practice notes (for humans)
 
