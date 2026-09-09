@@ -38,6 +38,30 @@ const SECTIONS = [
 let practiceSel = 1;   // SECTIONS[1..8] — the PRACTICE row's ◀▶ value
 let currentStart = 0;  // what retry re-enters (0 = full run)
 
+// r74 stem layers (lab `musicLayers`, wiki §10 / open Q20, docs/plans/stem-layers.md):
+// the shell watches the sim each frame and tells audio.js which stage section
+// the run is in; audio.js ramps the stage track's stem layers on the next bar
+// line. Presentation only — nothing here reads back into g, and with the row
+// off audio.setLayerSection only remembers the id (no fetch, no node). Sections
+// use SECTIONS (the SEC_T mirror above): sN = stageT reaching SECTIONS[N].t
+// (`>=`, the speed-kill caravan steps stageT by +4); midboss = the first frame
+// a type-4 enemy exists (S4 = 2400 is the gate, not the fight). s1 is applied
+// at every run start (the 2 s before SEC_T[1] are the opener too); a practice
+// start applies the latest section at/below its start immediately.
+const LAYER_SEC = [['s1', 1], ['s2', 2], ['s3', 3], ['s5', 5], ['s6', 6], ['s7', 7]].map(([id, i]) => [id, SECTIONS[i].t]);
+const layerFired = new Set();
+function layerStart(t) {
+  layerFired.clear(); let pre = 's1';
+  for (const [id, at] of LAYER_SEC) if (t >= at) { layerFired.add(id); pre = id; }
+  layerFired.add('s1'); if (t >= SECTIONS[5].t) layerFired.add('midboss'); // past the fight: no midboss lift (S4 practice still gets it when the type-4 spawns)
+  audio.setLayerSection(pre, true);
+}
+function layerTick() {
+  if (g.state !== 'play') return;
+  if (!layerFired.has('midboss')) for (let i = 0; i < g.enemies.count; i++) if (g.enemies.items[i].type === 4) { layerFired.add('midboss'); audio.setLayerSection('midboss'); break; }
+  for (const [id, at] of LAYER_SEC) if (!layerFired.has(id) && g.stageT >= at) { layerFired.add(id); audio.setLayerSection(id); }
+}
+
 // r42 title menu (audit MUST #1 — BR/Gunvein/M2 all use list menus; the old
 // banner-with-hidden-keys was the root of the "gaps surfacing one at a time"
 // symptom). DOM rows; keyboard arrows+Enter, pad d-pad+A/START, mouse click.
@@ -78,7 +102,7 @@ initOptions({
 
 function beginRun(t = currentStart) { // every run-start path
   currentStart = t;
-  audio.unlock(); startRun(g, t); resetHud(); audio.playMusic('stage');
+  audio.unlock(); startRun(g, t); resetHud(); layerStart(t); audio.playMusic('stage'); // r74: the section is known BEFORE the stems start, so a run begins IN its mix
   g.tune.partBite = { current: 0, clock: 1, inherit: 2, burst: 3 }[labGet('bossParts')] || 0; // r73 Lab experiment — AFTER startRun (it rebuilds g)
 }
 function retryRun() { g.seed = (Math.random() * 0xffffffff) >>> 0; beginRun(); } // same start, fresh seed — restart <2s (S7)
@@ -205,7 +229,7 @@ function frame(now) {
       if (pe.start) openOptions();
     }
     g.fxMeta = renderPrefs.speedDress; // r52/r53 lab: explosion recipe + meta dressing are chosen at spawn in core (fx rng only)
-    if (!optionsOpen() && !isHowToOpen()) { pollInput(gp); update(g); audio.drain(g); bgScroll += 1.05; }
+    if (!optionsOpen() && !isHowToOpen()) { pollInput(gp); update(g); audio.drain(g); layerTick(); bgScroll += 1.05; } // r74: drain first — the boss WARNING sfx stops the stems before a section could re-arm them
     acc -= STEP_MS;
   }
   syncReceipt(g, SECTIONS.find((x) => x.t === currentStart)?.label || 'FULL RUN'); // r44
@@ -226,5 +250,5 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 // devtools handle (r70): probes read the live game without the core knowing — mirrors sandbox.js's __sandbox
-window.__speedhell = { g: () => g };
+window.__speedhell = { g: () => g, layers: () => audio.layerState() }; // r74: `layers` = what the stems path is doing (sources, t0, gains, bytes)
 requestAnimationFrame(frame);

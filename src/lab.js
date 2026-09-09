@@ -13,6 +13,7 @@
 import { store } from './options.js';
 import { prefs, setSkin } from './render/renderer.js';
 import { SKINS } from './render/skins/index.js';
+import { musicLayersOn } from './audio.js';
 
 export const EXPERIMENTS = [
   // r60 — art direction skins (renderer-only; bullets, dot, hitboxes never move)
@@ -32,6 +33,13 @@ export const EXPERIMENTS = [
   { id: 'speedDress', label: 'speed-kill reward', def: 'off', ref: 'wiki §10 / open Q13',
     choices: [['off', 'current'], ['on', 'speed kill = tier up · rush = chain + big boom · cancels pop']],
     apply: (v) => { prefs.speedDress = v === 'on' ? 1 : 0; } },
+  // r74 EXPERIMENT — stem layers: the stage track's Demucs stems fade with the
+  // stage on bar lines (audio.js setLayerSection, docs/music/skyline-breaker.layers.json,
+  // docs/plans/stem-layers.md). Off = today's single <audio> path, byte-for-byte.
+  // Flipping it in the pause menu switches the path on resume at the same song position.
+  { id: 'musicLayers', label: 'music layers', def: 'off', ref: 'wiki §10 / open Q20 · docs/plans/stem-layers.md',
+    choices: [['off', 'current'], ['on', 'stems fade with the stage']],
+    apply: (v) => { musicLayersOn(v === 'on'); } },
 ];
 
 const KEY = 'speedhell.lab';

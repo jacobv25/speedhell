@@ -1,0 +1,17 @@
+{
+  "track": "skyline-breaker.mp3",
+  "bpm": 125, "beat_period": 0.48, "first_beat": 0.004, "bar_phase": 0, "beats_per_bar": 4,
+  "stem_dir": "assets/music/stems/skyline-breaker",
+  "layers": { "rhythm": ["drums", "bass"], "lead": ["other"], "voice": ["vocals"] },
+  "sections": {
+    "s1":      { "rhythm": 1.0,  "lead": 0.35, "voice": 0.0 },
+    "s2":      { "rhythm": 1.0,  "lead": 0.6,  "voice": 0.0 },
+    "s3":      { "rhythm": 1.0,  "lead": 1.0,  "voice": 0.6 },
+    "midboss": { "rhythm": 1.0,  "lead": 1.0,  "voice": 1.0 },
+    "s5":      { "rhythm": 1.0,  "lead": 1.0,  "voice": 1.0 },
+    "s6":      { "rhythm": 1.0,  "lead": 1.0,  "voice": 1.0 },
+    "s7":      { "rhythm": 0.25, "lead": 0.7,  "voice": 1.0 }
+  },
+  "fade_bars": 1,
+  "note": "r74 stem layers (docs/plans/stem-layers.md). Grid = the 125 BPM fit against the Demucs drum onsets (NOT the analyzer's 126.05 / 0.0464 guess nor the old 123 / 3.692). Section gains are a builder's starting guess — Jacob retunes by ear; the shape (opener held back, midboss lift, rush full, release hush) is the spec. sN = stageT crossing SEC_T[N] (main.js SECTIONS); midboss = first frame a type-4 enemy exists."
+}
