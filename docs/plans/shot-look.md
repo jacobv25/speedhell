@@ -1,5 +1,15 @@
 # Plan — Shot look: a bolt, not a rectangle (Lab `shotLook`)
 
+## Verdict r77
+
+**Jacob (2026-09-09): "heavy is obviously the best."** Shipped as THE shot in
+r77 — `heavy` became the constant (`renderer.js` `drawShots`), `current` and
+`bolt` were deleted with the Lab row, the impact blob + up-sparks are
+unconditional in the hit block (`fxRng` only), the hit click is always on, and
+the HOW TO card shows the bolt (`drawShot`). Record: wiki §10 r77, Q22 DECIDED,
+changelog 2026-09-09. Peeks `docs/img/r77-shot.png`, `docs/img/r77-howto-card.png`.
+The sections below are the plan as it was built (r75, r76).
+
 *Written 2026-09-09 for a builder agent. Branch: new `feat/shot-look` from
 `main` (r73). Jacob: "the shot feels like a pea shooter. Not so much the DPS
 but visually, it looks like a simple rectangle being fired." Read `CLAUDE.md`,

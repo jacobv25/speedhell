@@ -15,7 +15,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-09 (r76 EXPERIMENT: shotLook gains `heavy` — flame muzzle, 28 px bolt + echo + trail, messy stream, layered impact, hit click, shimmer (open Q22); r75 EXPERIMENT: the player shot as a BOLT — pixel bolt + trail + muzzle strobe + impact blob in the Lab (open Q22); r73 EXPERIMENT: boss parts bite back — clock / inherit / burst in the Lab (open Q17); r72: boss phase timeout 24s → 35s; §5.2b escalation clock written for the playtests; r71: boss hp 3× shipped — Jacob's verdict, Q16 decided; r70 EXPERIMENT: boss hp 1×–3× in the Lab; r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-09 (r77: SHOT LOOK DECIDED — `heavy` shipped as THE player shot (Jacob: "heavy is obviously the best"), the `shotLook` row + the rect and r75 bolt paths deleted, HOW TO card shows the bolt, Q22 decided; r76 EXPERIMENT: shotLook gains `heavy` — flame muzzle, 28 px bolt + echo + trail, messy stream, layered impact, hit click, shimmer (open Q22); r75 EXPERIMENT: the player shot as a BOLT — pixel bolt + trail + muzzle strobe + impact blob in the Lab (open Q22); r73 EXPERIMENT: boss parts bite back — clock / inherit / burst in the Lab (open Q17); r72: boss phase timeout 24s → 35s; §5.2b escalation clock written for the playtests; r71: boss hp 3× shipped — Jacob's verdict, Q16 decided; r70 EXPERIMENT: boss hp 1×–3× in the Lab; r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -438,6 +438,15 @@ either exactly true or errs in the player's favour, never against:
 > own `drawShip` / `drawRoundBullet` / `drawNeedle` (`src/render/renderer.js`), so it
 > mirrors the live art by construction. The rule now reads: keep the ship + dot
 > inside `drawShip` and the bullets inside those two functions.
+> **r77 update:** the bullet row also shows YOUR shot — the card calls the
+> renderer's `drawShot` (the shipped 6×28 bolt sprite, `shotRows` /
+> `shotSprite`; no muzzle or trail on the card), so the player family sits
+> next to the two enemy castes (S2: never a needle's hue). The contract itself
+> is untouched by r77: the 6 px kill dot and the 3 px white cores are drawn
+> exactly as before; the shot's larger drawn footprint (bolt + echo + 16 px
+> trail + 10×12 muzzle flame + impact blob + scorch) is player-family, sits
+> under enemy bullets, and marks no hitbox — the shot's collision reach
+> (`e.r + 6`) is unchanged and was never drawn.
 
 - **The ship's dot is drawn at 6px — the full effective kill radius** (your 3 +
   the bullet's 3, foldable because bullet radius is uniform). Rule: *a bullet's
@@ -743,9 +752,19 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     mobility reading. Fix shape (Jacob's call): stagger the two sides (one
     side first, the other a beat later), or bring risers in at the lane
     edges (x ≈ 60 / W−60) rather than the screen edges. Modes lever too.
-22. **The player shot looks like a pea shooter** (Jacob, 2026-09-09: "Not so
-    much the DPS but visually, it looks like a simple rectangle being fired").
-    Today (`renderer.js` ~185): a 4×20 rect in the skin's edge colour with a
+22. **The player shot looks like a pea shooter** — DECIDED 2026-09-09 (r77):
+    `heavy` shipped as THE shot. Jacob, after playing the r76 three-way row:
+    **"heavy is obviously the best."** Per the §10 lifecycle rule the row went
+    with the verdict: the r57 4×20 rect and the r75 5×20 bolt paths were
+    deleted, the r76 recipe (flame muzzle alternating barrels, 6×28 bolt +
+    echo + 16 px trail, ±1 px jitter + rail lag, six-frame impact blob +
+    up-sparks + scorch, hit click, spine shimmer) is now `drawShots` in
+    `renderer.js`, the impact fx spawn unconditionally in the hit block
+    (`fxRng` only), and the HOW TO card shows the bolt (`drawShot`). Details
+    §10 r77. The history below is the record. — The question as it was
+    opened (Jacob, 2026-09-09: "Not so much the DPS but visually, it looks
+    like a simple rectangle being fired"):
+    Then (`renderer.js` ~185, ≤ r76): a 4×20 rect in the skin's edge colour with a
     2×18 white core, no muzzle, no trail, and a hit answered by 3 sparks + one
     fire puff (`game.js` ~491). Corpus: boghog WS05 player shots — fast ✅,
     tall ✅, **"thick, detailed, juicy splash with good value contrast; always
@@ -819,11 +838,11 @@ and the `#lab` panel go.
   the HOW TO card (`src/howto.js` mirrors the art); fx particle counts stay on
   `g.fxRng`.
 
-Live experiments (r76): **skin** (§11, r60) · **speedPopup** (§2.6, open Q4) ·
+Live experiments (r77): **skin** (§11, r60) · **speedPopup** (§2.6, open Q4) ·
 **bossParts** (parts bite back: current / clock / inherit / burst, open Q17,
 r73, run-start tune knob) · **speedDress** (speed-kill reward dressing, open
-Q13, r53) · **shotLook** (the player shot as a bolt: current / bolt / heavy, open Q22,
-r75 + r76, live). Decided r71: bossHp
+Q13, r53). Decided r77: shotLook → heavy (Q22; the r75 / r76 paragraphs below
+are the record of what was tried). Decided r71: bossHp
 → 3× (Q16; the r70 paragraph below is the record). Decided and
 removed in r67: fxSize → 2×, fxStyle → chunky (Q12), killAudio → heavy (Q14) —
 the r51/r52/r54 paragraphs below stay as the record of what was tried. Parked on
@@ -840,6 +859,50 @@ the plan's starting numbers, popcorn-rate red + 2/6 robust clears recorded not
 fixed, art (step 4) and recert pending; details in that branch's wiki §6.4. Queued: destruction
 sequence (after the art overhaul), sprite-shaped debris (the hit impact blob
 landed in r75 as part of `shotLook`).
+
+**r77 "shot look" DECIDED — heavy shipped (renderer `drawShots` + `drawScorch`
++ fx pass 3 + `drawShot` for the card, core hit block, audio hit click; row
+deleted).** Jacob (2026-09-09), after the r76 three-way row: "heavy is
+obviously the best." Lifecycle rule applied in one commit: the r76 `heavy`
+recipe became the constant — `drawBoltsHeavy` → `drawShots`, `heavySprite` →
+`shotSprite` (`SHOT_ROWS`), `HEAVY_BLOB` → `IMPACT_D`; `prefs.shotLook` gone
+(`muzzleAt` / `muzzlePrev` / `muzzleSide` stay: they are the flame's data path,
+stamped by `main.js` off `SFX.SHOT`); the r57 rect loop and the r75 `drawBolts`
++ `BOLT_ROWS` + 2-frame strobe + 3-frame blob painter deleted; `drawScorch` and
+pass 3 unconditional. Core: the `g.fxShot` field and the `if (g.fxShot)` gate
+are gone — the impact blob (life 7, six drawn frames) + the two up-sparks spawn
+on every player-shot hit, `g.fxRng` only, `g.rng` untouched. `main.js` no
+longer mirrors `fxShot`. `audio.js`: `setHitWeight` gone, the once-per-frame
+150 Hz click is always on under the hit tick. `lab.js`: row deleted (rows left:
+skin, speedPopup, bossParts, speedDress; `test/shell.mjs` PASS prints exactly
+those). HOW TO card (`src/howto.js`): the bullet row now draws round · needle ·
+YOUR shot via the new renderer export `drawShot` (the 6×28 sprite, no muzzle /
+trail) — §6.2 r77 update; `img/r77-howto-card.png`. Tools: `shotpeek.html` and
+`artpeek.html` lost `?shot=` (one recipe; artpeek's max-load scene always fires
+now, so its draw time includes the shot). Control sim vs r76 HEAD: every bot
+line, the six robust seeds, every check and the determinism string
+`7022:81960:144:0:-1` identical; the only moving line is S8 stress — p50 0.017 →
+0.017, p99 0.143 → 0.114, max 0.595 → 0.574 ms (timing noise), heapDeltaKB 2775
+→ 3203 (the blob + two sparks per hit that the default sim never spawned
+before); `evidence/` untouched. Draw time (artpeek max-load, b = 1026, six
+shots in flight) 1.77 ms — the r76 heavy number (1.78 / 1.79); shotpeek frame
+f = 4587 draws in 0.35 ms. Peek: `img/r77-shot.png` (2× + 4× crop, same seed
+and frame as the r75/r76 sheets). **Left as is:** a bolt leaving the top drags
+its echo + ghosts for ~5 frames until core culls it at y < −20, then they
+vanish together — a comet tail following its head off the field; fading the
+tail would need per-bolt state, not a one-liner (renderer comment records it).
+**Corpus:** research `player-shot-juice-2026-09-09.md` §8 frame study (the
+muzzle is the biggest gap, alternating at a third of the ship; width is not;
+3–4 volleys on screen; Psikyo's pair); boghog 101 Shooting ("length will create
+the illusion of motion", "huge messy streams… Chaos feels good!", "the player
+needs to feel it when they're doing damage"); Vlambeer (muzzle flash, bigger
+bullets, lower accuracy, impact, permanence); WS05 player shots ("thick,
+detailed, juicy — always check in motion" — Jacob's verdict came from motion,
+not the sheets); rubric S1 (fast, tall, economy untouched — no DPS / cap /
+speed / hitbox change) and S2 (player family only, drawn under enemy bullets,
+no core masked). Pushback carried over from r76 (WS02 more white while firing,
+bible §2.5 alpha on echo + ghosts, bible §3 white exclusivity) stands as the
+accepted cost of the verdict.
 
 **r75 "shot look" (renderer `drawBolts` + fx pass 3, core `g.fxShot`, lab
 `shotLook`, live).** Jacob (2026-09-09): "the shot feels like a pea shooter.
@@ -2100,6 +2163,31 @@ is placement, not authoring time. Not scheduled.
   in the entry that lands the knobs. CLAUDE.md's clearance rule now cites the
   workshop digest. No design change, no BUILD bump (r70 stands); §8 gained
   items 17–19 (17 = pointer to the parked beatPulse Q17 in §10).
+- 2026-09-09 — r77: SHOT LOOK DECIDED — `heavy` SHIPPED (Q22). Jacob, after
+  the r76 three-way row: "heavy is obviously the best." §10 lifecycle rule,
+  one commit: the r76 recipe is the constant (`renderer.js` `drawShots` /
+  `shotSprite` / `IMPACT_D`, `drawScorch` + impact pass always on;
+  `prefs.shotLook` gone, the muzzle stamps stay); deleted: the r57 4×20 rect
+  loop, the r75 `drawBolts` + `BOLT_ROWS` + 2-frame strobe + 3-frame blob
+  painter, the Lab row (rows left: skin, speedPopup, bossParts, speedDress),
+  `g.fxShot` + its gate in the hit block (the blob + two up-sparks now spawn
+  on every hit, `fxRng` only), the `main.js` mirror, `audio.js`
+  `setHitWeight` (the hit click is always on), the `?shot=` switch in
+  `tools/shotpeek.html` / `tools/artpeek.html`. HOW TO card shows the bolt
+  through a new renderer export `drawShot` (§6.2 r77 update, the card follows
+  the winner as the r75 plan said). Control sim vs r76: bot lines, robust
+  seeds, checks and determinism `7022:81960:144:0:-1` identical; S8 stress
+  p99 0.143 → 0.114, max 0.595 → 0.574 (noise), heapDeltaKB 2775 → 3203 (the
+  per-hit fx the default sim never spawned before); evidence untouched, recert
+  whenever the next design change settles. Max-load draw 1.77 ms (r76 heavy
+  1.78). Peeks `img/r77-shot.png`, `img/r77-howto-card.png`. Corpus: research
+  §8 frame study (muzzle first, alternating, a third of the ship), boghog 101
+  Shooting (length, messy streams, feel the damage), Vlambeer (muzzle, bigger
+  bullets, lower accuracy, impact, permanence), WS05 ("always check in
+  motion" — the verdict came from play), S1/S2 held (no DPS / cap / hitbox /
+  speed / colour change; player family under enemy bullets). Left as is: the
+  top-edge echo/ghost drag (~5 frames, cosmetic, not a one-liner). Details
+  §10 r77; Q22 DECIDED; §10 live list. BUILD r76 → r77.
 - 2026-09-09 — r76 EXPERIMENT: SHOT LOOK `heavy` in the Lab (open Q22, third
   choice on the r75 row). Jacob on r75: "better but still a pea shooter."
   `heavy` = bolt + the six recipes of `research/player-shot-juice-2026-09-09.md`
