@@ -13,7 +13,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-07 (r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-08 (r70 EXPERIMENT: boss hp 1×–3× in the Lab (open Q16); r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -604,6 +604,12 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
    and rounds r 3.2 while §6.2 says every bullet is 3 (dot = 6 = 3 + 3). Truth is
    5.6 / 6.2 to the dot. Unify at 3.0 (both castes move; recert) or document the
    split? Surfaced by r59.
+16. **Boss phase hp** (r70 lab `bossHp` 1×–3×). The boss dies in 5–7 s per
+    phase against the midboss's 10–29 s; its escalation never fires for a
+    killer. Which multiplier makes the boss the exam and not the quiz, without
+    turning it into sponge? Playtest decides; measured table in §10 r70. Tied
+    to the coming decisions: parts that bite back (DDP/Blue Revolver) and
+    difficulty modes (Normal = solo midboss, Hard = with traffic).
 
 ## 9. Practice notes (for humans)
 
@@ -638,7 +644,9 @@ and the `#lab` panel go.
   `g.rng`, the referee (the sim runs defaults; the renderer is not imported
   by sim.mjs) or replays.
 - **Kinds:** presentation (renderer/fx prefs, live) vs tune (core knobs, run
-  start — the Booth VARIANTS chips; keep those in the Booth, not here).
+  start — the Booth VARIANTS chips). r70 amendment (Jacob): a tune knob MAY
+  live here when it is read once at run start, never live, and stamped like
+  every other row (first: `bossHp`).
 - **Lifecycle rule:** each experiment cites its wiki open-question number.
   When Jacob decides: winner → constant, losers deleted in the same commit,
   verdict + tester quotes in this changelog. Cap ~5 live experiments.
@@ -648,7 +656,8 @@ and the `#lab` panel go.
   the HOW TO card (`src/howto.js` mirrors the art); fx particle counts stay on
   `g.fxRng`.
 
-Live experiments (r67): **skin** (§11, r60) · **speedPopup** (§2.6, open Q4) ·
+Live experiments (r70): **skin** (§11, r60) · **speedPopup** (§2.6, open Q4) ·
+**bossHp** (boss phase hp 1×–3×, open Q16, r70, run-start tune knob) ·
 **speedDress** (speed-kill reward dressing, open Q13, r53). Decided and
 removed in r67: fxSize → 2×, fxStyle → chunky (Q12), killAudio → heavy (Q14) —
 the r51/r52/r54 paragraphs below stay as the record of what was tried. Parked on
@@ -664,6 +673,20 @@ to A/B). In progress on `design/ship-b` (r69, unmerged): Ship B
 the plan's starting numbers, popcorn-rate red + 2/6 robust clears recorded not
 fixed, art (step 4) and recert pending; details in that branch's wiki §6.4. Queued: destruction
 sequence (after the art overhaul), hit impact blob, sprite-shaped debris.
+
+**r70 "boss hp" (core `g.tune.bossHp`, lab `bossHp`, run start).** Multiplier on
+the boss's spawn hp (130) and `BOSS_PHASE_HP` (134/135); 0/1 = shipped. Jacob
+(2026-09-08): "the boss dies so quickly. Much more quickly than the midboss which
+feels strange… That's why we playtest!" — the standing no-hp-inflation condition
+guards against fixing balance complaints with sponge; this is boghog T1 (hp =
+pattern-duration knob) applied so the phases exist, the r25 midboss argument
+again. Measured, 7 seeds × expert bot (phase length P1/P2/P3 · avg bullets ·
+clears): 1× 6.9/5.2/4.4 s · 20/24/21 · 7/7; 1.5× 9.8/8.7/5.5 · 21/32/23 · 7/7;
+2× 12.5/10.9/6.6 · 21/33/29 · 6/7; 2.5× 15.9/7.7/6.5 · 21/28/29 · 4/7; 3×
+20.3/10.3/4.4 · 21/36/31 · 1/7. The escalation (rep ≥ 3) only exists from 2×
+up; no phase reaches the 24 s timeout even at 3×; the bot losses past 2× are
+the bot dying, not timeouts. Recommendation 2×; Jacob tests all five. Verdict
+→ constant, row deleted (lifecycle rule). Sim runs defaults (multiplier 0).
 
 **r54 "kill sound" (`audio.js` `thump`, lab `killAudio`).** 'heavy' layers a
 sub-bass sine under every explosion — 100 Hz (popcorn) / 80 Hz (elite,
@@ -1679,3 +1702,22 @@ is placement, not authoring time. Not scheduled.
   0.52 → 2.68 ms on one frame (p99 0.111, budget 16.6) — the chunky max-load
   spawn, still 6× under budget; evidence untouched, recert whenever the next
   design change settles. r66 is the `feat/music-cues` branch. BUILD r65 → r67.
+- 2026-09-08 — r70 EXPERIMENT: BOSS HP MULTIPLIER in the Lab (open Q16). Jacob,
+  after playtesting: the boss feels easier than the midboss (measured: midboss
+  34–48 bullets avg with 1.3–2.1 extra enemies always on screen, boss 16–32
+  and none; phases die in 4–8 s vs 10–29 s), killing parts makes it EASIER
+  (DDP / Blue Revolver make it harder — next), and "we can increase the HP of
+  the boss, despite what the corpora says… That's why we playtest!" Corpus:
+  boghog T1 supports hp as the pattern-duration knob (the r25 midboss case);
+  MSX — the boss is the exam, escalation should be met by killers too; the
+  no-hp-inflation standing condition is about sponge-as-balance, not
+  duration, and Jacob has explicitly overridden it for the boss regardless.
+  Lab row `bossHp` (1× / 1.5× / 2× / 2.5× / 3×), a run-start tune knob
+  (§10 Kinds amended) → `g.tune.bossHp`, applied at boss spawn and at each
+  phase change; stamped on receipts. Referee runs defaults (identical to the
+  r65 certificate — control sim). Timeouts untouched (no phase reaches 24 s
+  even at 3×). Coming next, Jacob's order: parts that bite back, then
+  difficulty modes (Normal / Hard; traffic at the midboss as the first
+  modifier; hp identical across modes — modes are not a slider, Pillar 3).
+  The boss-ritual plan (docs/plans/boss-ritual.md) waits behind these.
+  BUILD r67 → r70 (r68/r69 = parked/in-progress branches).

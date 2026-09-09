@@ -726,7 +726,7 @@ export function advanceBossPhase(g, e, killed, fade = 1) {
   // silently (dead=1) either way; gate opens, clear sequence begins.
   if (e.phase >= 2) { e.dead = 1; g.gate = null; g.bossDown = true; g.bossKilled = killed; return; }
   e.phase++; e.fireT = 0;
-  e.hp = BOSS_PHASE_HP[e.phase];
+  e.hp = g.tune.bossHp ? Math.round(BOSS_PHASE_HP[e.phase] * g.tune.bossHp) : BOSS_PHASE_HP[e.phase]; // r70 Lab experiment: phase hp multiplier (open Q16)
   e.prevHp = e.hp; e.campT = 0; e.latchX = -1e9; e.latchX2 = -1e9; e.latchN = 0;
   e.grindHp = 0; e.latchT = 0; // fresh serve ration + grind account + refund price
   // per form (moveT carries across the handoff: a live player stays credited)

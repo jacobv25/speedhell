@@ -24,6 +24,13 @@ export const EXPERIMENTS = [
     apply: (v) => { prefs.speedPopup = v; } },
   // r67: fxSize + fxStyle (r51/r52) and killAudio (r54) left the Lab — 2×, chunky, heavy shipped (open Q12/Q14 decided 2026-09-07)
   // r53 — dress the natural meta (research/explosion-and-weapon-feel §5 option 4)
+  // r70 EXPERIMENT — boss phase hp multiplier (a TUNE knob: read at run start by
+  // main.js beginRun → g.tune.bossHp; never live; stamped on receipts/hi-scores).
+  // Jacob 2026-09-08: "the boss dies so quickly… that's why we playtest". Measured
+  // (7 seeds, expert bot): phases 6.9/5.2/4.4 s today → 12.5/10.9/6.6 s at 2×.
+  { id: 'bossHp', label: 'boss hp (next run)', def: '1', ref: 'wiki §10 / open Q16',
+    choices: [['1', '1× (current: 130/134/135)'], ['1.5', '1.5×'], ['2', '2×'], ['2.5', '2.5×'], ['3', '3×']],
+    apply: () => {} }, // applied at run start, see main.js
   { id: 'speedDress', label: 'speed-kill reward', def: 'off', ref: 'wiki §10 / open Q13',
     choices: [['off', 'current'], ['on', 'speed kill = tier up · rush = chain + big boom · cancels pop']],
     apply: (v) => { prefs.speedDress = v === 'on' ? 1 : 0; } },

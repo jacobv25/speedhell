@@ -69,7 +69,7 @@ export function makeGame(seed = 1) {
     // r26 variant knobs (Booth experiments): deterministic — same knobs + seed
     // + inputs = same run. 0 / 'top' = shipped ENEMY_DEFS values. The referee
     // never sets these, so certified paths are untouched by construction.
-    tune: { eliteHp: 0, eliteEntry: 'side', eliteEscort: 1, midbossHp: 0 }, // r27: side entry + escort are the shipped defaults (Booth verdict); chips roll back
+    tune: { eliteHp: 0, eliteEntry: 'side', eliteEscort: 1, midbossHp: 0, bossHp: 0 }, // bossHp: r70 Lab EXPERIMENT — multiplier on every boss phase's hp (0/1 = shipped 130/134/135), set at run start // r27: side entry + escort are the shipped defaults (Booth verdict); chips roll back
     warn: 0, // r6 S3b arrival ritual: frames of WARNING remaining before the boss gate
 
     clearBonus: 0, clearAt: 0, endFrame: 0,
@@ -243,6 +243,7 @@ export function spawnEnemy(g, type, x, y, opts = {}) {
   e.hp = d.hp; e.r = d.r; e.age = 0; e.phase = 0; e.fireT = 0; e.dead = 0;
   if (type === 3 && g.tune.eliteHp) e.hp = g.tune.eliteHp;   // r26 variant knob
   if (type === 4 && g.tune.midbossHp) e.hp = g.tune.midbossHp;
+  if (type === 5 && g.tune.bossHp) e.hp = Math.round(e.hp * g.tune.bossHp); // r70 experiment (open Q16)
   e.side = opts.side || 1; e.holdT = opts.holdT || 0;
   e.value = d.value; e.window = d.window; e.sweepOff = 0; e.campT = 0; e.prevHp = e.hp;
   e.latchX = -1e9; e.latchX2 = -1e9; e.latchN = 0; e.trackT = 0; e.pxEma = g.player.x;
