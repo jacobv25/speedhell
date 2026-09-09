@@ -108,6 +108,7 @@ export function makeGame(seed = 1) {
     shake: 0, shakeMax: 0, flash: 0, cancelFlash: 0,
     hitstop: 0, fxHitstop: 0, // r8-fx: frames of world-freeze remaining; fxHitstop = frames granted per BIG/PHASE kill (0 = off)
     fxMeta: 0, // r53 lab: dress the natural meta — speed kills explode one tier up, rush = PHASE-tier chain + KILL_BIG, cancel walls pop per bullet (presentation only; scoring untouched)
+    fxShot: 0, // r75 lab `shotLook`: impact blob on every player-shot hit (research "every hit is answered", option 2) — mirrored from the renderer pref by main.js each frame like fxMeta; presentation only, fxRng only; 0 = byte-identical spawns
     sfx: new Array(SFX_CAP).fill(0), sfxN: 0, // sound-event ring, drained per frame
     // instrumentation (read by sim + critics; cheap fixed-size)
     stats: {
@@ -482,6 +483,7 @@ export function update(g) {
     }
     // player shots vs enemy
     if (e.vulnAt >= 0) {
+      let hits = 0; // r75: shots landing on THIS enemy this frame — only the gated impact blob below reads it
       for (let j = g.pBullets.count - 1; j >= 0; j--) {
         const b = g.pBullets.items[j];
         const dxx = b.x - e.x, dyy = b.y - e.y;
@@ -496,6 +498,15 @@ export function update(g) {
             spawnFx(g, FX.SPARK, b.x, b.y, Math.cos(a) * s, Math.sin(a) * s, 8 + g.fxRng.range(0, 6), 1, FAM.ORANGE);
           }
           spawnFx(g, FX.FIRE, b.x, b.y - 2, 0, -0.5, 8, 4, FAM.ORANGE);
+          if (g.fxShot) { // r75 lab shotLook=bolt: IMPACT BLOB — an opaque flare at the contact point, 3 frames,
+            // sized by shots landing on this enemy this frame (1 → 4px, 2 → 6px, 3+ → 8px: point-blank reads as a
+            // beam). DOJ "every hit is answered" (research 2026-09-04 §2, option 2). FX.CORE with ck=2 — the
+            // renderer draws it opaque, pixel-disc, in the player family. fxRng only (a 1px jitter so a held
+            // point-blank stream shimmers); default fxShot=0 → not one spawn, not one fxRng pull.
+            hits++;
+            const q = spawnFx(g, FX.CORE, b.x + g.fxRng.range(-1, 1), b.y - 1, 0, 0, 3, hits < 3 ? 1 + hits : 4, FAM.WHITE);
+            if (q) q.ck = 2;
+          }
           sfx(g, SFX.HIT);
           if (g.player.bombActive > 0) e.hp -= 0.5;
           if (e.hp <= 0) { if (e.type === 5) scoreBossPhase(g, e); else killEnemy(g, e, i); break; }

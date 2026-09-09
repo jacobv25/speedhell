@@ -32,6 +32,10 @@ export const EXPERIMENTS = [
   { id: 'speedDress', label: 'speed-kill reward', def: 'off', ref: 'wiki §10 / open Q13',
     choices: [['off', 'current'], ['on', 'speed kill = tier up · rush = chain + big boom · cancels pop']],
     apply: (v) => { prefs.speedDress = v === 'on' ? 1 : 0; } },
+  // r75 — the player shot as a bolt (renderer + one gated fx spawn in core, fx rng only; open Q22)
+  { id: 'shotLook', label: 'shot look', def: 'current', ref: 'wiki §10 / open Q22',
+    choices: [['current', 'current — 4×20 rect + white core'], ['bolt', 'bolt — pixel bolt · trail · muzzle flash · impact blob']],
+    apply: (v) => { prefs.shotLook = v; } },
 ];
 
 const KEY = 'speedhell.lab';

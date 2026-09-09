@@ -4,7 +4,7 @@
 // menu is the shell — retry/quit/mute/TATE live there — and the gamepad is a
 // first-class citizen: START = menu, d-pad/stick navigates it, A activates,
 // B backs out; title picker on d-pad; death screen A/shot = retry, B = title.
-import { makeGame, startRun, update, W, H } from './core/game.js';
+import { makeGame, startRun, update, W, H, SFX } from './core/game.js';
 import { draw, resetHud, prefs as renderPrefs } from './render/renderer.js';
 import * as audio from './audio.js';
 import { BUILD } from './version.js';
@@ -205,7 +205,12 @@ function frame(now) {
       if (pe.start) openOptions();
     }
     g.fxMeta = renderPrefs.speedDress; // r52/r53 lab: explosion recipe + meta dressing are chosen at spawn in core (fx rng only)
-    if (!optionsOpen() && !isHowToOpen()) { pollInput(gp); update(g); audio.drain(g); bgScroll += 1.05; }
+    g.fxShot = renderPrefs.shotLook === 'bolt' ? 1 : 0; // r75 lab shotLook: the impact blob spawns in core (fx rng only), same mirror as fxMeta
+    if (!optionsOpen() && !isHowToOpen()) {
+      pollInput(gp); update(g);
+      for (let i = 0; i < g.sfxN; i++) if (g.sfx[i] === SFX.SHOT) { renderPrefs.muzzleAt = g.frame; break; } // r75: the renderer strobes the muzzle off this stamp (read BEFORE drain empties the ring)
+      audio.drain(g); bgScroll += 1.05;
+    }
     acc -= STEP_MS;
   }
   syncReceipt(g, SECTIONS.find((x) => x.t === currentStart)?.label || 'FULL RUN'); // r44

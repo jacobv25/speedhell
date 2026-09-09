@@ -20,7 +20,10 @@ import { SKINS } from './skins/index.js';
 // still draw BELOW bullets (S2 — they never mask threats).
 // speedDress: r53 — transported to core as g.fxMeta by main.js (renderer ignores it)
 // skin: r60 — which skins/*.js draws the world (setSkin below; Lab row `skin`); r62 default cute-occult
-export const prefs = { speedPopup: 'both', speedDress: 0, skin: 'cute-occult' };
+// shotLook: r75 (open Q22) — 'current' = the 4×20 rect + 2×18 white core · 'bolt' = pixel bolt + trail + muzzle
+// flash + impact blob (core side: main.js mirrors it into g.fxShot). muzzleAt = the g.frame main.js last saw
+// SFX.SHOT in the ring (-1 = never); the renderer strobes the muzzle off it for 2 frames — no core change.
+export const prefs = { speedPopup: 'both', speedDress: 0, skin: 'cute-occult', shotLook: 'current', muzzleAt: -1 };
 const FX_SIZE = 2; // r67: explosion draw-size multiplier, 2× shipped (Lab open Q12 decided 2026-09-07)
 
 // r62: cute-occult is THE look (Jacob's verdict 2026-09-05: "the most personality");
@@ -182,7 +185,10 @@ export function draw(g, ctx, bgScroll) {
 
   // player shots — tall white-core bolts with the skin's player edge colour (S1);
   // the player family never shares a hue with enemy needles (r5 S2-MUST-3).
-  for (let i = 0; i < g.pBullets.count; i++) {
+  // r75 Lab `shotLook` (open Q22): 'bolt' swaps the rect for drawBolt + a 2-frame muzzle strobe on the
+  // barrels; 'current' is this loop, untouched. Both stay BELOW enemy bullets (S2 display contract).
+  if (prefs.shotLook === 'bolt') drawBolts(ctx, g);
+  else for (let i = 0; i < g.pBullets.count; i++) {
     const b = g.pBullets.items[i], x = Math.round(b.x), y = Math.round(b.y);
     ctx.fillStyle = SHIP.shot;
     ctx.fillRect(x - 2, y - 10, 4, 20);
@@ -285,6 +291,52 @@ export function drawNeedle(ctx, x, y, ang) {
   ctx.restore();
 }
 
+// --- r75 player shot as a BOLT (Lab `shotLook`, open Q22; bible §2 grid, §5/§6) --------------------
+// Same colour family as the rect it replaces (the skin's SHIP.shot edge + white; the darker rim is the
+// skin's SHIP.shade — still violet, player-only, r5 S2-MUST-3), same 20px height and 9px/frame (fast +
+// tall, S1), one cached pixel sprite. Rows top→bottom: a 1px rim tip, a 3px white HEAD (rows 1–4) inside
+// a 1px darker rim, the body (violet with a 1px white spine) narrowing at row 12, a 2px violet tail —
+// then, drawn first so the bolt covers it, an 8px trail: two stepped ghosts of the tail at the bolt's
+// previous positions (alpha 0.5 / 0.25 — the bible's fx-halo exception, capped; integer-snapped).
+// boghog WS05: "thick, detailed, juicy — always check in motion"; follow-through: the shot stream is
+// where the eye reads the ship. Hitboxes, speed, cap, damage: untouched (renderer-only, no g.rng).
+const BOLT_ROWS = [ // per row [x offset, width, colour]* for the 5×20 sprite; 0 = rim, 1 = body, 2 = white
+  [[0, 1, 0]],
+  [[-1, 1, 0], [0, 1, 2], [1, 1, 0]],
+  [[-2, 1, 0], [-1, 3, 2], [2, 1, 0]], [[-2, 1, 0], [-1, 3, 2], [2, 1, 0]], [[-2, 1, 0], [-1, 3, 2], [2, 1, 0]],
+  [[-2, 1, 0], [-1, 1, 1], [0, 1, 2], [1, 1, 1], [2, 1, 0]], [[-2, 1, 0], [-1, 1, 1], [0, 1, 2], [1, 1, 1], [2, 1, 0]],
+  [[-2, 1, 0], [-1, 1, 1], [0, 1, 2], [1, 1, 1], [2, 1, 0]], [[-2, 1, 0], [-1, 1, 1], [0, 1, 2], [1, 1, 1], [2, 1, 0]],
+  [[-2, 1, 0], [-1, 1, 1], [0, 1, 2], [1, 1, 1], [2, 1, 0]], [[-2, 1, 0], [-1, 1, 1], [0, 1, 2], [1, 1, 1], [2, 1, 0]],
+  [[-2, 1, 0], [-1, 1, 1], [0, 1, 2], [1, 1, 1], [2, 1, 0]],
+  [[-1, 1, 0], [0, 1, 2], [1, 1, 0]], [[-1, 1, 0], [0, 1, 2], [1, 1, 0]],
+  [[-1, 1, 0], [0, 1, 1], [1, 1, 0]], [[-1, 1, 0], [0, 1, 1], [1, 1, 0]],
+  [[-1, 2, 1]], [[-1, 2, 1]], [[-1, 2, 1]], [[-1, 2, 1]],
+];
+function drawBolts(ctx, g) {
+  const { SHIP } = skin.pal;
+  const s = CACHE.get('bolt') || sprite('bolt', 20, null, (c) => {
+    const col = [SHIP.shade, SHIP.shot, WHITE];
+    for (let r = 0; r < BOLT_ROWS.length; r++) for (const [dx, w, k] of BOLT_ROWS[r]) { c.fillStyle = col[k]; c.fillRect(dx, r - 10, w, 1); }
+  });
+  const n = g.pBullets.count, items = g.pBullets.items;
+  ctx.fillStyle = SHIP.shot; // trail ghosts first (under every bolt), stepped alpha, then all the bolts
+  ctx.globalAlpha = 0.5;
+  for (let i = 0; i < n; i++) { const b = items[i]; ctx.fillRect(Math.round(b.x) - 1, Math.round(b.y) + 10, 2, 4); }
+  ctx.globalAlpha = 0.25;
+  for (let i = 0; i < n; i++) { const b = items[i]; ctx.fillRect(Math.round(b.x) - 1, Math.round(b.y) + 14, 2, 4); }
+  ctx.globalAlpha = 1;
+  for (let i = 0; i < n; i++) { const b = items[i]; ctx.drawImage(s.img, Math.round(b.x) - s.o, Math.round(b.y) - s.o); }
+  // muzzle strobe: main.js stamps prefs.muzzleAt with g.frame whenever the ring carried SFX.SHOT; frame 1 a
+  // 5×3 white flash on each barrel mouth (shots leave at x±7, y−10), frame 2 a 3×2 ember. Follows the
+  // ship's invuln blink so a flash never floats over an invisible ship; play state only (g.frame holds at death).
+  const age = g.frame - prefs.muzzleAt, p = g.player;
+  if (age < 0 || age > 1 || g.state !== 'play' || (p.invuln > 0 && (g.frame & 2))) return;
+  const x = Math.round(p.x), y = Math.round(p.y);
+  ctx.fillStyle = WHITE;
+  if (age === 0) { ctx.fillRect(x - 9, y - 12, 5, 3); ctx.fillRect(x + 5, y - 12, 5, 3); }
+  else { ctx.fillRect(x - 8, y - 12, 3, 2); ctx.fillRect(x + 6, y - 12, 3, 2); }
+}
+
 function drawFx(ctx, g) {
   const n = g.particles.count, items = g.particles.items;
   const S = FX_SIZE;
@@ -293,7 +345,14 @@ function drawFx(ctx, g) {
   for (let i = 0; i < n; i++) {
     const q = items[i];
     if (q.delay > 0) continue;
-    if (q.kind === FX.RING && q.ck) { // linear expansion to target, hard cull (life sized to match)
+    if (q.kind === FX.CORE && q.ck === 2) { // r75 impact blob: opaque pixel disc, player family (FX_RAMP[0]) rim + white;
+      // full size 2 frames, one step smaller on its last — snaps on, collapses. source-over (never additive: it must
+      // read as a solid flare on the hull, not a glow), still under bullets. size = radius 2/3/4 (4/6/8px).
+      const r = q.life > 1 ? q.size : q.size - 1, x = Math.round(q.x), y = Math.round(q.y);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = FX_RAMP[0][2]; disc(ctx, x, y, r);
+      ctx.fillStyle = FX_RAMP[0][0]; disc(ctx, x, y, r - 1);
+    } else if (q.kind === FX.RING && q.ck) { // linear expansion to target, hard cull (life sized to match)
       const t = 1 - q.life / q.max;
       ctx.globalAlpha = 1; ctx.strokeStyle = FX_RAMP[q.hue][0]; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.arc(Math.round(q.x), Math.round(q.y), Math.max(1, Math.round(q.size * S * t)), 0, 7); ctx.stroke();
@@ -332,7 +391,7 @@ function drawFx(ctx, g) {
   ctx.globalCompositeOperation = 'lighter';
   for (let i = 0; i < n; i++) { // pass 2: hot kinds, additive
     const q = items[i];
-    if (q.delay > 0 || q.kind === FX.SMOKE || q.kind === FX.DEBRIS || q.kind === FX.BLOB || (q.kind === FX.RING && q.ck)) continue;
+    if (q.delay > 0 || q.kind === FX.SMOKE || q.kind === FX.DEBRIS || q.kind === FX.BLOB || (q.kind === FX.RING && q.ck) || (q.kind === FX.CORE && q.ck === 2)) continue;
     const a = q.life / q.max, ramp = FX_RAMP[q.hue];
     const stop = ((1 - a) * 3.99) | 0;
     switch (q.kind) {
