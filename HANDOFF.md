@@ -78,17 +78,26 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
    designs, not sliders (Pillar 3 / §11): boss hp stays 3× on both; parts
    bite back on both; first modifier = midboss traffic (Normal solo, Hard
    with the crosser pulse). Then a plan + agent, Ship-B style.
-2. **Parts verdict (Q17)** from expert hands on the r73 Lab links → winner
-   becomes the constant, row deleted, §5.3 priority rule rewritten.
+2. **Parts verdict (Q17) — SAVED for Mark + boghog** (Jacob, 2026-09-09:
+   "I'm not sure if it's my skill issue or the boss is unfair"). Expert hands
+   on the r73 Lab links → winner becomes the constant, row deleted, §5.3
+   priority rule rewritten. Don't decide this from Jacob's play alone.
 3. **Boss ritual** (`docs/plans/boss-ritual.md`): waits on Jacob's marks in
    the music lab (P1/P2/P3 sections, loop points, pattern moves with the
    five move words), intro dialogue draft, skip input (START vs double fire).
 4. **Stem layers** built on `feat/stem-layers` → Jacob listens with `?lab=musicLayers:on` (needs the gitignored stems: run the analyzer in whichever tree serves it); merge if it flows.
 5. **Midboss tell** (`docs/plans/midboss-tell.md`) — small; build when Jacob
    says go (Lab `midbossTell`).
-6. **Ship B:** art (second craft, HOW TO, artpeek `?ship=1`), Ship-B bot
-   runs in the referee (Jacob-authorized), maybe the ±1.6 angle retune;
-   sandbox ship sliders no longer move the ship (reads SHIPS[g.ship]).
+6. **Ship B — TODO (Jacob, 2026-09-09):** "it will require more tweaking…
+   In the shmup games I've played, the ship with the wide shot is easier at
+   clearing stages and popcorn enemies but more challenging when facing the
+   boss. Our ship B just feels all around more challenging." Target identity:
+   EASIER on popcorn/stage, HARDER on the boss. The probe agrees (popcorn
+   speed-kill rate 45 % vs A's 62 %; range DPS a fifth of A because missed
+   side bolts hold cap slots). Retune as a measured option (side-bolt angle
+   ±1.6, per-bolt lifetime, or a cap that doesn't count off-screen bolts);
+   then art (second craft, HOW TO, artpeek `?ship=1`) and Ship-B referee
+   runs (Jacob-authorized). Sandbox ship sliders no longer move the ship.
 7. **Referee recert** after 1–2 land. The expert bot is below Jacob's target
    player at 3× — a stronger dodge (referee change) or re-read bars (§8.1).
 8. **Campaign (stages 2–5):** the other session's proposal
