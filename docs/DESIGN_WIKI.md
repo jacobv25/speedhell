@@ -716,6 +716,21 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     telegraphed (a 12-frame flash on the core before it fires); clock is the
     least legible (nothing on screen says why it got faster). Playtest by
     expert hands before the verdict; Jacob's difficulty is one data point.
+21. **Flow: stage 1 overlaps strong enemies** (Jacob, 2026-09-09, from boghog
+    WS05 "never two strong enemies at once — paralysis"; rubric S5 MUST says
+    never 2+ elites simultaneously). Measured at r73, 7 seeds: **S6 — two
+    elites on screen together for ~7.4 s (442 f) on nearly every run**, all
+    three bots (elite #2 at stageT 3260 arrives 360 f after #1 at 2900, inside
+    #1's 380 f window; only a speed-killer avoids it — the timeline treats it
+    as speed-kill enforcement); **S3 — all four mids on screen at once** (they
+    hold deep for 120–153 f while spawning 110 f apart; the timeline comment
+    says "never simultaneous" but means spawn frames, not presence). Popcorn
+    and turret pairs on opposite sides are what WS05 prescribes (Top Line);
+    the midboss crosser pulse is pressure/clutter, not a second strong enemy.
+    Q: is the S6 overlap a designed speed-kill tax (keep on Hard, sequence on
+    Normal — a modes lever) or an S5 MUST breach (sequence everywhere)? No
+    referee check covers simultaneous elites today. Q18–Q20 are taken on
+    branches / plans, hence 21.
 
 ## 9. Practice notes (for humans)
 
