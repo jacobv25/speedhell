@@ -48,6 +48,23 @@ first — they are the deep record; this file is the quick resume.*
 
 ## Left to do (most important first)
 
+> **Jacob's TODO (2026-09-08, added by the r63–r73 session; the rest of this
+> file is the 2026-09-01 snapshot — the wiki changelog is current):**
+> - **Difficulty modes (Normal / Hard) — Jacob playtests more and writes down
+>   what each mode should do at each section of the stage** (S1 … S8; e.g.
+>   Normal = solo midboss, Hard = with the popcorn traffic). Modes are named
+>   designs, not sliders (Pillar 3 / wiki §11); boss hp stays 3× on both;
+>   parts bite back on both. Plan + agent build after his notes exist.
+> - **Parts verdict (open Q17):** expert playtesters (Mark / boghog) on the
+>   r73 Lab variants (`?lab=bossParts:clock|inherit|burst`); both lenses lean
+>   inherit. Winner → constant, row deleted.
+> - **Boss ritual plan** (`docs/plans/boss-ritual.md`): waits on Jacob's marks
+>   in `tools/music/lab.html`, intro lines, skip input.
+> - Ship B (`design/ship-b`, r69, unmerged): art + referee runs when Jacob
+>   calls the numbers final. Parked: `feat/music-cues` (r66), `feat/beat-pulse`
+>   (r68). Referee recert once modes + parts land (last cert r65).
+
+
 1. **DECISION (Jacob): referee midboss bot-priority.** The expert bot times
    out the 400hp midboss on every seed (it chases escort popcorn; humans kill
    it in ~4–5s). Options in wiki changelog r26/r27: (a) bot target-priority
