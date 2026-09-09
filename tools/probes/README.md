@@ -10,3 +10,8 @@ All import the core by ABSOLUTE path (adjust if the repo moves).
   seen, deaths, kill ages (the r16-r18 top-band investigation).
 - `seam-probe2.mjs` — "nothing shootable" seconds across the S1→S2 seam (r21).
 - `fmt-midboss.py` — formatter for midboss-probe output.
+- `campaign-probe.mjs` — r78 campaign infrastructure: `startRun(g)` vs
+  `startRun(g, 0, 0)` identity with the referee's four bots (seed C0FFEE), then a
+  faked two-stage run (`STAGES = [s1, s1]`) asserting the carry-over — rng objects
+  unchanged, stock / score carried, chain reset, `g.level`, the final `'clear'`.
+  Imports by RELATIVE path (runs in any worktree). Exit 1 on a failed assert.

@@ -15,7 +15,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-09 (r77: SHOT LOOK DECIDED — `heavy` shipped as THE player shot (Jacob: "heavy is obviously the best"), the `shotLook` row + the rect and r75 bolt paths deleted, HOW TO card shows the bolt, Q22 decided; r76 EXPERIMENT: shotLook gains `heavy` — flame muzzle, 28 px bolt + echo + trail, messy stream, layered impact, hit click, shimmer (open Q22); r75 EXPERIMENT: the player shot as a BOLT — pixel bolt + trail + muzzle strobe + impact blob in the Lab (open Q22); r73 EXPERIMENT: boss parts bite back — clock / inherit / burst in the Lab (open Q17); r72: boss phase timeout 24s → 35s; §5.2b escalation clock written for the playtests; r71: boss hp 3× shipped — Jacob's verdict, Q16 decided; r70 EXPERIMENT: boss hp 1×–3× in the Lab; r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-09 (r78: CAMPAIGN INFRASTRUCTURE — stage modules (`src/core/stages/`), `g.level`, `startRun(g, atT, level)`, `nextStage`, a dormant clear → receipt → briefing → next-stage flow, stage select on the PRACTICE row only once a second stage exists; stage 1 byte-identical to HEAD (sim, shots replay, Booth replay); Jacob's override to start the stages 2–5 route — new §12; r77: SHOT LOOK DECIDED — `heavy` shipped as THE player shot (Jacob: "heavy is obviously the best"), the `shotLook` row + the rect and r75 bolt paths deleted, HOW TO card shows the bolt, Q22 decided; r76 EXPERIMENT: shotLook gains `heavy` — flame muzzle, 28 px bolt + echo + trail, messy stream, layered impact, hit click, shimmer (open Q22); r75 EXPERIMENT: the player shot as a BOLT — pixel bolt + trail + muzzle strobe + impact blob in the Lab (open Q22); r73 EXPERIMENT: boss parts bite back — clock / inherit / burst in the Lab (open Q17); r72: boss phase timeout 24s → 35s; §5.2b escalation clock written for the playtests; r71: boss hp 3× shipped — Jacob's verdict, Q16 decided; r70 EXPERIMENT: boss hp 1×–3× in the Lab; r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -28,6 +28,8 @@ sections: popcorn intro → turret alley → mid gauntlet → midboss → rush �
 pair → release → 3-phase boss. You have 3 lives and 2 bombs; a death restores
 bombs to 2. Score is the only progression. There is no rank, no difficulty
 slider, no unlocks. Today there is one mode (arcade); the mode roadmap is §11.
+The code can hold more stages than it has (r78, §12) — with one stage module
+nothing about the run above changes.
 
 ## 2. Scoring — "stopwatches, not run time"
 
@@ -1202,6 +1204,114 @@ card, boss barks during the fight (wired to camp-governor / death signals), the
 receipt, and an interstitial between loops. Writing is async (agents); the constraint
 is placement, not authoring time. Not scheduled.
 
+**Campaign (stages 2–5):** the five-stage plan is `docs/plans/campaign-five-stages.md`;
+its infrastructure pass (§7 step 1) shipped at r78 — see §12. The mode order above
+is unchanged; the campaign grows *Arcade*, it is not a mode.
+
+## 12. Campaign (infrastructure, r78 — no stage content)
+
+*Jacob, 2026-09-09: "i kinda wanna go down the stage 2-5 route. even though stage 1
+is not perfect. im getting really tired of playtesting it." — his override of the
+plan's "settle stage 1 first" gate (§7 step 0). This pass is §7 step 1 only: the game
+can now hold N stages while stage 1 stays byte-identical. Nothing new to play.*
+
+**Module layout.**
+- `src/core/stages/s1.js` — THE CRYPT. Exports `buildTimeline()` (the r77
+  `stage.js` function *moved*, byte for byte — same events, same stageT numbers,
+  same rng draws), `SECTIONS` / `SEC_T` (the nine anchors `0, 120, 720, 1700,
+  2400, 2460, 2900, 3700, 3900` that main.js, renderer.js, the three skins,
+  booth.js and `tools/booth-replay.mjs` used to hand-mirror — they read the module
+  now; `test/shots.html` keeps its own copy, read-only), `name`, and the boss hook
+  `boss = { update: updateBoss, advance: advanceBossPhase, phases: 3 }`.
+- `src/core/stages/index.js` — `STAGES = [s1]` and `stageAt(level)`. A plain
+  mutable array on purpose (the probe pushes a fake second stage).
+- `src/core/stage.js` — keeps what every stage shares: `ENEMY_DEFS`,
+  `updateEnemy`, `mayFire`, the camp governor, `updateBoss` / `advanceBossPhase`,
+  `spawnParts`. Stage 2+ append enemy types here and add their own module (plan §6).
+- Landmarks stay art: each skin keeps its per-section landmark geometry
+  (`SEC_LANDGEO`); the renderer now passes the section's entry stageT into
+  `drawBackground(…, secT)` so the scroll math has no mirror to drift from. A new
+  stage needs a landmark row per skin (cute-occult first; others may lag — plan §6).
+
+**`g.level`** (`game.js` `makeGame`): 0-based index into `STAGES`; `g.startLevel`
+= where the run began; `g.stageBase` = the run counters at the stage's start (all
+zero on stage 1, so subtracting it is the identity). `startRun(g, atT = 0, level = 0)`
+clamps `level` into `STAGES` and builds `g.timeline = STAGES[level].buildTimeline()`;
+`g.stageT` semantics are untouched. Every existing caller (`startRun(g)`,
+`startRun(g, t)`) is level 0 = stage 1 as before. The boss entity is dispatched
+through `stageAt(g.level).boss.update / .advance` (`game.js` update loop +
+`scoreBossPhase`) — stage 1's hook is the same `stage.js` code, one property
+lookup away.
+
+**`nextStage(g)`** (`game.js`, after `startRun`): keeps lives, bombs, score, kills,
+speed kills, the run clock (`g.frame`), `g.stats`, the tune knobs, and **the same
+`g.rng` / `g.fxRng` objects — no reseed; the stream is continuous inside a run**, so a
+campaign run is as deterministic as a stage run. Resets what `startRun` resets:
+pools, bullets, items, chain, gate, stageT / tlIndex, warn, the clear latches, the
+ship's spot. `g.level++`, `g.stageBase` re-stamped, state back to `play`. Returns
+without doing anything on the last stage.
+
+**The clear flow (dormant until `STAGES.length > 1`).** `update()`'s tally now
+ends in `g.state = 'stageclear'` on a non-final stage, `'clear'` on the last —
+today's tally (stock bonus + `SFX.CLEAR`) either way. With one stage this is the
+r77 path byte for byte. The shell (`main.js` `stepStageClear`): this stage's
+receipt holds 210 f (SHOT skips it after 45 f) → the **target-briefing card**
+(`howto.js` `openBriefing` — the pre-run card reused per §11's story placement /
+Psikyo#9; text is `STAGE N` + the stage name, nothing else) for 120 f →
+`nextStage(g)` → the stage cue restarts. **Zero-input 5.5 s ≤ 6 s** [WS05]. The
+receipt (`results.js`) reads `STAGE n CLEAR`, a `STAGE n — NAME` line, and the
+stage's own speed kills / kills / time / deaths / bombs via `g.stageBase` (score
+is the run total, arcade style); the hi-score row stores `level` and the table
+prints `STn` — all of it only when there is more than one stage. One open hook
+for Jacob: the stock bonus (`lives × 1000 + bombs × 500`) pays at *every* stage
+tally in this plumbing, because "today's tally runs for the stage"; whether it
+should pay once at the end is his (§5 A territory; garnish-sized either way, S6).
+
+**Stage select** (Pillar 3's practice tool; boghog T3). `main.js` builds the
+PRACTICE row from `STAGES[].SECTIONS`: with one stage it is exactly the r36 rows
+(S1 POPCORN … S8 BOSS) — the title is pixel- and behaviour-identical. With more,
+each later stage adds a `STAGE N — NAME` entry (its full run from
+`startRun(g, 0, level)`) followed by its sections tagged `STn`; the pick persists
+as `speedhell.level` (`store`); `?level=N` on `index.html` preselects it (NOT
+`?stage=`, which stays the sandbox's stageT jump, `sandbox.js:372`). A run started
+past stage 1 has `g.startLevel > 0`: PRACTICE tag on the HUD, receipt yes, the
+board never (`results.js` `qualifies(…, startLevel)`). The Booth: `?level=N` on
+`booth.html` starts every run there; recordings carry `level`; `tools/booth-replay.mjs`
+replays from it, calls `nextStage` on `'stageclear'` (the Booth records no ticks
+while it holds the clear screen 5 s) and prints `level`.
+
+**Referee rule (plan §4 rule 14).** `test/sim.mjs` is untouched this pass (12 of
+15 green at HEAD and here — the r65 certificate is stale since r71's boss hp, a
+recert Jacob has not yet authorized). When stage 2 exists it gets **one
+Jacob-authorized control run per stage** from `startRun(g, 0, level)` with its own
+bot suite, plus one campaign run (stock carried, rng continuous) — referee
+commits, never a builder's. Stage 1's certificate never moves. The builder-side
+instrument is `tools/probes/campaign-probe.mjs`: it plays the referee's four bots
+through `startRun(g)` and `startRun(g, 0, 0)` on seed C0FFEE and asserts identity,
+then fakes `STAGES = [s1, s1]` and asserts the carry-over (rng objects unchanged,
+stock / score carried, chain reset, stageT 0, `g.level === 1`, final `'clear'`).
+
+**Measured, 2026-09-09.** Stage 1 identity: `startRun(g)` →
+`clear:8401:151280:124:69:3:0:0:0`, `startRun(g, 0, 0)` → the same; the other
+three bots identical too; `node test/sim.mjs` on this tree equals the r77 HEAD
+control in every run, robust seed, check and the determinism string
+(`7022:81960:144:0:-1`); the shots harness replays `f=8401 score=151280 kills=124`
+(= HEAD; it still reports DIVERGED against the r65 certificate, as HEAD does); a
+Booth tape replays identically apart from the new `level` field. Two-stage fake:
+the expert reaches the seam at 0 lives / 0 bombs (its r77 stage-1 state), carries
+151 280 / 124 kills, and dies 1 571 f into "stage 2" (`gameover:9972:170380`) —
+Pillar 4 doing its job, and the concrete reason the extend rule (§5 A) is the
+first campaign decision; with the ship invulnerable from the seam (the camp probes'
+trick, flow-only) the final tally is today's `'clear'` — `clear:16526:306240:240`,
+stage 2 alone 8 125 f / 154 960, zero timeouts. Stage 2 on the continued stream is a *different* run
+than a fresh stage 1 (no reseed).
+
+**Still Jacob's (nothing here decides them):** the extend rule (plan §5 A1–A3)
+and the Q8 suicide-for-bombs price (§5 B) *before stage 2 is built*; the Pillars
+identity line "V1 = one full stage" (this pass does not edit the pillars); the
+per-stage vs once stock bonus above; the S5 rubric amendment the Twin Moths need
+(plan §3); which stage's pass opens next (plan §7: stage 2, the ground layer).
+
 ## Changelog of decisions recorded here
 
 - 2026-08-27 — r9 midboss arrival bloom + speed-gated 100/bullet cancel.
@@ -2262,3 +2372,32 @@ is placement, not authoring time. Not scheduled.
   anything is built; decisions it forces first: Q8 (suicide-for-bombs ×5) and an
   extend rule (options A1–A3). No design change today, no BUILD bump, §11
   roadmap unchanged until he rules.
+- 2026-09-09 — **r78 CAMPAIGN INFRASTRUCTURE** (plan `docs/plans/campaign-five-stages.md`
+  §7 step 1, no stage content). **Jacob's override**, verbatim: "i kinda wanna go
+  down the stage 2-5 route. even though stage 1 is not perfect. im getting really
+  tired of playtesting it" — overriding the plan's "settle stage 1 first" gate (§7
+  step 0). Built: `src/core/stages/s1.js` (stage 1's timeline MOVED, not edited)
+  + `stages/index.js` (`STAGES`), `g.level` / `g.startLevel` / `g.stageBase`,
+  `startRun(g, atT, level)`, `nextStage(g)` (lives, bombs, score, rng stream
+  carried — no reseed), the dormant `'stageclear'` → receipt → briefing card →
+  next-stage flow (5.5 s zero-input ≤ 6 s [WS05]), stage select on the PRACTICE
+  row + `speedhell.level` + `?level=N` (title identical with one stage), Booth
+  tapes / replay carry `level`, receipt + board stamp the stage only with >1
+  stage; `tools/probes/campaign-probe.mjs`. Corpus: **boghog pushes back on the
+  process order** — [T1] player abilities → enemies in the void → layout, scoring
+  last: no stage 2 until the ship roster (A/B) and the S1 pass are settled; "work
+  in passes with cooldown" (one stage per pass, playtested before the next) —
+  recorded, and honoured in that this pass builds no content; [WS05] the ≤ 6 s
+  between-stage cap is met. **MSX**: density over duration — Psikyo's length is
+  fine, dilution is not; every added second must carry decisions (the Psikyo clock,
+  plan §4 rule 1, is the guardrail when stage 2 opens). Pillars 3 (stage select is
+  the practice tool), 4 (stock carries — the probe shows the r77 expert bot dying on
+  a faked stage 2 at 0 lives), 7 (no per-frame cost: one property lookup for the
+  boss hook). **Stage 1 byte-identical:** `startRun(g) → clear:8401:151280:124:69:3:0:0:0`
+  = `startRun(g, 0, 0)`; sim identical to the r77 HEAD control in every run / seed /
+  check / determinism string; shots replay `f=8401 score=151280 kills=124` = HEAD.
+  Wiki: new §12; §1 and §11 gained one pointer each; the header. Not decided here
+  (Jacob's): extend rule §5 A, Q8 price, the Pillars "V1 = one full stage"
+  amendment, per-stage vs once stock bonus, the S5 amendment for the elite pair.
+  BUILD r78. `test/sim.mjs`, `CRITIC_RUBRIC.md`, `evidence/`, `DESIGN_PILLARS.md`
+  untouched.
