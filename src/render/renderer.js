@@ -345,14 +345,8 @@ function drawFx(ctx, g) {
   for (let i = 0; i < n; i++) {
     const q = items[i];
     if (q.delay > 0) continue;
-    if (q.kind === FX.CORE && q.ck === 2) { // r75 impact blob: opaque pixel disc, player family (FX_RAMP[0]) rim + white;
-      // full size 2 frames, one step smaller on its last — snaps on, collapses. source-over (never additive: it must
-      // read as a solid flare on the hull, not a glow), still under bullets. size = radius 2/3/4 (4/6/8px).
-      const r = q.life > 1 ? q.size : q.size - 1, x = Math.round(q.x), y = Math.round(q.y);
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = FX_RAMP[0][2]; disc(ctx, x, y, r);
-      ctx.fillStyle = FX_RAMP[0][0]; disc(ctx, x, y, r - 1);
-    } else if (q.kind === FX.RING && q.ck) { // linear expansion to target, hard cull (life sized to match)
+    if (q.kind === FX.CORE && q.ck === 2) continue; // r75 impact blob — pass 3 below, on top of the fx stack
+    if (q.kind === FX.RING && q.ck) { // linear expansion to target, hard cull (life sized to match)
       const t = 1 - q.life / q.max;
       ctx.globalAlpha = 1; ctx.strokeStyle = FX_RAMP[q.hue][0]; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.arc(Math.round(q.x), Math.round(q.y), Math.max(1, Math.round(q.size * S * t)), 0, 7); ctx.stroke();
@@ -430,6 +424,19 @@ function drawFx(ctx, g) {
   }
   ctx.globalCompositeOperation = 'source-over';
   ctx.globalAlpha = 1;
+  // r75 pass 3 (Lab shotLook = bolt only): the IMPACT BLOB — an opaque WHITE pixel disc (size = radius 2/3/4 →
+  // 4/6/8px) inside a 1px dark-violet rim (FX_RAMP[0][3], player family). Drawn LAST of the fx so the r8 hit
+  // sparks + fire puff at the same point never wash it out, and rimmed because the hit-flash paints the enemy
+  // white for the same 2 frames and a bare white flare vanished into it (peek, r75) — WS02 "very dark next to
+  // very bright". Full size 2 frames, one step smaller on its last: snaps on, collapses. source-over (a solid
+  // flare on the hull, not a glow); still under player shots and enemy bullets (S2).
+  if (prefs.shotLook === 'bolt') for (let i = 0; i < n; i++) {
+    const q = items[i];
+    if (q.kind !== FX.CORE || q.ck !== 2) continue;
+    const r = q.life > 1 ? q.size : q.size - 1, x = Math.round(q.x), y = Math.round(q.y);
+    ctx.fillStyle = FX_RAMP[0][3]; disc(ctx, x, y, r + 1);
+    ctx.fillStyle = FX_RAMP[0][0]; disc(ctx, x, y, r);
+  }
 }
 
 // --- enemies: the skin paints, the renderer caches/rims/places -----------------

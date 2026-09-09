@@ -7,9 +7,13 @@
 <body style="margin:0;background:#05060a">
 <canvas id="c" width="1920" height="1400"></canvas>
 <script type="module">
-import { makeGame, startRun, update, stressScene, W, H } from '../src/core/game.js';
-import { draw, drawEnemy, drawPlayer, resetHud, setSkin } from '../src/render/renderer.js';
+import { makeGame, startRun, update, stressScene, SFX, W, H } from '../src/core/game.js';
+import { draw, drawEnemy, drawPlayer, resetHud, setSkin, prefs } from '../src/render/renderer.js';
 setSkin(new URLSearchParams(location.search).get('skin') || 'cute-occult'); // r60: node tools/peek.mjs 'tools/artpeek.html?skin=neon-vector' out.png
+// r75: ?shot=current|bolt — the Lab shotLook pref; the max-load scene then also FIRES (6 shots + impact blobs in
+// flight) so the two settings' draw times compare on the same scene. Without ?shot the sheet is the r73 sheet.
+const SHOT = new URLSearchParams(location.search).get('shot');
+if (SHOT) prefs.shotLook = SHOT;
 import { makeBot } from '../test/bot.mjs';
 const c = document.getElementById('c'), ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = false;
 const label = (t, x, y) => { ctx.fillStyle = '#ffd24a'; ctx.font = 'bold 18px monospace'; ctx.textAlign = 'left'; ctx.fillText(t, x, y); };
@@ -59,8 +63,10 @@ const yield_ = () => new Promise((r) => setTimeout(r, 0));
 }
 {
   const g = makeGame(7); g.state = 'play'; startRun(g); g.timeline = []; g.tlIndex = 0; stressScene(g); resetHud();
+  if (SHOT) { g.fxShot = SHOT === 'bolt' ? 1 : 0; g.input.fire = true; }
   for (let f = 0; f < 45; f++) update(g);
-  shot(g, 1410, 680, 'max-load b=' + g.eBullets.count, 'maxload');
+  if (SHOT) { for (let i = 0; i < g.sfxN; i++) if (g.sfx[i] === SFX.SHOT) prefs.muzzleAt = g.frame; }
+  shot(g, 1410, 680, 'max-load b=' + g.eBullets.count + (SHOT ? ' shot=' + SHOT + ' s=' + g.pBullets.count : ''), 'maxload');
 }
 window.__done = true;
 </script></body>
