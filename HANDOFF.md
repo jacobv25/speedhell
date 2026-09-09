@@ -8,7 +8,7 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
 
 ## State
 
-- **`main` == `design/needle-tier` at r73**, pushed to GitHub
+- **`main` == `design/needle-tier` at r77** (r77 = heavy shot shipped, Jacob: "heavy is obviously the best"; feat/shot-look merged), pushed to GitHub
   (`jacobv25/speedhell`). Fast-forward main after every commit on
   design/needle-tier (a clean `play-main` worktree exists for that).
 - **Two Claude sessions share this working tree.** As of this rewrite the
@@ -16,7 +16,7 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
   `docs/plans/boghog-ws-questions.md`, `docs/BOGHOG_WORKSHOP.md` (+ edits to
   `CLAUDE.md`, `README.md`). Don't commit or revert another session's files;
   `git add` by name. Check `BUILD` + the wiki changelog before taking a round
-  number (next free on main: **r75** — r74 is `feat/stem-layers`).
+  number (next free on main: **r78** — r74 is `feat/stem-layers`).
 - **Referee:** last certificate r65 (expert bot fixed to close on big
   targets). Since then r71 (boss hp 3×), r72 (boss phase timeout 35 s) and
   r73's experiment changed outcomes; at 3× the bot clears 1–2 of 7 seeds and
@@ -69,7 +69,6 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
 | `feat/music-cues` | r66 | PARKED — bar-snapped section jumps = "scissor cut"; salvage its 125 BPM grid + cues loader |
 | `feat/beat-pulse` | r68 | PARKED — pixel-identical off, imperceptible on; revive with a `bold` setting |
 | `design/ship-b` | r69 | IN PROGRESS — Ship B "PRIESTESS" (3/1.5/1.5 at ±2.2, speed 3.2, focus 2.5, cap 9); Jacob: "much more difficult than ship A", keep for now; art + Ship-B referee runs pending; popcorn-rate red + 2/6 robust recorded |
-| `feat/shot-look` | r76 | BUILT, pushed, unmerged — Lab `shotLook` current/bolt/heavy (heavy = flame muzzle alternating barrels, 6×28 bolt + echo + 16 px trail, messy stream, 6-frame impact + up-sparks + scorch, hit click, shimmer; from the frame study in docs/research/player-shot-juice-2026-09-09.md): pixel bolt + 8 px trail + muzzle strobe + impact blob (core: one gated fx spawn on fxRng); pixel-identical off; Jacob compares on its worktree port |
 | `feat/stem-layers` | r74 | BUILT, pushed, unmerged — Lab `musicLayers` (off by default): 3 layers (rhythm/lead/voice) at 32 kHz mono, 73.9 MB PCM, ramps on bar lines; Jacob listens on its worktree port |
 
 ## Left to do (most important first)
