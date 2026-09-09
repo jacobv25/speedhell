@@ -68,3 +68,4 @@ Local corpora on disk (primary sources): ~/Dev/mark-msx-research and
 
 - **shell-parity-audit-2026-09-02.md** — shell audit vs Blue Revolver / Gunvein / M2 ShotTriggers; drives the r42+ shell rounds (top 5: title menu, hi-score, receipt, title music, attract).
 - **explosion-and-weapon-feel-2026-09-04.md** — Lazy Devs explosion recipe (four episodes) × Mark MSX's DOJ review ("explodes on top of an explosion, parts break into pieces … you want the player to feel powerful"); gap table vs SPEEDHELL; five Lab options (destruction sequence, hit impact blob, sprite debris, dress the natural meta, kill audio). Drove r52 chunky.
+- `bullet-hell-design-101.md` — source note for boghog's written "Bullet Hell Shmup Design 101" (Google Doc; cite [BH101 §]); digest + what it adds/corrects vs `docs/BOGHOG_WORKSHOP.md`; logged 2026-09-09.
