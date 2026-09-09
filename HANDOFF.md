@@ -69,7 +69,7 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
 | `feat/music-cues` | r66 | PARKED — bar-snapped section jumps = "scissor cut"; salvage its 125 BPM grid + cues loader |
 | `feat/beat-pulse` | r68 | PARKED — pixel-identical off, imperceptible on; revive with a `bold` setting |
 | `design/ship-b` | r69 | IN PROGRESS — Ship B "PRIESTESS" (3/1.5/1.5 at ±2.2, speed 3.2, focus 2.5, cap 9); Jacob: "much more difficult than ship A", keep for now; art + Ship-B referee runs pending; popcorn-rate red + 2/6 robust recorded |
-| `feat/stem-layers` | r74 | agent building `docs/plans/stem-layers.md` (Lab `musicLayers`, off by default) — not pushed at rewrite time |
+| `feat/stem-layers` | r74 | BUILT, pushed, unmerged — Lab `musicLayers` (off by default): 3 layers (rhythm/lead/voice) at 32 kHz mono, 73.9 MB PCM, ramps on bar lines; Jacob listens on its worktree port |
 
 ## Left to do (most important first)
 
@@ -83,7 +83,7 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
 3. **Boss ritual** (`docs/plans/boss-ritual.md`): waits on Jacob's marks in
    the music lab (P1/P2/P3 sections, loop points, pattern moves with the
    five move words), intro dialogue draft, skip input (START vs double fire).
-4. **Stem layers** (agent running) → Jacob listens with `?lab=musicLayers:on`.
+4. **Stem layers** built on `feat/stem-layers` → Jacob listens with `?lab=musicLayers:on` (needs the gitignored stems: run the analyzer in whichever tree serves it); merge if it flows.
 5. **Midboss tell** (`docs/plans/midboss-tell.md`) — small; build when Jacob
    says go (Lab `midbossTell`).
 6. **Ship B:** art (second craft, HOW TO, artpeek `?ship=1`), Ship-B bot
