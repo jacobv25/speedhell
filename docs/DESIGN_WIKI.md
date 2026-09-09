@@ -15,7 +15,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-09 (r78: CAMPAIGN INFRASTRUCTURE — stage modules (`src/core/stages/`), `g.level`, `startRun(g, atT, level)`, `nextStage`, a dormant clear → receipt → briefing → next-stage flow, stage select on the PRACTICE row only once a second stage exists; stage 1 byte-identical to HEAD (sim, shots replay, Booth replay); Jacob's override to start the stages 2–5 route — new §12; r77: SHOT LOOK DECIDED — `heavy` shipped as THE player shot (Jacob: "heavy is obviously the best"), the `shotLook` row + the rect and r75 bolt paths deleted, HOW TO card shows the bolt, Q22 decided; r76 EXPERIMENT: shotLook gains `heavy` — flame muzzle, 28 px bolt + echo + trail, messy stream, layered impact, hit click, shimmer (open Q22); r75 EXPERIMENT: the player shot as a BOLT — pixel bolt + trail + muzzle strobe + impact blob in the Lab (open Q22); r73 EXPERIMENT: boss parts bite back — clock / inherit / burst in the Lab (open Q17); r72: boss phase timeout 24s → 35s; §5.2b escalation clock written for the playtests; r71: boss hp 3× shipped — Jacob's verdict, Q16 decided; r70 EXPERIMENT: boss hp 1×–3× in the Lab; r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-09 (r79: extend A1 + one-bomb refill; r78: CAMPAIGN INFRASTRUCTURE — stage modules (`src/core/stages/`), `g.level`, `startRun(g, atT, level)`, `nextStage`, a dormant clear → receipt → briefing → next-stage flow, stage select on the PRACTICE row only once a second stage exists; stage 1 byte-identical to HEAD (sim, shots replay, Booth replay); Jacob's override to start the stages 2–5 route — new §12; r77: SHOT LOOK DECIDED — `heavy` shipped as THE player shot (Jacob: "heavy is obviously the best"), the `shotLook` row + the rect and r75 bolt paths deleted, HOW TO card shows the bolt, Q22 decided; r76 EXPERIMENT: shotLook gains `heavy` — flame muzzle, 28 px bolt + echo + trail, messy stream, layered impact, hit click, shimmer (open Q22); r75 EXPERIMENT: the player shot as a BOLT — pixel bolt + trail + muzzle strobe + impact blob in the Lab (open Q22); r73 EXPERIMENT: boss parts bite back — clock / inherit / burst in the Lab (open Q17); r72: boss phase timeout 24s → 35s; §5.2b escalation clock written for the playtests; r71: boss hp 3× shipped — Jacob's verdict, Q16 decided; r70 EXPERIMENT: boss hp 1×–3× in the Lab; r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -593,7 +593,9 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
 7. **Chain as a scoreboard.** The HUD's most prominent number is the least
    valuable one. Keep it (it's the *speed-kill streak*, which is the identity)
    or demote it?
-8. **The suicide-for-bombs meta (accidental Garegga).** Discovered by Jacob in
+8. **The suicide-for-bombs meta — DECIDED 2026-09-09 (r79): keep the move, fix
+   the price. Death refills ONE bomb (was two); stock value untouched.** Jacob:
+   "fix the bomb price". History (accidental Garegga):** Discovered by Jacob in
    play (2026-08-29): bombs deal 30 dmg field-wide, so one bomb kills both boss
    side parts (24 hp) inside their window; bomb kills credit as speed kills
    (killEnemy is damage-source-agnostic), so bombs also insure the chain; death
@@ -1306,7 +1308,7 @@ trick, flow-only) the final tally is today's `'clear'` — `clear:16526:306240:2
 stage 2 alone 8 125 f / 154 960, zero timeouts. Stage 2 on the continued stream is a *different* run
 than a fresh stage 1 (no reseed).
 
-**Still Jacob's (nothing here decides them):** the extend rule (plan §5 A1–A3)
+**Decided r79 (Jacob, 2026-09-09): extend rule A1 and the Q8 price (one bomb on death).** **Still Jacob's:** (the extend rule was plan §5 A1–A3 — A1 chosen)
 and the Q8 suicide-for-bombs price (§5 B) *before stage 2 is built*; the Pillars
 identity line "V1 = one full stage" (this pass does not edit the pillars); the
 per-stage vs once stock bonus above; the S5 rubric amendment the Twin Moths need
@@ -2372,6 +2374,25 @@ per-stage vs once stock bonus above; the S5 rubric amendment the Twin Moths need
   anything is built; decisions it forces first: Q8 (suicide-for-bombs ×5) and an
   extend rule (options A1–A3). No design change today, no BUILD bump, §11
   roadmap unchanged until he rules.
+- 2026-09-09 — r79: EXTEND RULE A1 + ONE-BOMB DEATH REFILL (design changes;
+  Jacob: "let's go with the extend rule A1 and fix the bomb price").
+  `game.js EXTEND_AT = 400000`: the loop's ONE extend the first frame score
+  crosses it (lives +1, EXTEND popup, new `SFX.EXTEND` rising five); the HUD
+  announces "EXTEND 400000" under the stock until earned (plan §5 A1: fixed,
+  announced, binary — Pillar 2 visible math; Psikyo gives extends; a 10-minute
+  1CC on three lives with none is CAVE-cruel). Carried across stages by
+  `nextStage` (once per LOOP; loop 2 resets it when loop 2 exists). Dormant in
+  a one-stage run (expert ≈ 150–190k). `playerDie`: bombs refill to ONE (was
+  two) — Q8 DECIDED per boghog "keep the move, fix the price" [T3 balance =
+  counters, not numbers]; the trade stays legal and visible (MSX natural
+  meta) but pays half; stock value 1,000 untouched (S6, no scoring math).
+  Control (r78 → r79, one stage, no extend reachable): expert clear 151,280 /
+  0 lives → GAME OVER 79,790 (4 deaths); aggressive-human 86,890 → 122,630
+  (both game over); passive-human clear 56,880 / 1 life → clear 49,930 / 0;
+  s6_alignment 1.53 → 2.46. The bots leaned on the two-bomb refill as
+  insurance at 3× boss hp; one bomb removes it. In the campaign the extend
+  pays some of that back from stage 2 on — this is the trade Jacob chose.
+  Referee stale since r65; recert per stage per §12. BUILD r78 → r79.
 - 2026-09-09 — **r78 CAMPAIGN INFRASTRUCTURE** (plan `docs/plans/campaign-five-stages.md`
   §7 step 1, no stage content). **Jacob's override**, verbatim: "i kinda wanna go
   down the stage 2-5 route. even though stage 1 is not perfect. im getting really
