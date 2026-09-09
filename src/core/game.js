@@ -29,7 +29,7 @@ export const PLAYER = {
 // and the sim harness ignores it. Bounded (SFX_CAP) — zero per-frame allocation.
 export const SFX = {
   SHOT: 1, HIT: 2, KILL: 3, KILL_BIG: 4, SPEED: 5, RUSH: 6, ITEM: 7, CANCEL: 8,
-  BOMB: 9, DIE: 10, WARNING: 11, MIDBOSS: 12, BOSS: 13, PHASE: 14, CLEAR: 15, GAMEOVER: 16,
+  BOMB: 9, DIE: 10, WARNING: 11, MIDBOSS: 12, BOSS: 13, PHASE: 14, CLEAR: 15, GAMEOVER: 16, EXTEND: 17, // r79: extend (append only; never renumber)
 };
 const SFX_CAP = 32;
 // r8-fx: particle KINDS (the renderer draws each differently) and colour
@@ -52,6 +52,11 @@ export function sfx(g, id) {
 // to replay the old rule. Referee recert pending (bullet stream changed).
 export const NEEDLE_TIER = { 1: 1, 3: 1, 4: 1, 5: 1, 6: 1 };
 
+// r79 (Jacob, 2026-09-09: "let's go with the extend rule A1"): ONE extend per loop at a
+// fixed, announced score — visible, binary, no math (Pillar 2). 400,000 ≈ an expert's
+// stage-2 clear in the five-stage plan (§5 A1); dormant in a one-stage run (expert ≈ 150–190k).
+export const EXTEND_AT = 400000;
+
 export function makeGame(seed = 1) {
   const g = {
     seed, rng: makeRng(seed), frame: 0,
@@ -72,6 +77,7 @@ export function makeGame(seed = 1) {
     // never the hi-score board); stageBase = run counters at this stage's start
     // so the receipt can show per-stage numbers (all zero on stage 1: subtracting
     // it is the identity, so the one-stage receipt is unchanged).
+    extended: 0, // r79: the loop's one extend (plan §5 A1) — set when score first crosses EXTEND_AT; carried across stages by nextStage; a loop-2 reset is loop 2's job
     level: 0, startLevel: 0, stageBase: { frame: 0, score: 0, kills: 0, speedKills: 0, deaths: 0, bombsUsed: 0 },
     // r26 variant knobs (Booth experiments): deterministic — same knobs + seed
     // + inputs = same run. 0 / 'top' = shipped ENEMY_DEFS values. The referee
@@ -161,7 +167,7 @@ export function nextStage(g) {
   const carry = {
     rng: g.rng, fxRng: g.fxRng, frame: g.frame, score: g.score, kills: g.kills, speedKills: g.speedKills,
     stats: g.stats, tune: g.tune, needleTier: g.needleTier, fxMeta: g.fxMeta, fxHitstop: g.fxHitstop,
-    practice: g.practice, startLevel: g.startLevel, level: g.level + 1,
+    practice: g.practice, startLevel: g.startLevel, level: g.level + 1, extended: g.extended, // r79: one extend per LOOP, not per stage
   };
   Object.assign(g, makeGame(g.seed), carry);
   g.player.lives = lives; g.player.bombs = bombs;
@@ -421,7 +427,9 @@ function playerDie(g, cause) {
   cancelAllBullets(g, 0); // safety clear, no points
   p.lives--;
   if (p.lives < 0) { g.state = 'gameover'; g.endFrame = g.frame; sfx(g, SFX.GAMEOVER); return; }
-  p.x = W / 2; p.y = H - 53; p.invuln = 150; p.bombs = 2; p.bombActive = 0;
+  // r79 (Jacob: "fix the bomb price" — Q8, boghog "keep the move, fix the price"): death refills ONE bomb, not two.
+  // The suicide-for-bombs trade stays a visible, legal move (MSX natural meta) but pays half; stock value untouched (S6).
+  p.x = W / 2; p.y = H - 53; p.invuln = 150; p.bombs = Math.max(1, p.bombs); p.bombActive = 0;
 }
 
 function fireBomb(g) {
@@ -637,6 +645,9 @@ export function update(g) {
   }
 
   // --- stage clear (boss down → tally after a beat) ---
+  if (!g.extended && g.score >= EXTEND_AT && g.state === 'play') { // r79 A1 extend: once per loop, announced on the HUD
+    g.extended = 1; g.player.lives++; addPopup(g, g.player.x, g.player.y - 30, 'EXTEND', 1); sfx(g, SFX.EXTEND);
+  }
   if (g.bossDown && !g.clearAt) g.clearAt = g.frame + 150;
   if (g.clearAt && g.frame >= g.clearAt) {
     g.clearBonus = p.lives * 1000 + p.bombs * 500; // stock bonus, garnish-sized (S6)

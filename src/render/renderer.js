@@ -9,7 +9,7 @@
 // (src/render/skins/*.js, contract in skins/base.js). This file keeps what no
 // skin may touch: the bullet castes, the hit dot, the sprite cache and grid,
 // fx, HUD layout, popups/WARNING/flashes. Core, hitboxes, g.rng, referee: untouched.
-import { W, H, PLAYER, FX } from '../core/game.js';
+import { W, H, PLAYER, FX, EXTEND_AT } from '../core/game.js';
 import { SKINS } from './skins/index.js';
 import { stageAt } from '../core/stages/index.js'; // r78: section anchors come from the stage module, not a mirror
 
@@ -590,6 +590,9 @@ function drawHud(ctx, g) {
   for (let i = 0; i < g.player.lives; i++) poly(ctx, [[W - 16 - i * 16, 12], [W - 10 - i * 16, 24], [W - 22 - i * 16, 24]]);
   ctx.fillStyle = UI.gold;
   for (let i = 0; i < g.player.bombs; i++) disc(ctx, W - 14 - i * 16, 36, 5);
+  if (!g.extended && g.state === 'play') { // r79: the extend is ANNOUNCED (plan §5 A1: fixed, visible, binary) — a dim line until earned
+    ctx.font = '9px monospace'; ctx.textAlign = 'right'; ctx.fillStyle = UI.dim || UI.warnText; ctx.fillText('EXTEND ' + EXTEND_AT, W - 6, 52); ctx.textAlign = 'left';
+  }
 
   ctx.textAlign = 'center';
   if (g.state === 'title') {

@@ -241,6 +241,7 @@ const HANDLERS = {
   [SFX.DIE]: () => { osc('square', 600, 40, 0.6, 0.35, { curve: 'lin' }); noise(0.6, 0.5, { lp: 4000, lpEnd: 100 }); if (!dry) { duckMusic(0.35, 0.05); setTimeout(() => duckMusic(1, 0.6), 700); } },
   [SFX.WARNING]: () => { for (let i = 0; i < 3; i++) { osc('square', 440, 440, 0.18, 0.22, { t0: i * 0.36 }); osc('square', 330, 330, 0.18, 0.22, { t0: i * 0.36 + 0.18 }); } if (!dry) stopMusic(0.12); }, // r20 (Booth flag): the stage track used to FADE over 0.9s and was still audible under the siren — arcade warnings cut the music; the boss track then starts clean
   [SFX.MIDBOSS]: () => { osc('sawtooth', 80, 200, 0.6, 0.3); osc('square', 55, 55, 0.7, 0.2); },
+  [SFX.EXTEND]: () => { arp([523, 659, 784, 1047, 1319], 0.07, 0.22, 'square', 0.22); osc('sine', 1319, 1319, 0.5, 0.12, { t0: 0.35 }); }, // r79: the one extend — a bright rising five, unmistakable
   [SFX.BOSS]: () => { if (!dry) playMusic('boss'); osc('sawtooth', 60, 160, 1.0, 0.35); noise(1.2, 0.25, { lp: 700, lpEnd: 100 }); },
   [SFX.CLEAR]: () => { if (!dry) stopMusic(1.5); arp([523, 659, 784, 1047, 1319, 1568], 0.09, 0.5, 'square', 0.22); },
   [SFX.GAMEOVER]: () => { if (!dry) stopMusic(0.5); arp([392, 370, 349, 330, 262], 0.16, 0.45, 'square', 0.2); },
