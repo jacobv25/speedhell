@@ -1,127 +1,115 @@
-# SPEEDHELL — Session Handoff (2026-09-01)
+# SPEEDHELL — Session Handoff (2026-09-08)
 
-*Supersedes the 2026-08-29 handoff (that session's in-flight notes are folded
-in; its r9–r17 stack is long committed). Written at closeout of the marathon
-session that ran r18–r27. **Jacob's next step: polish phase, in a NEW
-instance.** Read `docs/DESIGN_WIKI.md` changelog + `docs/research/README.md`
-first — they are the deep record; this file is the quick resume.*
+*Rewritten from scratch at r73 by the session that ran r63–r73 (2026-09-05 →
+09-08). Supersedes the 2026-09-01 snapshot. The deep record is
+`docs/DESIGN_WIKI.md` (its "Changelog of decisions" is current through r73)
+and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
+`~/.claude/projects/-Users-jacobvalenzuela-Dev-speedhell/memory/`.*
 
 ## State
 
-- **Committed through r27** (`5d9b037` + closeout commit). **22+ commits
-  UNPUSHED** to origin — Jacob's standing choice; ask before pushing.
-- Working tree at closeout: only today's Booth recordings (committed by the
-  closeout commit) — clean otherwise.
-- **Servers left running on purpose:** Booth/no-store server on **:8002**
-  (`node tools/booth-server.mjs`, kill by pid on port) and an older python
-  no-cache server on **:8001**. The Booth flag-monitor was session-local and
-  died with the old session — a new instance must re-arm it:
-  `tail -n 0 -F playtest/notes.jsonl | grep --line-buffered '"kind":"flag"'`
-  via Monitor.
-- Referee: last full run at r27. **Board is RED on purpose** — see decision 1.
+- **`main` == `design/needle-tier` at r73**, pushed to GitHub
+  (`jacobv25/speedhell`). Fast-forward main after every commit on
+  design/needle-tier (a clean `play-main` worktree exists for that).
+- **Two Claude sessions share this working tree.** As of this rewrite the
+  OTHER session has uncommitted files here: `docs/plans/campaign-five-stages.md`,
+  `docs/plans/boghog-ws-questions.md`, `docs/BOGHOG_WORKSHOP.md` (+ edits to
+  `CLAUDE.md`, `README.md`). Don't commit or revert another session's files;
+  `git add` by name. Check `BUILD` + the wiki changelog before taking a round
+  number (next free on main: **r75** — r74 is `feat/stem-layers`).
+- **Referee:** last certificate r65 (expert bot fixed to close on big
+  targets). Since then r71 (boss hp 3×), r72 (boss phase timeout 35 s) and
+  r73's experiment changed outcomes; at 3× the bot clears 1–2 of 7 seeds and
+  is below Jacob's target player. **Recert once modes + parts land**, one
+  Jacob-authorized commit. Run HEAD as a control before blaming a change.
+- **Servers** (session-local, may be gone): :8001 python no-cache on this
+  tree; :8005 Booth server on this tree (music lab); :8007 music-cues,
+  :8008 beat-pulse, :8010 ship-b worktrees. `node tools/booth-server.mjs <port>`.
 
-## Done this session (r18–r27, all Booth-driven)
+## Done 2026-09-05 → 09-08 (r63–r73)
 
-- **r18** fire gating: canon's three gates replaced the "enemy must be 40px
-  above player" mute (top-of-screen safe spot, boss included); `s6_topband`
-  referee probe added (Jacob-authorized).
-- **r19** overlap pass: crossers/risers, midboss escort + unseal.
-- **r20** enemy identity art (two families, size ladder), player ship 28px,
-  **display contract** (wiki §6.2, with images): dot = 6px effective kill
-  radius, bullet white cores = true 3px, focus = shape. Hitbox tester +
-  enemy gallery tools.
-- **r21** seam pass (S1→S2 popcorn bridge, crossers to mid-side y88).
-- **r22** flee telegraph (timed-out boss/midboss announces itself).
-- **r23** grave-shot fix (dead enemies never update) + killed-boss bullet
-  guarantee. **r24** caravan pull counts only engageable enemies.
-- **r25/r26** experiment round: midboss 130→400hp (Jacob: "felt great"),
-  elite rep-escalation bug fixed, **Booth VARIANTS panel** (deterministic tune
-  knobs, chips at run start, every run/flag stamped, replay honors stamps).
-- **r27** elite verdict shipped: **HP 220 + side entry + escort** as defaults;
-  chips became rollbacks. TATE mode (T key / booth button, 90°/270°) +
-  portrait layout.
-- **Research corpus** (`docs/research/`): canon three-holes, hitbox display,
-  playtest interviewing, ZeroRanger, Undertale free-release playbook, game-#2
-  wrapper genres (verdict: story-rich roguelite action > Undertale-shape RPG >
-  deckbuilder×shooter; avoid survivors-like). Strategy memory: ship SPEEDHELL
-  asap as game #1; game #2 = Trojan shmup.
+- **Music lab** (`tools/music/`): Demucs stems + beat grid (`analyze.py`),
+  browser marker app (`lab.html`, Booth server `POST /music/cues`), cues
+  format in `docs/music/<track>.cues.json`. Boss-track cues seeded from
+  Jacob's first listen. insert-coin-skies has a 3:2 tempo ambiguity — use
+  `--bpm 172`. Skyline Breaker's true grid is **125 BPM / 0.480 s / first
+  beat 0.004** (the old 123 / 3.692 json is wrong).
+- **r63** merged r59 (needle caste) + r60–r62 (art skins) — `art/skins` had
+  been cut from r58 and silently lacked r59. **r64** neon-vector +
+  graphic-pop skins retired (cute-occult default, synthwave kept).
+- **r65** midboss timeout 23 s → 35 s (Jacob, after watching the certified
+  fight live in the sandbox). Removal rejected: the post-bloom crosser pulse
+  is an infinite point source (S6).
+- **Referee fixes (Jacob-authorized):** bot closes in on big targets
+  (`test/bot.mjs` closeY/closePull/trackPull 110/1.0/0.8 — the old bot shot
+  from the bottom at half DPS because of shotLimit 6); shots harness p2 rule
+  uses the phase latch. Recert at r65: 16 green / 1 red (lives on 3 seeds).
+- **Sandbox:** `bot=referee` + URL presets — `sandbox.html?stage=0&seed=
+  12648430&bot=referee&god=0&lives=0&speed=4&slowAt=N` replays the certified
+  run live (midboss ≈ frame 2241, boss ≈ 4680 at r73).
+- **r67** Lab catch-up: 2× chunky explosions + heavy kill sound shipped as
+  constants; classic/bloom/heavy painters and the rows deleted.
+- **r70→r71** boss hp 1×–3× in the Lab → **3× shipped** (390/402/405).
+  Jacob: "design for difficulty and challenge. If it's difficult for me, it's
+  likely normal/easy for expert shmup players." **r72** boss phase timeout
+  24 s → 35 s. Wiki **§5.2b** documents the escalation clock (rep table, per-
+  phase scaling + unlocks, timeout, parts-per-phase) for Mark/boghog.
+- **r73 EXPERIMENT** parts bite back — Lab `bossParts` current / clock /
+  inherit / burst (open Q17). Both critic lenses lean **inherit**; burst
+  needs a telegraph; clock is least legible. Expert playtesters decide.
+- Plans written: `boss-ritual.md` ("the player wins": hp drives phases,
+  music follows; boss track from 0:00 = the 12-s intro ritual),
+  `stem-layers.md` (stage track breathes via Demucs stems, no jumps),
+  `midboss-tell.md` (1-s sting + top-band bracket, no gate).
+
+## Branches (all pushed unless noted)
+
+| branch | build | state |
+|---|---|---|
+| `feat/music-cues` | r66 | PARKED — bar-snapped section jumps = "scissor cut"; salvage its 125 BPM grid + cues loader |
+| `feat/beat-pulse` | r68 | PARKED — pixel-identical off, imperceptible on; revive with a `bold` setting |
+| `design/ship-b` | r69 | IN PROGRESS — Ship B "PRIESTESS" (3/1.5/1.5 at ±2.2, speed 3.2, focus 2.5, cap 9); Jacob: "much more difficult than ship A", keep for now; art + Ship-B referee runs pending; popcorn-rate red + 2/6 robust recorded |
+| `feat/stem-layers` | r74 | agent building `docs/plans/stem-layers.md` (Lab `musicLayers`, off by default) — not pushed at rewrite time |
 
 ## Left to do (most important first)
 
-> **Jacob's TODO (2026-09-08, added by the r63–r73 session; the rest of this
-> file is the 2026-09-01 snapshot — the wiki changelog is current):**
-> - **Difficulty modes (Normal / Hard) — Jacob playtests more and writes down
->   what each mode should do at each section of the stage** (S1 … S8; e.g.
->   Normal = solo midboss, Hard = with the popcorn traffic). Modes are named
->   designs, not sliders (Pillar 3 / wiki §11); boss hp stays 3× on both;
->   parts bite back on both. Plan + agent build after his notes exist.
-> - **Parts verdict (open Q17):** expert playtesters (Mark / boghog) on the
->   r73 Lab variants (`?lab=bossParts:clock|inherit|burst`); both lenses lean
->   inherit. Winner → constant, row deleted.
-> - **Boss ritual plan** (`docs/plans/boss-ritual.md`): waits on Jacob's marks
->   in `tools/music/lab.html`, intro lines, skip input.
-> - Ship B (`design/ship-b`, r69, unmerged): art + referee runs when Jacob
->   calls the numbers final. Parked: `feat/music-cues` (r66), `feat/beat-pulse`
->   (r68). Referee recert once modes + parts land (last cert r65).
-
-
-1. **DECISION (Jacob): referee midboss bot-priority.** The expert bot times
-   out the 400hp midboss on every seed (it chases escort popcorn; humans kill
-   it in ~4–5s). Options in wiki changelog r26/r27: (a) bot target-priority
-   referee edit, (b) accept red until recert, (c) revisit hp. Blocks a green
-   board; should be settled before the Mark/boghog consult.
-2. **POLISH PHASE** (Jacob's chosen next step; merge with his own list):
-   ~~options menu~~ ✅ SHIPPED r29–r34 (volume, TATE, rebinding, fullscreen)
-   → ~~onboarding~~ ✅ SHIPPED r35 (one-card HOW TO: display contract +
-   speed-kill rule, auto-once + H key) → ~~practice/section select~~ ✅ SHIPPED
-   r36 (title ◀▶ picker, R retries the section; g.practice runs MUST be
-   excluded from the hi-score/receipt when built) → controller parity +
-   hotkey removal ✅ r38 (menu = shell; retry/quit/mute/TATE menu-only; full
-   pad nav) → shell-parity audit ✅ (docs/research/shell-parity-audit-2026-09-02.md;
-   real title menu ✅ r42) → ~~local hi-score table + results receipt~~ ✅ SHIPPED r44 (initials
-   entry, top-10, practice excluded; per-section R8 breakdown deferred) → `SPEED +1600` popup (wiki §2.6) → named
-   boss patterns (ZUN/Undertale trick) → boss art to families (§8.11; NOTE any ship/bullet
-   redesign must update the HOW TO card — src/howto.js mirrors the art,
-   ⚠ notes in renderer.js) →
-   title/menu music (parked r32: title screen is silent today — asset +
-   direction decision, pairs with the attract-mode/title pass) →
-   audio pass → cross-browser/perf pass → itch packaging.
-3. **Mark/boghog consult handout ready:** wiki §6.2 + §8, docs/research/, the
-   canon-three-holes HTML page, plus decisions 1 above, elite-cancel width
-   (r21 changelog), s4_dynamic recert bar (chronic, four flips).
-4. **Booth recorder divergence — RESOLVED r28 (2026-09-01).** Root cause: the
-   renderer's screen shake drew from g.rng (renderer.js:55) — browser-only, so
-   live runs consumed gameplay-rng the headless replay never saw. Fixed to
-   g.fxRng; proof + sweep evidence in the wiki changelog (r28). Pre-r28 tapes
-   are historical (inputs answered the leaked-rng world; will never replay
-   true) — booth-replay.mjs now warns. Recordings made from r28 on replay
-   byte-perfect; attract mode / practice replays are unblocked.
-5. Deferred design queue: density pass (compression vs multiplication — after
-   the consult), loop 2 (Ketsui-style seal), bullet-radius leniency (parked),
-   suicide-for-bombs meta (§8.8).
-
-## Next first step
-
-Open a new instance in this repo and say what phase to run. For polish:
-start with the options menu (index.html/main.js — volume sliders need
-audio.js gain plumbing; TATE already has state to surface). Check
-`git log --oneline -15` + wiki changelog tail to orient.
+1. **Jacob's TODO — difficulty modes.** Playtest more, then write what
+   Normal and Hard each do at every section (S1…S8). Modes are named
+   designs, not sliders (Pillar 3 / §11): boss hp stays 3× on both; parts
+   bite back on both; first modifier = midboss traffic (Normal solo, Hard
+   with the crosser pulse). Then a plan + agent, Ship-B style.
+2. **Parts verdict (Q17)** from expert hands on the r73 Lab links → winner
+   becomes the constant, row deleted, §5.3 priority rule rewritten.
+3. **Boss ritual** (`docs/plans/boss-ritual.md`): waits on Jacob's marks in
+   the music lab (P1/P2/P3 sections, loop points, pattern moves with the
+   five move words), intro dialogue draft, skip input (START vs double fire).
+4. **Stem layers** (agent running) → Jacob listens with `?lab=musicLayers:on`.
+5. **Midboss tell** (`docs/plans/midboss-tell.md`) — small; build when Jacob
+   says go (Lab `midbossTell`).
+6. **Ship B:** art (second craft, HOW TO, artpeek `?ship=1`), Ship-B bot
+   runs in the referee (Jacob-authorized), maybe the ±1.6 angle retune;
+   sandbox ship sliders no longer move the ship (reads SHIPS[g.ship]).
+7. **Referee recert** after 1–2 land. The expert bot is below Jacob's target
+   player at 3× — a stronger dodge (referee change) or re-read bars (§8.1).
+8. **Campaign (stages 2–5):** the other session's proposal
+   `docs/plans/campaign-five-stages.md` (uncommitted at rewrite time) — a
+   design proposal for Jacob's decision; it amends Pillar scope and §11 and
+   says no stage 2 until the current pass settles.
 
 ## Gotchas / decisions (the why)
 
-- **Corpus rule is live** (CLAUDE.md): design changes cite boghog/MSX/research
-  in the wiki changelog; hp changes need Jacob's explicit override (midboss
-  400 and elite 220 have it, on record in the changelog).
-- **Referee reds are not all equal:** s4_dynamic is chronic (bar encodes the
-  pre-r18 world); the midboss timeouts are the bots' flaw, not the game's.
-- **Bots ≠ Jacob:** he speed-kills far faster than the bots on bosses; bot
-  TTK data misled twice (r19, r25 probes). Use DPS math + his hands.
-- **The Booth is the method:** flag → replay → fix → verdict, one round per
-  build tag, byte-identical referee checks for presentation-only changes.
-- Variant chips are ROLLBACKS now (old values), not experiments.
-- `tools/probes/` holds the session's measurement probes (absolute paths).
-
-## State warnings
-
-- 22+ commits unpushed (deliberate). Two servers running (above). Referee red
-  (deliberate, decision 1). Recorder divergence FIXED r28 (item 4).
+- **Standing conditions** (CLAUDE.md): no hp-inflation *fixes* — Jacob
+  overrode it for the boss (r71) on boghog T1 grounds (hp = pattern
+  duration); no scoring-math changes; loot garnish; pass-cooldown.
+- **"Design for difficulty."** Jacob's own difficulty ≈ an expert's normal;
+  bot deaths are a bot ceiling, not a verdict (memory:
+  `jacob-difficulty-principle`).
+- **Lab lifecycle:** winner → constant, losers deleted in the same commit;
+  run-start tune knobs are allowed in the Lab since r70 (`bossHp`,
+  `bossParts` pattern: `main.js beginRun` sets `g.tune.*` AFTER `startRun`,
+  which rebuilds `g`).
+- **Referee bot:** `PLAYER.speed` is read by bot.mjs; Ship B's branch routes
+  it through `SHIPS[g.ship]`.
+- **Sound "dead" while music plays** = a wedged AudioContext in the tab —
+  reload; each dev port has its own localStorage (SFX slider).
+- **Two sessions, one tree:** always `git add` by filename.
