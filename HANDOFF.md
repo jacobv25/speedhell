@@ -100,7 +100,13 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
    runs (Jacob-authorized). Sandbox ship sliders no longer move the ship.
 7. **Referee recert** after 1–2 land. The expert bot is below Jacob's target
    player at 3× — a stronger dodge (referee change) or re-read bars (§8.1).
-8. **Campaign (stages 2–5):** the other session's proposal
+8. **Jacob's playtest notes 2026-09-09 (wiki Q21/Q22):** flow — S6 two elites
+   overlap ~7 s on most runs, S3 four mids at once; far-side popcorn arriving
+   simultaneously (risers 2470/2660/3290, S1 group at 420) "doesn't feel
+   good"; the player shot "looks like a simple rectangle" — WS05 wants thick /
+   detailed / juicy splash (Lab `shotLook`, renderer-only). All logged, none
+   built; the flow items are modes-notes material.
+9. **Campaign (stages 2–5):** the other session's proposal
    `docs/plans/campaign-five-stages.md` (uncommitted at rewrite time) — a
    design proposal for Jacob's decision; it amends Pillar scope and §11 and
    says no stage 2 until the current pass settles.
