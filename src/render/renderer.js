@@ -11,6 +11,7 @@
 // fx, HUD layout, popups/WARNING/flashes. Core, hitboxes, g.rng, referee: untouched.
 import { W, H, PLAYER, FX } from '../core/game.js';
 import { SKINS } from './skins/index.js';
+import { stageAt } from '../core/stages/index.js'; // r78: section anchors come from the stage module, not a mirror
 
 // r50 lab: presentation prefs the shell may switch live (src/lab.js writes
 // them). The renderer stays DOM-free; headless harnesses get the defaults.
@@ -70,10 +71,11 @@ const FX_DEBRIS = ['#c8bfe8', '#d07a3a', '#5fb4d8', '#b0503a'];
 let displayScore = 0; // ticks up toward real score [BOGHOG_CRAFT]
 
 // Section entry stageT (intro / s1..s8) — the skin gets `sec` already resolved.
-const SEC_T = [0, 120, 720, 1700, 2400, 2460, 2900, 3700, 3900];
-function sectionOf(t) {
+// r78: read from STAGES[g.level].SEC_T (stage 1: the same nine anchors).
+function sectionOf(g) {
+  const SEC_T = stageAt(g.level).SEC_T;
   let s = 0;
-  for (let i = SEC_T.length - 1; i >= 0; i--) if (t >= SEC_T[i]) { s = i; break; }
+  for (let i = SEC_T.length - 1; i >= 0; i--) if (g.stageT >= SEC_T[i]) { s = i; break; }
   return s;
 }
 
@@ -158,13 +160,13 @@ export function draw(g, ctx, bgScroll) {
 
   // background — the skin's; it receives the section and boss phase resolved.
   // Must stay inside the washed band (S2-MUST-1); boss arena restains per phase (r6).
-  const sec = sectionOf(g.stageT);
+  const sec = sectionOf(g);
   let bossPhase = -1;
   for (let i = 0; i < g.enemies.count; i++) {
     const e = g.enemies.items[i];
     if (e.type === 5) { bossPhase = e.phase; break; }
   }
-  skin.drawBackground(ctx, g, bgScroll, sec, bossPhase, KIT);
+  skin.drawBackground(ctx, g, bgScroll, sec, bossPhase, KIT, stageAt(g.level).SEC_T[sec]); // r78: secT = this section's entry stageT (landmark scroll)
 
   // items — gold, unmistakable vs bullets (S2). Radius scales with value; the
   // glint pulse steps 1px. Items sit below enemies/fx/bullets, so size can never
@@ -582,7 +584,7 @@ function drawHud(ctx, g) {
   ctx.font = '11px monospace';
   ctx.fillStyle = UI.dim;
   ctx.fillText('CHAIN ' + g.chain, 10, 36);
-  if (g.practice) { ctx.font = 'bold 9px monospace'; ctx.fillStyle = UI.gold; ctx.fillText('PRACTICE', 6, H - 6); } // r36: always visible — this score is rehearsal
+  if (g.practice || g.startLevel) { ctx.font = 'bold 9px monospace'; ctx.fillStyle = UI.gold; ctx.fillText('PRACTICE', 6, H - 6); } // r36: always visible — this score is rehearsal
   // lives / bombs icons
   ctx.fillStyle = UI.lives;
   for (let i = 0; i < g.player.lives; i++) poly(ctx, [[W - 16 - i * 16, 12], [W - 10 - i * 16, 24], [W - 22 - i * 16, 24]]);

@@ -47,7 +47,6 @@ const VOID = '#150a14';   // pupil / deep socket
 // band (≤ #2e per channel, S2-MUST-1): candles are dim warm motes, never lights.
 // ---------------------------------------------------------------------------
 const FIELD_BG = '#0c0716';
-const SEC_T = [0, 120, 720, 1700, 2400, 2460, 2900, 3700, 3900];
 const SEC_SLAB = ['#17102a', '#1a1230', '#1d142e', '#201434', '#241430', '#1e1628', '#181a2c', '#1b1233', '#26142e'];
 const SEC_STAR = ['#241a3a', '#281c42', '#2c1e3e', '#2e1e44', '#2e1c3c', '#2a2034', '#22263a', '#261a42', '#2e1c3c'];
 const SEC_LAND = ['#1c1430', '#1f1638', '#221836', '#25183c', '#2a1836', '#241c2e', '#1e2234', '#211636', '#2c1836'];
@@ -88,7 +87,7 @@ const mir = (pts) => { const o = []; for (let i = 0; i < pts.length; i++) o.push
 // BACKGROUND — far: candle motes + hanging chains · mid: a scrolling sigil
 // circle · near: one code-drawn landmark per section (bible §7).
 // ---------------------------------------------------------------------------
-function drawBackground(ctx, g, bgScroll, sec, bossPhase, K) {
+function drawBackground(ctx, g, bgScroll, sec, bossPhase, K, secT = 0) {
   const { W, H } = K;
   const boss = bossPhase >= 0;
   const bgC = boss ? BOSS_BG[bossPhase] : FIELD_BG;
@@ -114,7 +113,7 @@ function drawBackground(ctx, g, bgScroll, sec, bossPhase, K) {
   // --- near layer: the landmark ---------------------------------------------
   if (!boss) {
     const [lx, lw, lh] = SEC_LANDGEO[sec];
-    const ly = Math.round((g.stageT - SEC_T[sec]) * 0.55 - lh - 40);
+    const ly = Math.round((g.stageT - secT) * 0.55 - lh - 40);
     if (ly < H + 40 && ly > -lh - 60) landmark(ctx, sec, lx, ly, lw, lh, landC, slabC, K);
   }
 

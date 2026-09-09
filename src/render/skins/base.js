@@ -9,7 +9,7 @@
 //                             castes (ROUND / NEEDLE) are NOT skinnable — wiki §6.2
 //   span[type]              — sprite-cache canvas size per enemy type (rotated extent + rim)
 //   rimOf(type, phase)      — 1px outline colour per family (null = no rim)
-//   drawBackground(ctx, g, bgScroll, sec, bossPhase, K)
+//   drawBackground(ctx, g, bgScroll, sec, bossPhase, K, secT)   // r78: secT = the section's entry stageT (from the stage module)
 //                           — the whole field behind items/enemies; MUST stay inside the
 //                             washed band (S2-MUST-1): a landmark may be large, never bright
 //   paintEnemy(c, type, phase, side, step, prop, hit, flick, extra, K)
@@ -43,7 +43,6 @@ const BOSS   = { hull: '#c8cde0', armor: '#3a3f55', burnA: '#e0604a', burnB: '#7
 // the section plays. Keyed off g.stageT; values stay washed-out so the
 // background never competes with the bullet layer (S2-MUST-1).
 const FIELD_BG = '#0a0c14';
-const SEC_T = [0, 120, 720, 1700, 2400, 2460, 2900, 3700, 3900];
 const SEC_SLAB = ['#12151f', '#101726', '#171820', '#181422', '#1d1418', '#1c1812', '#101c17', '#101a26', '#1d1220'];
 const SEC_STAR = ['#161a28', '#141d30', '#1e2026', '#1f1a2e', '#261b20', '#25211a', '#16241e', '#152230', '#261a2a'];
 const SEC_LAND = ['#161a26', '#141c2e', '#1e2028', '#211c30', '#291d22', '#28241c', '#182922', '#1a2632', '#2a1e2e'];
@@ -60,7 +59,7 @@ const BOSS_LAND = ['#16243e', '#2e1a1e', '#333038'];
 
 export const TURRET_PLATE = [[-9, -13], [9, -13], [13, -9], [13, 9], [9, 13], [-9, 13], [-13, 9], [-13, -9]];
 
-function drawBackground(ctx, g, bgScroll, sec, bossPhase, K) {
+function drawBackground(ctx, g, bgScroll, sec, bossPhase, K, secT = 0) {
   const { W, H } = K;
   const bgC = bossPhase >= 0 ? BOSS_BG[bossPhase] : FIELD_BG;
   const slabC = bossPhase >= 0 ? BOSS_SLAB[bossPhase] : SEC_SLAB[sec];
@@ -70,7 +69,7 @@ function drawBackground(ctx, g, bgScroll, sec, bossPhase, K) {
   ctx.fillRect(-20, -20, W + 40, H + 40);
   { // landmark slab: enters at the section boundary, scrolls with section progress
     const [lx, lw, lh] = SEC_LANDGEO[sec];
-    const ly = Math.round((g.stageT - SEC_T[sec]) * 0.55 - lh - 20);
+    const ly = Math.round((g.stageT - secT) * 0.55 - lh - 20);
     if (ly < H + 20) {
       ctx.fillStyle = landC; ctx.fillRect(lx, ly, lw, lh);
       ctx.fillStyle = slabC; ctx.fillRect(lx + 10, ly + 8, lw - 20, lh - 16); // inset gives it structure

@@ -2,7 +2,8 @@
 // Runs identically in browser and Node (sim harness imports this file).
 import { makeRng } from './rng.js';
 import { makePool } from './pool.js';
-import { buildTimeline, updateEnemy, updateBoss, advanceBossPhase, ENEMY_DEFS, BOSS_PHASE_TIMEOUT } from './stage.js';
+import { updateEnemy, ENEMY_DEFS, BOSS_PHASE_TIMEOUT } from './stage.js';
+import { STAGES, stageAt } from './stages/index.js'; // r78: the campaign table — g.timeline / the boss hook come from STAGES[g.level]
 
 export const W = 320, H = 427;
 export const STEP = 1 / 60;
@@ -57,7 +58,7 @@ export function makeGame(seed = 1) {
     // r8-fx: particles roll on their OWN stream so effect tuning never perturbs the
     // gameplay rng (the certified bot/camp laws replay against g.rng alone)
     fxRng: makeRng((seed ^ 0x5bd1e995) >>> 0),
-    state: 'title', // title | play | dead-wait | clear | gameover
+    state: 'title', // title | play | dead-wait | clear | gameover | stageclear (r78: a non-final stage's boss is down — shell shows the receipt + briefing, then nextStage)
     player: {
       x: W / 2, y: H - 53, prevX: W / 2, prevY: H - 53,
       alive: true, invuln: 0, focus: false, fireCd: 0,
@@ -66,6 +67,12 @@ export function makeGame(seed = 1) {
     input: { dx: 0, dy: 0, focus: false, fire: false, bomb: false },
     score: 0, chain: 0, speedKills: 0, kills: 0,
     stageT: 0, timeline: null, tlIndex: 0, gate: null, bossDown: false, bossKilled: false, practice: 0,
+    // r78 campaign (plan §6): level = which STAGES[] entry is playing (0-based);
+    // startLevel = where the run began (a run started past stage 1 is practice —
+    // never the hi-score board); stageBase = run counters at this stage's start
+    // so the receipt can show per-stage numbers (all zero on stage 1: subtracting
+    // it is the identity, so the one-stage receipt is unchanged).
+    level: 0, startLevel: 0, stageBase: { frame: 0, score: 0, kills: 0, speedKills: 0, deaths: 0, bombsUsed: 0 },
     // r26 variant knobs (Booth experiments): deterministic — same knobs + seed
     // + inputs = same run. 0 / 'top' = shipped ENEMY_DEFS values. The referee
     // never sets these, so certified paths are untouched by construction.
@@ -119,11 +126,14 @@ export function makeGame(seed = 1) {
   return g;
 }
 
-export function startRun(g, atT = 0) {
+export function startRun(g, atT = 0, level = 0) {
   const seed = g.seed;
   Object.assign(g, makeGame(seed));
   g.state = 'play';
-  g.timeline = buildTimeline();
+  // r78: the stage module builds the timeline. level 0 (every existing caller,
+  // the referee, the Booth, replays) is stage 1 exactly as before.
+  g.level = g.startLevel = Math.max(0, Math.min(STAGES.length - 1, level | 0));
+  g.timeline = STAGES[g.level].buildTimeline();
   // r36 practice/section select — the sandbox's stage-jump made player-facing.
   // Pure stageT/tlIndex math, no rng consumed; atT=0 (every full run, the
   // referee, the Booth, replays) is byte-identical to the pre-r36 path.
@@ -134,6 +144,30 @@ export function startRun(g, atT = 0) {
     while (g.tlIndex < g.timeline.length && g.timeline[g.tlIndex].t < atT) g.tlIndex++;
     g.practice = atT;
   }
+  return g;
+}
+
+// r78 campaign carry-over (plan §6 / §7 step 1). Called by the shell (or a
+// harness) once a non-final stage's clear tally has shown (g.state ===
+// 'stageclear'). Keeps what an arcade run keeps — lives, bombs, score, kills,
+// the run clock, the stats, the tune knobs, and the SAME rng objects (the
+// stream is continuous inside a run: no reseed, determinism holds) — and
+// resets what a fresh stage resets exactly as startRun does (pools, bullets,
+// items, chain, gate, stageT/tlIndex, warn, clear latches, the ship's spot).
+// Dormant while STAGES.length === 1; tools/probes/campaign-probe.mjs exercises it.
+export function nextStage(g) {
+  if (g.level >= STAGES.length - 1) return g; // the final stage's clear is the run's clear
+  const lives = g.player.lives, bombs = g.player.bombs;
+  const carry = {
+    rng: g.rng, fxRng: g.fxRng, frame: g.frame, score: g.score, kills: g.kills, speedKills: g.speedKills,
+    stats: g.stats, tune: g.tune, needleTier: g.needleTier, fxMeta: g.fxMeta, fxHitstop: g.fxHitstop,
+    practice: g.practice, startLevel: g.startLevel, level: g.level + 1,
+  };
+  Object.assign(g, makeGame(g.seed), carry);
+  g.player.lives = lives; g.player.bombs = bombs;
+  g.stageBase = { frame: g.frame, score: g.score, kills: g.kills, speedKills: g.speedKills, deaths: g.stats.deaths.length, bombsUsed: g.stats.bombsUsed };
+  g.state = 'play';
+  g.timeline = STAGES[g.level].buildTimeline();
   return g;
 }
 
@@ -333,7 +367,7 @@ function scoreBossPhase(g, e) {
   sfx(g, SFX.PHASE);
   g.stats.killLog.push({ t: 5, f: e.vulnAt >= 0 ? g.frame - e.vulnAt : -1, s: speed ? 1 : 0 });
   explode(g, e.x, e.y, TIER.PHASE, FAM.ORANGE, e.r); setShake(g, 16); g.hitstop = g.fxHitstop;
-  advanceBossPhase(g, e, true, fade);
+  stageAt(g.level).boss.advance(g, e, true, fade); // r78: stage boss hook (stage 1: stage.js advanceBossPhase)
 }
 
 function cancelAllBullets(g, perBullet = 100) {
@@ -473,7 +507,7 @@ export function update(g) {
     // sweep below removed them — a killed P3 boss could fire a final lance
     // volley AFTER its kill's full-screen cancel, from beyond the grave, with
     // nothing left alive to ever cancel it. Dead enemies never update.
-    if (!e.dead) { if (e.type === 5) updateBoss(g, e); else updateEnemy(g, e); }
+    if (!e.dead) { if (e.type === 5) stageAt(g.level).boss.update(g, e); else updateEnemy(g, e); } // r78: the boss runs through the stage module's hook (stage 1: stage.js updateBoss)
     // outro: off-screen enemies despawn silently, fire nothing (S4)
     if (e.dead || e.y > H + 40 || e.y < -80 || e.x < -60 || e.x > W + 60) {
       if (e.dead === 2) killEnemy(g, e, i); // marked killed by script (timeout phases use dead=1: no score)
@@ -607,7 +641,10 @@ export function update(g) {
   if (g.clearAt && g.frame >= g.clearAt) {
     g.clearBonus = p.lives * 1000 + p.bombs * 500; // stock bonus, garnish-sized (S6)
     g.score += g.clearBonus;
-    g.state = 'clear'; g.endFrame = g.frame; sfx(g, SFX.CLEAR);
+    // r78: a non-final stage ends in 'stageclear' — the shell shows this stage's
+    // receipt, the target-briefing card, then calls nextStage(g). With one
+    // stage (STAGES.length === 1) this is today's 'clear', byte for byte.
+    g.state = g.level >= STAGES.length - 1 ? 'clear' : 'stageclear'; g.endFrame = g.frame; sfx(g, SFX.CLEAR);
   }
 
   // --- instrumentation (fixed cadence, bounded size) ---

@@ -46,7 +46,6 @@ const BOSS   = { hull: '#b9b3d0', armor: '#332c48', burnA: '#e0604a', burnB: '#7
 // the whole section reads as one time of day.
 // ---------------------------------------------------------------------------
 const HY = 118;                 // horizon line on the 320x427 field
-const SEC_T = [0, 120, 720, 1700, 2400, 2460, 2900, 3700, 3900];
 // [top indigo, mid violet, horizon burnt orange] — max channel 0x48 (72)
 const SKY = [
   [[10, 9, 26], [24, 15, 42], [56, 30, 40]],   // 0 intro   — dusk indigo
@@ -257,7 +256,7 @@ function landmark(c, kind, x, y, w, h, T) {
 }
 
 // ---------------------------------------------------------------------------
-function drawBackground(ctx, g, bgScroll, sec, bossPhase, K) {
+function drawBackground(ctx, g, bgScroll, sec, bossPhase, K, secT = 0) {
   const { W, H } = K;
   const boss = bossPhase >= 0;
   const T = boss ? BTONE[bossPhase] : TONE[sec];
@@ -287,7 +286,7 @@ function drawBackground(ctx, g, bgScroll, sec, bossPhase, K) {
   // the landmark rises out of the horizon and passes the player (field sections only)
   if (!boss) {
     const [lx, lw, lh, kind] = LAND[sec];
-    const prog = (g.stageT - SEC_T[sec]) * 0.55;               // px travelled since the section opened
+    const prog = (g.stageT - secT) * 0.55;               // px travelled since the section opened
     const k = 0.45 + Math.min(1.05, prog / 260);               // and it grows as it nears (perspective)
     const lw2 = Math.round(lw * k), lh2 = Math.round(lh * k);
     const lx2 = Math.round(lx + lw / 2 - lw2 / 2);
