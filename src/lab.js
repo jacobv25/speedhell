@@ -12,7 +12,6 @@
 // never touch g.rng, scoring, or the referee (the sim always runs defaults).
 import { store } from './options.js';
 import { prefs, setSkin } from './render/renderer.js';
-import { setHitWeight } from './audio.js';
 import { SKINS } from './render/skins/index.js';
 
 export const EXPERIMENTS = [
@@ -33,12 +32,7 @@ export const EXPERIMENTS = [
   { id: 'speedDress', label: 'speed-kill reward', def: 'off', ref: 'wiki §10 / open Q13',
     choices: [['off', 'current'], ['on', 'speed kill = tier up · rush = chain + big boom · cancels pop']],
     apply: (v) => { prefs.speedDress = v === 'on' ? 1 : 0; } },
-  // r75 — the player shot as a bolt (renderer + one gated fx spawn in core, fx rng only; open Q22)
-  // r76 — 'heavy' = bolt + the six research recipes (frame-study order): flame muzzle, 28px bolt + echo + 16px
-  // trail, messy stream, layered impact, hit-sound weight (audio.js setHitWeight), spine shimmer
-  { id: 'shotLook', label: 'shot look', def: 'current', ref: 'wiki §10 / open Q22',
-    choices: [['current', 'current — 4×20 rect + white core'], ['bolt', 'bolt — pixel bolt · trail · muzzle flash · impact blob'], ['heavy', 'heavy — flame muzzle · 28px bolt + echo · messy stream · 6f impact · hit click']],
-    apply: (v) => { prefs.shotLook = v; setHitWeight(v === 'heavy'); } },
+  // r75/r76 shotLook (current / bolt / heavy) left the Lab in r77: heavy shipped as THE shot (open Q22 decided 2026-09-09)
 ];
 
 const KEY = 'speedhell.lab';

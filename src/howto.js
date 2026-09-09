@@ -5,7 +5,7 @@
 // contract (wiki §6.2) and the speed-kill rule (§2.1) — auto-shown once ever,
 // then reachable with H from the title. Never gates play. Browser-only.
 import { binds } from './options.js';
-import { drawShip, drawRoundBullet, drawNeedle } from './render/renderer.js';
+import { drawShip, drawRoundBullet, drawNeedle, drawShot } from './render/renderer.js';
 
 const seen = () => { try { return localStorage.getItem('speedhell.howto') === 'seen'; } catch { return true; } };
 const markSeen = () => { try { localStorage.setItem('speedhell.howto', 'seen'); } catch { /* ok */ } };
@@ -38,14 +38,20 @@ function drawShipCard(ctx) {
 }
 
 // Both bullet castes at 3x: white = the true 3px hit circle; pink ring / cyan
-// body are graze.
+// body are graze. r77: plus YOUR shot (the shipped 6×28 bolt, renderer
+// drawShot — the r76 `heavy` sprite, no muzzle / trail on the card) at the
+// right, so the card also shows what the player family looks like next to
+// the two enemy castes (S2: never the same hue as a needle).
 function drawBulletCard(ctx) {
   ctx.imageSmoothingEnabled = false;
-  ctx.save(); ctx.translate(30, 48); ctx.scale(3, 3);
+  ctx.save(); ctx.translate(22, 48); ctx.scale(3, 3);
   drawRoundBullet(ctx, 0, 0, 0);
   ctx.restore();
-  ctx.save(); ctx.translate(64, 48); ctx.scale(3, 3);
+  ctx.save(); ctx.translate(52, 48); ctx.scale(3, 3);
   drawNeedle(ctx, 0, 0, Math.PI / 2);
+  ctx.restore();
+  ctx.save(); ctx.translate(82, 38); ctx.scale(3, 3);
+  drawShot(ctx, 0, 0);
   ctx.restore();
 }
 

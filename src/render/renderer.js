@@ -20,12 +20,12 @@ import { SKINS } from './skins/index.js';
 // still draw BELOW bullets (S2 — they never mask threats).
 // speedDress: r53 — transported to core as g.fxMeta by main.js (renderer ignores it)
 // skin: r60 — which skins/*.js draws the world (setSkin below; Lab row `skin`); r62 default cute-occult
-// shotLook: r75 (open Q22) — 'current' = the 4×20 rect + 2×18 white core · 'bolt' = pixel bolt + trail + muzzle
-// flash + impact blob (core side: main.js mirrors it into g.fxShot). muzzleAt = the g.frame main.js last saw
-// SFX.SHOT in the ring (-1 = never); the renderer strobes the muzzle off it for 2 frames — no core change.
-// r76: 'heavy' = bolt + the six research recipes (drawBoltsHeavy below; core side g.fxShot = 2). muzzlePrev = the
-// volley before muzzleAt, muzzleSide = which barrel flares this volley (main.js toggles it per SFX.SHOT).
-export const prefs = { speedPopup: 'both', speedDress: 0, skin: 'cute-occult', shotLook: 'current', muzzleAt: -1, muzzlePrev: -1, muzzleSide: 0 };
+// muzzleAt / muzzlePrev / muzzleSide: r75–r77 — the muzzle flame's data path (not a Lab knob). main.js stamps
+// muzzleAt = the g.frame it last saw SFX.SHOT in the ring (-1 = never), muzzlePrev = the volley before it, and
+// toggles muzzleSide (which barrel flares this volley); drawShots strobes the flames off them. No core change.
+// (r77: the Lab row `shotLook` left — 'heavy' shipped as THE shot, Q22 decided 2026-09-09; the r57 rect and
+// the r75 bolt paths are deleted.)
+export const prefs = { speedPopup: 'both', speedDress: 0, skin: 'cute-occult', muzzleAt: -1, muzzlePrev: -1, muzzleSide: 0 };
 const FX_SIZE = 2; // r67: explosion draw-size multiplier, 2× shipped (Lab open Q12 decided 2026-09-07)
 
 // r62: cute-occult is THE look (Jacob's verdict 2026-09-05: "the most personality");
@@ -145,7 +145,7 @@ const KIT = { poly, disc, STEP, STEPS, W, H, white: WHITE };
 export function resetHud() { displayScore = 0; }
 
 export function draw(g, ctx, bgScroll) {
-  const { UI, SHIP } = skin.pal;
+  const { UI } = skin.pal;
   ctx.save();
   if (g.shake > 0) { // r8-fx: squared decay — snaps hard, settles fast (no constant buzz)
     const k = g.shakeMax > 0 ? g.shake / g.shakeMax : 1, amp = (g.shakeMax || g.shake) * k * k;
@@ -185,19 +185,10 @@ export function draw(g, ctx, bgScroll) {
   // particles (below bullets: explosions must never mask threats, S2).
   drawFx(ctx, g);
 
-  // player shots — tall white-core bolts with the skin's player edge colour (S1);
-  // the player family never shares a hue with enemy needles (r5 S2-MUST-3).
-  // r75 Lab `shotLook` (open Q22): 'bolt' swaps the rect for drawBolt + a 2-frame muzzle strobe on the
-  // barrels; 'current' is this loop, untouched. Both stay BELOW enemy bullets (S2 display contract).
-  if (prefs.shotLook === 'bolt') drawBolts(ctx, g);
-  else if (prefs.shotLook === 'heavy') drawBoltsHeavy(ctx, g); // r76
-  else for (let i = 0; i < g.pBullets.count; i++) {
-    const b = g.pBullets.items[i], x = Math.round(b.x), y = Math.round(b.y);
-    ctx.fillStyle = SHIP.shot;
-    ctx.fillRect(x - 2, y - 10, 4, 20);
-    ctx.fillStyle = WHITE;
-    ctx.fillRect(x - 1, y - 9, 2, 18);
-  }
+  // player shots — tall white-headed bolts in the skin's player edge colour (S1); the player family
+  // never shares a hue with enemy needles (r5 S2-MUST-3). r77: drawShots (was r76 `heavy`) is THE shot —
+  // flame muzzle, 6×28 bolt + echo + trail, scorch — and stays BELOW enemy bullets (S2 display contract).
+  drawShots(ctx, g);
 
   // ⚠ ART-CHANGE NOTE (r35/r57): src/howto.js draws its bullet card through
   // drawRoundBullet / drawNeedle below — the card mirrors by construction.
@@ -294,57 +285,13 @@ export function drawNeedle(ctx, x, y, ang) {
   ctx.restore();
 }
 
-// --- r75 player shot as a BOLT (Lab `shotLook`, open Q22; bible §2 grid, §5/§6) --------------------
-// Same colour family as the rect it replaces (the skin's SHIP.shot edge + white; the darker rim is the
-// skin's SHIP.shade — still violet, player-only, r5 S2-MUST-3), same 20px height and 9px/frame (fast +
-// tall, S1), one cached pixel sprite. Rows top→bottom: a 1px rim tip, a 3px white HEAD (rows 1–4) inside
-// a 1px darker rim, the body (violet with a 1px white spine) narrowing at row 12, a 2px violet tail —
-// then, drawn first so the bolt covers it, an 8px trail: two stepped ghosts of the tail at the bolt's
-// previous positions (alpha 0.5 / 0.25 — the bible's fx-halo exception, capped; integer-snapped).
-// boghog WS05: "thick, detailed, juicy — always check in motion"; follow-through: the shot stream is
-// where the eye reads the ship. Hitboxes, speed, cap, damage: untouched (renderer-only, no g.rng).
-const BOLT_ROWS = [ // per row [x offset, width, colour]* for the 5×20 sprite; 0 = rim, 1 = body, 2 = white
-  [[0, 1, 0]],
-  [[-1, 1, 0], [0, 1, 2], [1, 1, 0]],
-  [[-2, 1, 0], [-1, 3, 2], [2, 1, 0]], [[-2, 1, 0], [-1, 3, 2], [2, 1, 0]], [[-2, 1, 0], [-1, 3, 2], [2, 1, 0]],
-  [[-2, 1, 0], [-1, 1, 1], [0, 1, 2], [1, 1, 1], [2, 1, 0]], [[-2, 1, 0], [-1, 1, 1], [0, 1, 2], [1, 1, 1], [2, 1, 0]],
-  [[-2, 1, 0], [-1, 1, 1], [0, 1, 2], [1, 1, 1], [2, 1, 0]], [[-2, 1, 0], [-1, 1, 1], [0, 1, 2], [1, 1, 1], [2, 1, 0]],
-  [[-2, 1, 0], [-1, 1, 1], [0, 1, 2], [1, 1, 1], [2, 1, 0]], [[-2, 1, 0], [-1, 1, 1], [0, 1, 2], [1, 1, 1], [2, 1, 0]],
-  [[-2, 1, 0], [-1, 1, 1], [0, 1, 2], [1, 1, 1], [2, 1, 0]],
-  [[-1, 1, 0], [0, 1, 2], [1, 1, 0]], [[-1, 1, 0], [0, 1, 2], [1, 1, 0]],
-  [[-1, 1, 0], [0, 1, 1], [1, 1, 0]], [[-1, 1, 0], [0, 1, 1], [1, 1, 0]],
-  [[-1, 2, 1]], [[-1, 2, 1]], [[-1, 2, 1]], [[-1, 2, 1]],
-];
-function drawBolts(ctx, g) {
-  const { SHIP } = skin.pal;
-  const s = CACHE.get('bolt') || sprite('bolt', 20, null, (c) => {
-    const col = [SHIP.shade, SHIP.shot, WHITE];
-    for (let r = 0; r < BOLT_ROWS.length; r++) for (const [dx, w, k] of BOLT_ROWS[r]) { c.fillStyle = col[k]; c.fillRect(dx, r - 10, w, 1); }
-  });
-  const n = g.pBullets.count, items = g.pBullets.items;
-  ctx.fillStyle = SHIP.shot; // trail ghosts first (under every bolt), stepped alpha, then all the bolts
-  ctx.globalAlpha = 0.5;
-  for (let i = 0; i < n; i++) { const b = items[i]; ctx.fillRect(Math.round(b.x) - 1, Math.round(b.y) + 10, 2, 4); }
-  ctx.globalAlpha = 0.25;
-  for (let i = 0; i < n; i++) { const b = items[i]; ctx.fillRect(Math.round(b.x) - 1, Math.round(b.y) + 14, 2, 4); }
-  ctx.globalAlpha = 1;
-  for (let i = 0; i < n; i++) { const b = items[i]; ctx.drawImage(s.img, Math.round(b.x) - s.o, Math.round(b.y) - s.o); }
-  // muzzle strobe: main.js stamps prefs.muzzleAt with g.frame whenever the ring carried SFX.SHOT; frame 1 a
-  // 5×3 white flash on each barrel mouth (shots leave at x±7, y−10), frame 2 a 3×2 ember. Follows the
-  // ship's invuln blink so a flash never floats over an invisible ship; play state only (g.frame holds at death).
-  const age = g.frame - prefs.muzzleAt, p = g.player;
-  if (age < 0 || age > 1 || g.state !== 'play' || (p.invuln > 0 && (g.frame & 2))) return;
-  const x = Math.round(p.x), y = Math.round(p.y);
-  ctx.fillStyle = WHITE;
-  if (age === 0) { ctx.fillRect(x - 9, y - 12, 5, 3); ctx.fillRect(x + 5, y - 12, 5, 3); }
-  else { ctx.fillRect(x - 8, y - 12, 3, 2); ctx.fillRect(x + 6, y - 12, 3, 2); }
-}
-
-// --- r76 HEAVY shot (Lab `shotLook` = heavy, open Q22; research player-shot-juice-2026-09-09 §6 + §8) -------
-// The r75 bolt plus the six recipes, in the frame study's revised order. Everything here is DRAWN, not
-// simulated: hitboxes, speed, cap, damage and b.x / b.y are untouched (the only core touch is the gated blob
-// life + two up-sparks in game.js). Player family only (SHIP.shot / SHIP.shade / white); the whole pass sits
-// under enemy bullets (S2 display contract). `bolt` (drawBolts above) is left byte-for-byte as r75.
+// --- THE PLAYER SHOT (r77 — was r76 Lab `shotLook` = heavy; Q22 decided 2026-09-09, Jacob: "heavy is
+// obviously the best"; research player-shot-juice-2026-09-09 §6 + §8) -------------------------------------
+// The r75 pixel bolt plus the six research recipes, in the frame study's revised order. Everything here is
+// DRAWN, not simulated: hitboxes, speed, cap, damage and b.x / b.y are untouched (the only core touch is the
+// impact blob + two up-sparks in game.js's hit block, fxRng only). Player family only (SHIP.shot / SHIP.shade /
+// white); the whole pass sits under enemy bullets (S2 display contract). The r57 4×20 rect and the r75 5×20
+// bolt were deleted with the Lab row (wiki §10 lifecycle rule).
 // 1. MUZZLE at flame size — a flame per barrel, 10×12 with its rim (a third of the 28px ship: DaiOuJou's
 //    option-pod flare, Garegga's nose flame), 4 frames (10×12 → 10×12 licked → 8×8 → 4×5), white core →
 //    violet edge → dark-violet rim, ALTERNATING barrels per volley (main.js toggles prefs.muzzleSide and keeps
@@ -358,11 +305,14 @@ function drawBolts(ctx, g) {
 // 3. MESSIER stream — ±1px x-jitter per bolt, seeded on the frame it was first seen (stable, not sparkle),
 //    and the right rail drawn one frame (9px) behind the left. Draw offsets only.
 // 4. LAYERED impact — the blob lives 6 drawn frames at 8/6/4/3/2/1 px (pass 3 in drawFx), two up-sparks
-//    (core, gated), and a 1px SCORCH dot in SHIP.dark riding the hull for 10 frames (a renderer list keyed to
+//    (core), and a 1px SCORCH dot in SHIP.dark riding the hull for 10 frames (a renderer list keyed to
 //    the enemy, drawn UNDER the fx from drawScorch; no sprite-cache change). The popcorn hit-flash is the core
 //    field e.flash (already 2 frames) — untouched.
-// 5. Hit-sound weight lives in audio.js (setHitWeight, from lab.js). 6. SHIMMER — spine 1px / 2px by frame.
-function heavyRows(wide) { // per row [x offset, width, colour]* for the 6×28 sprite (cols −3..2); 0 rim 1 body 2 white
+// 5. Hit-sound weight lives in audio.js (the SFX.HIT click, once per frame). 6. SHIMMER — spine 1px / 2px by frame.
+// Known cosmetic artefact (r76, left as is): core culls a bolt at y < −20, so the echo (b.y + 22…49) and the
+// ghosts (+50…66) of a bolt leaving the top stay visible for ~5 frames and then vanish with it — a comet
+// tail following its head off the field; fading it would mean per-bolt tail state, not a one-liner.
+function shotRows(wide) { // per row [x offset, width, colour]* for the 6×28 sprite (cols −3..2); 0 rim 1 body 2 white
   const rows = [[[-1, 2, 0]], [[-2, 1, 0], [-1, 2, 2], [1, 1, 0]]];
   for (let r = 0; r < 4; r++) rows.push([[-3, 1, 0], [-2, 4, 2], [2, 1, 0]]); // the 4px white head
   for (let r = 0; r < 12; r++) rows.push(wide ? [[-3, 1, 0], [-2, 1, 1], [-1, 2, 2], [1, 1, 1], [2, 1, 0]] : [[-3, 1, 0], [-2, 2, 1], [0, 1, 2], [1, 1, 1], [2, 1, 0]]);
@@ -371,7 +321,7 @@ function heavyRows(wide) { // per row [x offset, width, colour]* for the 6×28 s
   for (let r = 0; r < 4; r++) rows.push([[-1, 2, 1]]); // 2px tail
   return rows; // 28 rows, drawn at dy = row − 10 (−10 … 17)
 }
-const HEAVY_ROWS = [heavyRows(false), heavyRows(true)];
+const SHOT_ROWS = [shotRows(false), shotRows(true)];
 // flame frames, rows tip → base as [outer width, white-core width]; even widths centred on the barrel x
 const FLARE_ROWS = [
   [[2, 0], [4, 0], [4, 2], [6, 2], [6, 4], [8, 4], [8, 6], [8, 6], [6, 4], [4, 2]],   // age 0: 8×10 + rim = 10×12
@@ -380,13 +330,13 @@ const FLARE_ROWS = [
   [[2, 0], [2, 2], [2, 0]],                                                           // age 3: 2×3 + rim = 4×5
 ];
 const TRAIL_A = [0.6, 0.4, 0.25, 0.12];
-const HEAVY_BLOB = [8, 6, 4, 3, 2, 1]; // impact blob diameter by drawn frame (px, at the 3-hit size)
+const IMPACT_D = [8, 6, 4, 3, 2, 1]; // impact blob diameter by drawn frame (px, at the 3-hit size)
 const BOLT_STATE = new WeakMap(); // pooled bolt object → { y, side, jit } (draw-only bookkeeping, never written back)
 const SCORCH = []; // { e, dx, dy, age, f } — a 1px dot riding an enemy's hull for 10 frames after a hit
-function heavySprite(k) {
-  const { SHIP } = skin.pal, key = 'heavy' + k;
+function shotSprite(k) {
+  const { SHIP } = skin.pal, key = 'shot' + k;
   return CACHE.get(key) || sprite(key, 32, null, (c) => {
-    const col = [SHIP.shade, SHIP.shot, WHITE], rows = HEAVY_ROWS[k];
+    const col = [SHIP.shade, SHIP.shot, WHITE], rows = SHOT_ROWS[k];
     for (let r = 0; r < rows.length; r++) for (const [dx, w, kk] of rows[r]) { c.fillStyle = col[kk]; c.fillRect(dx, r - 10, w, 1); }
   });
 }
@@ -397,7 +347,10 @@ function flareSprite(age) {
     for (let r = 0; r < h; r++) { const [w, cw] = rows[r]; c.fillStyle = SHIP.shot; c.fillRect(-w / 2, r - h, w, 1); if (cw) { c.fillStyle = WHITE; c.fillRect(-cw / 2, r - h, cw, 1); } }
   });
 }
-function drawScorch(ctx, g) { // 4b. scorch dots (heavy only; called from drawFx so the dots sit under the blob)
+// r57/r77 ART-CHANGE NOTE: src/howto.js draws the shipped bolt on its bullet card through drawShot — keep the
+// player shot's pixels inside shotRows / shotSprite so the card mirrors the live art by construction (wiki §6.2).
+export function drawShot(ctx, x, y) { const s = shotSprite(1); ctx.drawImage(s.img, Math.round(x) - s.o, Math.round(y) - s.o); }
+function drawScorch(ctx, g) { // 4b. scorch dots (called from drawFx so the dots sit under the blob)
   // a blob particle on its first drawn frame marks the hull it hit (the nearest enemy within reach)
   const live = new Set(); for (let i = 0; i < g.enemies.count; i++) live.add(g.enemies.items[i]);
   for (let i = 0; i < g.particles.count; i++) {
@@ -414,9 +367,9 @@ function drawScorch(ctx, g) { // 4b. scorch dots (heavy only; called from drawFx
     ctx.fillRect(Math.round(sc.e.x) + sc.dx, Math.round(sc.e.y) + sc.dy, 1, 1);
   }
 }
-function drawBoltsHeavy(ctx, g) {
+function drawShots(ctx, g) {
   const { SHIP } = skin.pal, p = g.player, px = Math.round(p.x), py = Math.round(p.y);
-  const n = g.pBullets.count, items = g.pBullets.items, s = heavySprite(g.frame & 1);
+  const n = g.pBullets.count, items = g.pBullets.items, s = shotSprite(g.frame & 1);
   // per-bolt draw state: side + jitter fixed on the frame the bolt is first seen (a new bolt is at p.y − 10 − 9
   // after its spawn tick; a reused pool slot shows up as y jumping DOWN). Nothing is written to the bolt.
   const X = new Int16Array(n), Y = new Int16Array(n);
@@ -450,7 +403,7 @@ function drawBoltsHeavy(ctx, g) {
 function drawFx(ctx, g) {
   const n = g.particles.count, items = g.particles.items;
   const S = FX_SIZE;
-  if (prefs.shotLook === 'heavy') drawScorch(ctx, g); // r76: scorch dots under every fx
+  drawScorch(ctx, g); // r76/r77: scorch dots under every fx
   // r52 chunky pass 0: white constant-width shockwave UNDER everything, then
   // opaque shaded blobs in spawn order (centre blob of each grape drawn last).
   for (let i = 0; i < n; i++) {
@@ -535,25 +488,17 @@ function drawFx(ctx, g) {
   }
   ctx.globalCompositeOperation = 'source-over';
   ctx.globalAlpha = 1;
-  // r75 pass 3 (Lab shotLook = bolt only): the IMPACT BLOB — an opaque WHITE pixel disc (size = radius 2/3/4 →
-  // 4/6/8px) inside a 1px dark-violet rim (FX_RAMP[0][3], player family). Drawn LAST of the fx so the r8 hit
-  // sparks + fire puff at the same point never wash it out, and rimmed because the hit-flash paints the enemy
-  // white for the same 2 frames and a bare white flare vanished into it (peek, r75) — WS02 "very dark next to
-  // very bright". Full size 2 frames, one step smaller on its last: snaps on, collapses. source-over (a solid
-  // flare on the hull, not a glow); still under player shots and enemy bullets (S2).
-  if (prefs.shotLook === 'bolt') for (let i = 0; i < n; i++) {
-    const q = items[i];
-    if (q.kind !== FX.CORE || q.ck !== 2) continue;
-    const r = q.life > 1 ? q.size : q.size - 1, x = Math.round(q.x), y = Math.round(q.y);
-    ctx.fillStyle = FX_RAMP[0][3]; disc(ctx, x, y, r + 1);
-    ctx.fillStyle = FX_RAMP[0][0]; disc(ctx, x, y, r);
-  }
-  // r76 (Lab shotLook = heavy): the same blob, six drawn frames, collapsing 8/6/4/3/2/1 px at the 3-hit size
-  // (scaled by hits: 1 hit starts at 4px, 2 at 6px); odd sizes are centred squares, even ones pixel discs.
-  else if (prefs.shotLook === 'heavy') for (let i = 0; i < n; i++) {
+  // r75/r76 pass 3 (r77: always on): the IMPACT BLOB — an opaque WHITE pixel disc inside a 1px dark-violet rim
+  // (FX_RAMP[0][3], player family). Drawn LAST of the fx so the r8 hit sparks + fire puff at the same point
+  // never wash it out, and rimmed because the hit-flash paints the enemy white for the same 2 frames and a bare
+  // white flare vanished into it (peek, r75) — WS02 "very dark next to very bright". Six drawn frames,
+  // collapsing 8/6/4/3/2/1 px at the 3-hit size (scaled by hits: 1 hit starts at 4px, 2 at 6px); odd sizes are
+  // centred squares, even ones pixel discs. source-over (a solid flare on the hull, not a glow); still under
+  // player shots and enemy bullets (S2).
+  for (let i = 0; i < n; i++) {
     const q = items[i];
     if (q.kind !== FX.CORE || q.ck !== 2 || q.life > 6) continue;
-    const d = Math.max(1, Math.round(HEAVY_BLOB[6 - q.life] * q.size / 4)), x = Math.round(q.x), y = Math.round(q.y);
+    const d = Math.max(1, Math.round(IMPACT_D[6 - q.life] * q.size / 4)), x = Math.round(q.x), y = Math.round(q.y);
     if (d & 1) { const h = d >> 1; ctx.fillStyle = FX_RAMP[0][3]; ctx.fillRect(x - h - 1, y - h - 1, d + 2, d + 2); ctx.fillStyle = FX_RAMP[0][0]; ctx.fillRect(x - h, y - h, d, d); }
     else { ctx.fillStyle = FX_RAMP[0][3]; disc(ctx, x, y, d / 2 + 1); ctx.fillStyle = FX_RAMP[0][0]; disc(ctx, x, y, d / 2); }
   }

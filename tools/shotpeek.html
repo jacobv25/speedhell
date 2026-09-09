@@ -1,70 +1,54 @@
 <!doctype html><meta charset="utf-8">
-<!-- shot peek (r75, wiki §10 shotLook / open Q22): ONE stage frame mid-volley — the referee's expert bot from
+<!-- shot peek (r75 → r77, wiki §10 / Q22 decided): ONE stage frame mid-volley — the referee's expert bot from
      s2 on, captured on the first frame where a volley fires AND a shot lands inside the crop with the ship
-     visible (not invuln-blinking) — at 2x, plus a 4x crop around the ship so bolt + trail + muzzle strobe +
+     visible (not invuln-blinking) — at 2x, plus a 4x crop around the ship so bolt + echo + trail + muzzle flame +
      impact blob can be read pixel by pixel. Seed C0FFEE lands on the s4 midboss (the bot only closes on big targets).
-       node tools/peek.mjs 'tools/shotpeek.html?shot=current' docs/img/r75-shot-current.png 1160x900
-       node tools/peek.mjs 'tools/shotpeek.html?shot=bolt'    docs/img/r75-shot-bolt.png    1160x900
-       node tools/peek.mjs 'tools/shotpeek.html?shot=heavy'   docs/img/r76-shot-heavy.png   1160x900   (r76)
-       node tools/peek.mjs 'tools/shotpeek.html?shot=three'   docs/img/r76-shot-three.png   1980x1500  (r76: current / bolt / heavy, same frame)
-       …&bw=1 desaturates the sheet (the bible §3 / boghog black-and-white readability check).
-     Same seed + same g.rng either way (fxShot only touches fxRng), so every sheet shows the SAME frame; `three`
-     steps three games in lockstep (identical g.rng, bots and inputs) and draws each with its own look. -->
+       node tools/peek.mjs tools/shotpeek.html       docs/img/r77-shot.png 1160x900
+       node tools/peek.mjs 'tools/shotpeek.html?bw=1' out.png                1160x900   (desaturated — the bible §3 / boghog black-and-white readability check)
+     r77: the ?shot= switch went with the Lab row (one recipe now: the shipped shot, was r76 `heavy`). The frame
+     matches the r75/r76 sheets (same seed, same g.rng — the shot's fx live on fxRng only). -->
 <body style="margin:0;background:#05060a">
-<canvas id="c"></canvas>
+<canvas id="c" width="1160" height="900"></canvas>
 <script type="module">
 import { makeGame, startRun, update, SFX, W, H } from '../src/core/game.js';
 import { draw, resetHud, prefs } from '../src/render/renderer.js';
 import { makeBot } from '../test/bot.mjs';
-const Q = new URLSearchParams(location.search), shot = Q.get('shot') || 'current', BW = Q.get('bw') === '1';
-const LOOKS = shot === 'three' ? ['current', 'bolt', 'heavy'] : [shot];
-const FXSHOT = { current: 0, bolt: 1, heavy: 2 };
-const c = document.getElementById('c'), ctx = c.getContext('2d');
-c.width = shot === 'three' ? 1980 : 1160; c.height = shot === 'three' ? 1500 : 900; ctx.imageSmoothingEnabled = false;
+const Q = new URLSearchParams(location.search), BW = Q.get('bw') === '1';
+const c = document.getElementById('c'), ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = false;
 const label = (t, x, y) => { ctx.fillStyle = '#ffd24a'; ctx.font = 'bold 18px monospace'; ctx.textAlign = 'left'; ctx.fillText(t, x, y); };
 const off = document.createElement('canvas'); off.width = W; off.height = H; const octx = off.getContext('2d');
 const desat = () => { if (!BW) return; const im = octx.getImageData(0, 0, W, H), d = im.data; for (let i = 0; i < d.length; i += 4) { const l = Math.round(0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]); d[i] = d[i + 1] = d[i + 2] = l; } octx.putImageData(im, 0, 0); };
-const games = LOOKS.map((look) => { const g = makeGame(0xC0FFEE); startRun(g, 720); g.fxShot = FXSHOT[look]; return { look, g, bot: makeBot({ aggressive: true, lookahead: 14, reactDelay: 0 }) }; });
+const g = makeGame(0xC0FFEE); startRun(g, 720); const bot = makeBot({ aggressive: true, lookahead: 14, reactDelay: 0 });
 resetHud();
-const stamp = (g) => { for (let i = 0; i < g.sfxN; i++) if (g.sfx[i] === SFX.SHOT) { prefs.muzzlePrev = prefs.muzzleAt; prefs.muzzleAt = g.frame; prefs.muzzleSide ^= 1; return true; } return false; };
+const stamp = () => { for (let i = 0; i < g.sfxN; i++) if (g.sfx[i] === SFX.SHOT) { prefs.muzzlePrev = prefs.muzzleAt; prefs.muzzleAt = g.frame; prefs.muzzleSide ^= 1; return true; } return false; };
 const CW = 120, CH = 200; // crop (field px): ship at the bottom, the target above
 const stub = { next: () => 0.5, range: (a, b) => (a + b) / 2 };
-function render(G, warm) { // draw G with its look; warm = the per-frame draw that keeps heavy's draw-only state (jitter, scorch) honest
-  prefs.shotLook = G.look; const g = G.g, real = g.rng; g.rng = stub; octx.setTransform(1, 0, 0, 1, 0, 0);
+function render(warm) { // warm = the per-frame draw that keeps the shot's draw-only state (jitter, scorch) honest
+  const real = g.rng; g.rng = stub; octx.setTransform(1, 0, 0, 1, 0, 0);
   draw(g, octx, g.stageT * 1.05); let ms = 0;
   if (!warm) { const t0 = performance.now(); for (let i = 0; i < 60; i++) draw(g, octx, g.stageT * 1.05); ms = (performance.now() - t0) / 60; }
   g.rng = real; return ms;
 }
-let found = false; const seen = []; const g0 = games[0].g;
-for (let f = 0; f < 6000 && g0.state === 'play'; f++) {
+let found = false; const seen = [];
+for (let f = 0; f < 6000 && g.state === 'play'; f++) {
   let fired = false, hit = false;
-  for (const G of games) { G.bot(G.g); update(G.g); }
-  for (let i = 0; i < g0.sfxN; i++) { if (g0.sfx[i] === SFX.SHOT) fired = true; if (g0.sfx[i] === SFX.HIT) hit = true; }
-  stamp(g0); // main.js does this from the ring before audio.drain
-  for (const G of games) if (G.look === 'heavy' && g0.stageT >= 780) render(G, true);
-  if (!(fired && hit) || g0.stageT < 800 || g0.player.invuln > 0) continue; // a blink-off frame hides the ship AND the muzzle
-  const p = g0.player, x0 = Math.round(p.x) - CW / 2, y0 = Math.round(p.y) + 30 - CH;
+  bot(g); update(g);
+  for (let i = 0; i < g.sfxN; i++) { if (g.sfx[i] === SFX.SHOT) fired = true; if (g.sfx[i] === SFX.HIT) hit = true; }
+  stamp(); // main.js does this from the ring before audio.drain
+  if (g.stageT >= 780) render(true);
+  if (!(fired && hit) || g.stageT < 800 || g.player.invuln > 0) continue; // a blink-off frame hides the ship AND the muzzle
+  const p = g.player, x0 = Math.round(p.x) - CW / 2, y0 = Math.round(p.y) + 30 - CH;
   let inCrop = false;
-  for (let i = 0; i < g0.enemies.count; i++) { const e = g0.enemies.items[i]; if (e.flash !== 2) continue; seen.push([g0.frame, Math.round(e.x - p.x), Math.round(e.y - p.y)]); if (e.x > x0 + 15 && e.x < x0 + CW - 15 && e.y > y0 + 10 && e.y < y0 + CH - 60) inCrop = true; }
+  for (let i = 0; i < g.enemies.count; i++) { const e = g.enemies.items[i]; if (e.flash !== 2) continue; seen.push([g.frame, Math.round(e.x - p.x), Math.round(e.y - p.y)]); if (e.x > x0 + 15 && e.x < x0 + CW - 15 && e.y > y0 + 10 && e.y < y0 + CH - 60) inCrop = true; }
   if (!inCrop) continue;
-  found = true; window.__perf = { frame: g0.frame, stageT: g0.stageT, shots: g0.pBullets.count, particles: g0.particles.count };
-  if (shot !== 'three') {
-    const ms = render(games[0]); desat();
-    ctx.drawImage(off, 0, 40, W * 2, H * 2);
-    ctx.drawImage(off, x0, y0, CW, CH, 660, 40, CW * 4, CH * 4);
-    ctx.strokeStyle = '#ffd24a'; ctx.lineWidth = 1; ctx.strokeRect(x0 * 2 + 0.5, y0 * 2 + 40.5, CW * 2, CH * 2);
-    label(`shotLook = ${shot}${BW ? ' (B&W)' : ''} · t=${g0.stageT} f=${g0.frame} · shots ${g0.pBullets.count} · draw ${ms.toFixed(2)} ms`, 10, 26);
-    label(`4x crop ${CW}x${CH} around the ship`, 660, 26);
-    window.__perf[shot] = +ms.toFixed(2);
-  } else for (let k = 0; k < 3; k++) {
-    const ms = render(games[k]); desat(); const X = 10 + k * 660;
-    ctx.drawImage(off, X, 40, W * 2, H * 2);
-    ctx.drawImage(off, x0, y0, CW, CH, X + 140, 900, CW * 3, CH * 3);
-    ctx.strokeStyle = '#ffd24a'; ctx.lineWidth = 1; ctx.strokeRect(x0 * 2 + X + 0.5, y0 * 2 + 40.5, CW * 2, CH * 2);
-    label(`shotLook = ${games[k].look} · t=${g0.stageT} f=${g0.frame} · draw ${ms.toFixed(2)} ms`, X, 26);
-    label(`3x crop`, X + 140, 890);
-    window.__perf[games[k].look] = +ms.toFixed(2);
-  }
+  found = true;
+  const ms = render(); desat();
+  window.__perf = { frame: g.frame, stageT: g.stageT, shots: g.pBullets.count, particles: g.particles.count, draw: +ms.toFixed(2) };
+  ctx.drawImage(off, 0, 40, W * 2, H * 2);
+  ctx.drawImage(off, x0, y0, CW, CH, 660, 40, CW * 4, CH * 4);
+  ctx.strokeStyle = '#ffd24a'; ctx.lineWidth = 1; ctx.strokeRect(x0 * 2 + 0.5, y0 * 2 + 40.5, CW * 2, CH * 2);
+  label(`shot (r77)${BW ? ' (B&W)' : ''} · t=${g.stageT} f=${g.frame} · shots ${g.pBullets.count} · draw ${ms.toFixed(2)} ms`, 10, 26);
+  label(`4x crop ${CW}x${CH} around the ship`, 660, 26);
   break;
 }
 if (!found) { label('no mid-volley frame found', 10, 26); window.__err = 'no frame'; window.__result = seen.slice(0, 40); }
