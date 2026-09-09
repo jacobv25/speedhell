@@ -8,6 +8,7 @@
 import { store } from './options.js';
 import { BUILD } from './version.js';
 import { labStamp } from './lab.js';
+import { STAGES } from './core/stages/index.js'; // r78: stage stamp on the receipt + board when there is more than one stage
 
 const $ = (id) => document.getElementById(id);
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.';
@@ -19,8 +20,8 @@ let slots = [0, 0, 0], slot = 0, pendingEntry = null;
 // beats the board. Practice never qualifies, at any score (Jacob: no shmup
 // shows the initials card in practice). This is the ONLY practice gate (r47
 // removed the redundant r45 latch — the r45 bug was CSS, never JS).
-export function qualifies(state, practice, score, scores) {
-  if (practice > 0) return false;
+export function qualifies(state, practice, score, scores, startLevel = 0) {
+  if (practice > 0 || startLevel > 0) return false; // r78: a run started past stage 1 is practice too
   if (state !== 'gameover' && state !== 'clear') return false;
   return scores.length < 10 || score > scores[scores.length - 1].score;
 }
@@ -44,8 +45,8 @@ function loadScores() {
 const saveScores = (a) => store.set('speedhell.scores', JSON.stringify(a));
 
 // called every frame from main.js — shows/hides with the game state
-export function syncReceipt(g, label) {
-  const end = g.state === 'gameover' || g.state === 'clear';
+export function syncReceipt(g, label, suppress = false) { // r78: suppress = the briefing card is up (between stages)
+  const end = !suppress && (g.state === 'gameover' || g.state === 'clear' || g.state === 'stageclear');
   if (!end) {
     if (receiptShown) { receiptShown = false; entryOpen = false; pendingEntry = null; $('results').classList.add('hide'); }
     return;
@@ -57,42 +58,48 @@ export function syncReceipt(g, label) {
 }
 
 function buildReceipt(g, label) {
-  const clear = g.state === 'clear';
-  const practice = g.practice > 0;
+  const clear = g.state === 'clear' || g.state === 'stageclear';
+  const practice = g.practice > 0 || g.startLevel > 0;
+  // r78: with more than one stage the card stamps the stage (STAGE n CLEAR /
+  // "STAGE n — NAME" line) and the counters are THIS stage's (g.stageBase is
+  // the run's counters at the stage's start; all zero on stage 1, so the
+  // one-stage receipt is unchanged). Score stays the run total (arcade).
+  const multi = STAGES.length > 1, b = g.stageBase, stageLine = `STAGE ${g.level + 1} — ${STAGES[g.level].name}`;
   // r46: practice is a visibly DIFFERENT card — gold accent, PRACTICE subtitle,
   // "not saved" note, and NO score-submission chrome at all. r47: the heading
   // keeps the OUTCOME (a death in practice still reads GAME OVER); the
   // subtitle carries the mode + section.
   $('resultsCard').classList.toggle('practice', practice);
-  $('resTitle').textContent = clear ? 'STAGE CLEAR' : 'GAME OVER';
-  $('resSub').classList.toggle('hide', !practice);
-  $('resSub').textContent = practice ? 'PRACTICE · ' + label : '';
+  $('resTitle').textContent = g.state === 'stageclear' ? `STAGE ${g.level + 1} CLEAR` : clear ? 'STAGE CLEAR' : 'GAME OVER';
+  $('resSub').classList.toggle('hide', !practice && !multi);
+  $('resSub').textContent = practice ? 'PRACTICE · ' + label + (multi && g.startLevel > 0 && label.indexOf('STAGE') < 0 ? ` · ${stageLine}` : '') : multi ? stageLine : '';
   $('resTag').classList.toggle('hide', !practice);
   $('resTag').textContent = practice ? 'practice run — not saved to hi-scores' : '';
   const lab = labStamp(); // r50: which experiments this run played under ('' = all defaults)
   $('resLab').classList.toggle('hide', !lab);
   $('resLab').textContent = lab ? 'lab: ' + lab : '';
   $('resScore').textContent = pad9(g.score);
-  const st = g.stats, pct = g.kills ? Math.round((100 * g.speedKills) / g.kills) : 0;
+  const st = g.stats, kills = g.kills - b.kills, speedKills = g.speedKills - b.speedKills, deaths = st.deaths.length - b.deaths, bombsUsed = st.bombsUsed - b.bombsUsed;
+  const pct = kills ? Math.round((100 * speedKills) / kills) : 0;
   $('resStats').innerHTML =
-    `speed kills ${g.speedKills}/${g.kills} (${pct}%)<br>` +
+    `speed kills ${speedKills}/${kills} (${pct}%)<br>` +
     `longest chain ${st.maxChain}<br>` +
-    `time ${fmtTime(g.frame)} · deaths ${st.deaths.length} · bombs used ${st.bombsUsed}` +
+    `time ${fmtTime(g.frame - b.frame)}${multi && g.level > 0 ? ` (run ${fmtTime(g.frame)})` : ''} · deaths ${deaths} · bombs used ${bombsUsed}` +
     (clear ? `<br>stock bonus +${g.clearBonus}` : '');
   const badges = [];
-  if (!st.deaths.length) badges.push('NO MISS');
-  if (!st.bombsUsed) badges.push('NO BOMB');
+  if (!deaths) badges.push('NO MISS');
+  if (!bombsUsed) badges.push('NO BOMB');
   $('resBadges').textContent = badges.join('  ·  ');
   // qualification: FULL RUNS only, top 10 (pure gate, practice can never pass)
   entryOpen = false; pendingEntry = null;
-  if (qualifies(g.state, g.practice, g.score, loadScores())) {
-    pendingEntry = { score: g.score, speedKills: g.speedKills, kills: g.kills, maxChain: st.maxChain, cleared: clear, date: new Date().toISOString().slice(0, 10), build: BUILD, ...(lab ? { lab } : {}) };
+  if (qualifies(g.state, g.practice, g.score, loadScores(), g.startLevel)) {
+    pendingEntry = { score: g.score, speedKills: g.speedKills, kills: g.kills, maxChain: st.maxChain, cleared: clear, date: new Date().toISOString().slice(0, 10), build: BUILD, ...(lab ? { lab } : {}), ...(multi ? { level: g.level } : {}) }; // r78: the board row remembers how far the run got (only stamped with >1 stage)
     const init = (store.get('speedhell.initials', 'AAA') + 'AAA').slice(0, 3);
     slots = [...init].map((c) => Math.max(0, CHARS.indexOf(c)));
     slot = 0; entryOpen = true;
   }
   renderEntry();
-  $('resHint').textContent = entryOpen ? '' : (practice ? 'SHOT retry section · Ⓑ title · START menu' : 'SHOT retry · Ⓑ title · START menu');
+  $('resHint').textContent = g.state === 'stageclear' ? 'next stage…' : entryOpen ? '' : (practice ? 'SHOT retry section · Ⓑ title · START menu' : 'SHOT retry · Ⓑ title · START menu');
 }
 
 function renderEntry() {
@@ -132,7 +139,7 @@ export function showScores() {
     '<tr><th>#</th><th>name</th><th>score</th><th>speed</th><th>chain</th><th></th></tr>' +
     scores.map((s, i) => s.seed
       ? `<tr class="seed"><td>${i + 1}</td><td>${s.name}</td><td>${pad9(s.score)}</td><td>—</td><td>—</td><td></td></tr>`
-      : `<tr${s.lab ? ` title="lab: ${s.lab}"` : ''}><td>${i + 1}</td><td>${s.name}</td><td>${pad9(s.score)}</td><td>${s.speedKills}/${s.kills}</td><td>${s.maxChain}</td><td>${s.cleared ? 'CLEAR' : ''}${s.lab ? ' ⚗' : ''}</td></tr>`).join('')
+      : `<tr${s.lab ? ` title="lab: ${s.lab}"` : ''}><td>${i + 1}</td><td>${s.name}</td><td>${pad9(s.score)}</td><td>${s.speedKills}/${s.kills}</td><td>${s.maxChain}</td><td>${STAGES.length > 1 && s.level != null ? `ST${s.level + 1} ` : ''}${s.cleared ? 'CLEAR' : ''}${s.lab ? ' ⚗' : ''}</td></tr>`).join('') // r78: stage stamp
     + (scores.some((s) => s.lab) ? '<tr><td colspan="6" class="labnote">⚗ run played under lab experiments</td></tr>' : '');
   tableOpen = true; $('scores').classList.remove('hide');
 }

@@ -9,7 +9,8 @@
 // the player's words (Gow 2010: "What were you doing here? What did you feel
 // here?"), then an optional word list, then the expectation gap. "I don't
 // know" is a valid answer and still a flag.
-import { makeGame, startRun, update, W, H } from './core/game.js';
+import { makeGame, startRun, nextStage, update, W, H } from './core/game.js';
+import { STAGES, stageAt } from './core/stages/index.js'; // r78: section names + ?level=N from the stage modules
 import { draw, resetHud } from './render/renderer.js';
 import * as audio from './audio.js';
 import { BUILD } from './version.js';
@@ -18,10 +19,12 @@ const $ = (id) => document.getElementById(id);
 const canvas = $('game'); canvas.width = W; canvas.height = H;
 const ctx = canvas.getContext('2d');
 
-// section names by stageT (mirrors the renderer's SEC_T)
-const SEC_T = [0, 120, 720, 1700, 2400, 2460, 2900, 3700, 3900];
-const SEC_NAME = ['intro', 'S1 popcorn intro', 'S2 turret alley', 'S3 mid gauntlet', 'S4 midboss', 'S5 rush', 'S6 elite pair', 'S7 release', 'S8 boss'];
-const sectionOf = (g) => { let s = 0; for (let i = SEC_T.length - 1; i >= 0; i--) if (g.stageT >= SEC_T[i]) { s = i; break; } if (g.gate === 'midboss') return 'S4 midboss'; if (g.gate === 'boss') return 'S8 boss'; return SEC_NAME[s]; };
+// section names by stageT — r78: from the stage module's SECTIONS table (no
+// mirror); with more than one stage the name carries an STn tag.
+const sectionOf = (g) => { const S = stageAt(g.level).SECTIONS, tag = STAGES.length > 1 ? `ST${g.level + 1} ` : ''; let s = 0; for (let i = S.length - 1; i >= 0; i--) if (g.stageT >= S[i].t) { s = i; break; } if (g.gate === 'midboss') return tag + 'S4 midboss'; if (g.gate === 'boss') return tag + 'S8 boss'; return tag + S[s].name; };
+// r78: ?level=N starts every Booth run on stage N (0-based; clamped). `?stage=`
+// stays the sandbox's stageT jump. Recordings carry the level for the replay.
+const boothLevel = (() => { try { const q = new URLSearchParams(location.search); return q.has('level') ? Math.max(0, Math.min(STAGES.length - 1, +q.get('level') | 0)) : 0; } catch { return 0; } })();
 const ENEMY = ['zako', 'mid', 'turret', 'elite', 'midboss', 'boss', 'boss-part'];
 
 const WORDS = ['Frustrated', 'Challenged', 'Confused', 'In control', 'Controlled', 'Bored', 'Tense', 'Relieved', 'Annoyed', 'Surprised', 'Satisfied', 'Powerful', 'Curious', 'Immersed', 'Disappointed', 'Determined', 'Relaxed', 'Excited', 'Interested', 'Confident'];
@@ -45,11 +48,11 @@ async function api(path, data) {
 })();
 
 function beginRun() {
-  audio.unlock(); startRun(g); resetHud(); audio.playMusic('stage');
+  audio.unlock(); startRun(g, 0, boothLevel); resetHud(); audio.playMusic('stage');
   activeVariant = applyVariants(g); // r26: variants land here, never mid-run
   $('variantNow').textContent = 'active: ' + activeVariant;
   run++; tick = 0; inputs = [];
-  logLine(`run ${run} · ${activeVariant} · seed ${g.seed.toString(16)}`);
+  logLine(`run ${run} · ${activeVariant} · seed ${g.seed.toString(16)}` + (STAGES.length > 1 ? ` · stage ${boothLevel + 1}` : ''));
 }
 
 // ---------------------------------------------------------------- recording
@@ -61,7 +64,7 @@ function packInput(i) { return (i.dx + 1) | ((i.dy + 1) << 2) | ((i.fire ? 1 : 0
 function inputsB64() { let s = ''; const a = Uint8Array.from(inputs); for (let i = 0; i < a.length; i += 0x8000) s += String.fromCharCode.apply(null, a.subarray(i, i + 0x8000)); return btoa(s); }
 async function uploadRecording(reason) {
   if (!session) return;
-  try { await api('/booth/recording', { session, run, seed: g.seed, build: BUILD, variant: activeVariant, tune: g.tune, ticks: tick, frame: g.frame, state: g.state, reason, inputs: inputsB64() }); } catch { /* offline */ }
+  try { await api('/booth/recording', { session, run, seed: g.seed, level: g.startLevel, build: BUILD, variant: activeVariant, tune: g.tune, ticks: tick, frame: g.frame, state: g.state, reason, inputs: inputsB64() }); } catch { /* offline */ }
 }
 
 // ---------------------------------------------------------------- snapshot
@@ -258,7 +261,7 @@ function padResumePoll() {
 
 // ---------------------------------------------------------------- loop
 const STEP_MS = 1000 / 60;
-let last = performance.now(), acc = 0, lastState = g.state;
+let last = performance.now(), acc = 0, lastState = g.state, clearHold = 0;
 function frame(now) {
   acc += now - last; last = now;
   if (acc > 200) acc = 200;
@@ -267,6 +270,10 @@ function frame(now) {
     if (!paused && !flagged) {
       if (g.state === 'play') { inputs.push(packInput(g.input)); tick++; }
       update(g); audio.drain(g); bgScroll += 1.05;
+      // r78: between stages the Booth holds the clear screen 5 s (no card here —
+      // the game's receipt/briefing are main.js's), then carries the run over.
+      // Ticks are not recorded while held; the replay calls nextStage at once.
+      if (g.state === 'stageclear' && ++clearHold >= 300) { clearHold = 0; nextStage(g); resetHud(); audio.playMusic('stage'); logLine(`stage ${g.level + 1} · ${stageAt(g.level).name}`); }
       if (g.state !== lastState) { if (g.state === 'gameover' || g.state === 'clear') uploadRecording(g.state); lastState = g.state; }
     }
     acc -= STEP_MS;

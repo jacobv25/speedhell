@@ -55,6 +55,20 @@ function drawBulletCard(ctx) {
   ctx.restore();
 }
 
+// r78 target-briefing card (plan §4 rule 10, Psikyo#9 "one card naming the
+// next boss"; §11 story placement: text lives in a pre-run card — this IS that
+// card, reused). Minimal text: "STAGE N — <name>". Shown ≤ 2 s between stages
+// by main.js's stage-clear flow; never gates input (there is none to gate — it
+// closes itself on a frame budget). Dormant until a second stage exists.
+let briefing = false;
+export function isBriefingOpen() { return briefing; }
+export function openBriefing(title, sub) {
+  briefing = true;
+  $('briefTitle').textContent = title; $('briefSub').textContent = sub;
+  $('briefing').classList.remove('hide');
+}
+export function closeBriefing() { briefing = false; $('briefing').classList.add('hide'); }
+
 export function initHowTo() {
   drawShipCard($('howtoShip').getContext('2d'));
   drawBulletCard($('howtoBullet').getContext('2d'));

@@ -104,6 +104,13 @@
   #howtoCard b { color: #ff4fa3; }
   #howtoCard .speed { color: #ffd24a; font-weight: bold; }
   #howtoCard .note { margin-top: 10px; font-size: 10px; color: #5a6480; text-align: center; }
+  /* r78 target-briefing card between stages (the pre-run card, reused; dormant with one stage) */
+  #briefing { position: fixed; inset: 0; background: rgba(5,6,10,.86); display: grid; place-items: center; z-index: 11; }
+  #briefing.hide { display: none; }
+  #briefingCard { min-width: 220px; padding: 22px 40px; background: #0a0c14; border: 1px solid #2a3050;
+                  box-shadow: 0 0 40px rgba(255,79,163,.15); font: 12px monospace; color: #c8cde4; text-align: center; }
+  #briefingCard h1 { margin: 0 0 8px; font: bold 18px monospace; letter-spacing: .3em; color: #ff4fa3; }
+  #briefingCard .bsub { letter-spacing: .25em; color: #ffd24a; }
 </style>
 </head>
 <body>
@@ -160,6 +167,12 @@
       <div>Every enemy runs a stopwatch. Kill it fast → <span class="speed">SPEED</span>: double points, chain +1. Slow kills pay base and break the chain. That's the whole scoring system.</div></div>
     <div class="note" id="howtoKeys">arrows/WASD move · Z/space shot · shift focus · X bomb</div>
     <div class="note"><button id="howtoClose" class="btn" style="width:100%">got it — Z / Enter</button></div>
+  </div>
+</div>
+<div id="briefing" class="hide">
+  <div id="briefingCard">
+    <h1 id="briefTitle">STAGE 2</h1>
+    <div class="bsub" id="briefSub"></div>
   </div>
 </div>
 <div id="opts" class="hide">

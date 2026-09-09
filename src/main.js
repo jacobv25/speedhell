@@ -4,12 +4,13 @@
 // menu is the shell — retry/quit/mute/TATE live there — and the gamepad is a
 // first-class citizen: START = menu, d-pad/stick navigates it, A activates,
 // B backs out; title picker on d-pad; death screen A/shot = retry, B = title.
-import { makeGame, startRun, update, W, H, SFX } from './core/game.js';
+import { makeGame, startRun, nextStage, update, W, H, SFX } from './core/game.js';
+import { STAGES } from './core/stages/index.js'; // r78: the campaign table (one entry today)
 import { draw, resetHud, prefs as renderPrefs } from './render/renderer.js';
 import * as audio from './audio.js';
 import { BUILD } from './version.js';
-import { initOptions, isOpen as optionsOpen, openOptions, menuNav, binds, padBinds, isBoundKey, isCapturing, capturePad } from './options.js';
-import { initHowTo, isHowToOpen, openHowTo, closeHowTo } from './howto.js';
+import { initOptions, isOpen as optionsOpen, openOptions, menuNav, binds, padBinds, isBoundKey, isCapturing, capturePad, store } from './options.js';
+import { initHowTo, isHowToOpen, openHowTo, closeHowTo, openBriefing, closeBriefing, isBriefingOpen } from './howto.js';
 import { initResults, syncReceipt, busy as resultsBusy, padNav as resultsPad, showScores } from './results.js';
 import { initLab, labGet } from './lab.js';
 import { initSoundTest, openSoundTest, busy as soundBusy, padNav as soundPad } from './soundtest.js';
@@ -25,18 +26,34 @@ const ctx = canvas.getContext('2d');
 let g = makeGame((Math.random() * 0xffffffff) >>> 0);
 let bgScroll = 0;
 
-// r36 practice/section select — stageT anchors mirror renderer/booth SEC_T.
-// Left/right on the title picks where the run starts; retry re-enters the
-// SAME section (die at the midboss, retry the midboss in two seconds).
-const SECTIONS = [
-  { t: 0, label: 'FULL RUN' },
-  { t: 120, label: 'S1 POPCORN' }, { t: 720, label: 'S2 TURRET ALLEY' },
-  { t: 1700, label: 'S3 MID GAUNTLET' }, { t: 2400, label: 'S4 MIDBOSS' },
-  { t: 2460, label: 'S5 RUSH' }, { t: 2900, label: 'S6 ELITE PAIR' },
-  { t: 3700, label: 'S7 RELEASE' }, { t: 3900, label: 'S8 BOSS' },
-];
-let practiceSel = 1;   // SECTIONS[1..8] — the PRACTICE row's ◀▶ value
+// r36 practice/section select — left/right on the title picks where the run
+// starts; retry re-enters the SAME section (die at the midboss, retry the
+// midboss in two seconds). r78: the list is built from the stage modules'
+// SECTIONS tables (no hand-mirrored SEC_T). With ONE stage it is exactly the
+// r36 rows, S1..S8 of stage 1. With more, the PRACTICE row gains the stage
+// dimension (plan §6 stage select — Pillar 3's practice tool, boghog T3):
+// every later stage adds a "STAGE N — NAME" entry (its full run, from its own
+// startRun(g, 0, level)) followed by its sections, tagged STn. A run started
+// past stage 1 is practice (g.startLevel > 0): receipt yes, hi-score board no.
+const PRACTICE = [];
+STAGES.forEach((st, L) => {
+  const tag = STAGES.length > 1 ? `ST${L + 1} ` : '';
+  if (L > 0) PRACTICE.push({ level: L, t: 0, label: `STAGE ${L + 1} — ${st.name}` });
+  st.SECTIONS.forEach((s, i) => { if (i > 0) PRACTICE.push({ level: L, t: s.t, label: tag + s.label }); });
+});
+let practiceSel = 0;   // PRACTICE[] index — the row's ◀▶ value (0 = S1 POPCORN, as r36)
 let currentStart = 0;  // what retry re-enters (0 = full run)
+let currentLevel = 0;  // r78: …and on which stage
+// r78: `?level=N` (NOT `?stage=` — that is the sandbox's stageT jump) preselects
+// stage N on the PRACTICE row; `speedhell.level` remembers the last stage
+// picked. Both exist only when there is more than one stage, so today's title
+// reads nothing and stores nothing.
+if (STAGES.length > 1) {
+  const q = new URLSearchParams(location.search);
+  const L = q.has('level') ? (+q.get('level') | 0) : (+store.get('speedhell.level', 0) | 0);
+  const i = PRACTICE.findIndex((p) => p.level === L);
+  if (i >= 0) practiceSel = i;
+}
 
 // r42 title menu (audit MUST #1 — BR/Gunvein/M2 all use list menus; the old
 // banner-with-hidden-keys was the root of the "gaps surfacing one at a time"
@@ -46,18 +63,21 @@ const tRows = [...document.querySelectorAll('#titleMenu .trow')];
 let titleSel = 0;
 function titleRender() {
   tRows.forEach((r, i) => r.classList.toggle('sel', i === titleSel));
-  document.getElementById('tPractice').textContent = '◀ ' + SECTIONS[practiceSel].label + ' ▶';
+  document.getElementById('tPractice').textContent = '◀ ' + PRACTICE[practiceSel].label + ' ▶';
 }
 function titleNav(act) {
   if (act === 'up' || act === 'down') { titleSel = (titleSel + (act === 'down' ? 1 : tRows.length - 1)) % tRows.length; titleRender(); return; }
   const a = tRows[titleSel].dataset.act;
   if (act === 'left' || act === 'right') {
-    if (a === 'practice') { practiceSel = ((practiceSel - 1 + (act === 'right' ? 1 : SECTIONS.length - 2)) % (SECTIONS.length - 1)) + 1; titleRender(); }
+    if (a === 'practice') {
+      practiceSel = (practiceSel + (act === 'right' ? 1 : PRACTICE.length - 1)) % PRACTICE.length; titleRender();
+      if (STAGES.length > 1) store.set('speedhell.level', PRACTICE[practiceSel].level); // r78: persist the stage pick
+    }
     return;
   }
   if (act !== 'activate') return;
   if (a === 'start') beginRun(0);
-  else if (a === 'practice') beginRun(SECTIONS[practiceSel].t);
+  else if (a === 'practice') beginRun(PRACTICE[practiceSel].t, PRACTICE[practiceSel].level);
   else if (a === 'scores') showScores();
   else if (a === 'howto') openHowTo();
   else if (a === 'options') openOptions();
@@ -76,9 +96,9 @@ initOptions({
   onSoundTest: () => openSoundTest(), // r55
 });
 
-function beginRun(t = currentStart) { // every run-start path
-  currentStart = t;
-  audio.unlock(); startRun(g, t); resetHud(); audio.playMusic('stage');
+function beginRun(t = currentStart, level = currentLevel) { // every run-start path
+  currentStart = t; currentLevel = level;
+  audio.unlock(); startRun(g, t, level); resetHud(); audio.playMusic('stage');
   g.tune.partBite = { current: 0, clock: 1, inherit: 2, burst: 3 }[labGet('bossParts')] || 0; // r73 Lab experiment — AFTER startRun (it rebuilds g)
 }
 function retryRun() { g.seed = (Math.random() * 0xffffffff) >>> 0; beginRun(); } // same start, fresh seed — restart <2s (S7)
@@ -87,6 +107,27 @@ function quitToTitle() { // r37: back to the picker
   audio.stopMusic(0.4);
 }
 const atEnd = () => g.state === 'gameover' || g.state === 'clear';
+
+// r78 stage-clear flow (plan §4 rule 10, boghog [WS05] "even ship intro
+// animations add up over many runs"): a non-final stage's boss dies →
+// g.state 'stageclear' → this stage's receipt holds STAGE_CLEAR_HOLD frames
+// (SHOT skips it after a beat) → the target-briefing card "STAGE N — NAME" for
+// BRIEFING_HOLD frames → nextStage(g). Zero-input total 3.5 + 2 = 5.5 s ≤ 6 s.
+// Dormant with one stage: the final boss still ends in 'clear' as always.
+const STAGE_CLEAR_HOLD = 210, BRIEFING_HOLD = 120;
+let stageClearT = 0;
+function stepStageClear(skip) {
+  if (!isBriefingOpen()) {
+    stageClearT++;
+    if (stageClearT >= STAGE_CLEAR_HOLD || (skip && stageClearT > 45)) {
+      const next = STAGES[g.level + 1];
+      openBriefing(`STAGE ${g.level + 2}`, next ? next.name : ''); stageClearT = 0;
+    }
+  } else if (++stageClearT >= BRIEFING_HOLD) {
+    closeBriefing(); stageClearT = 0;
+    nextStage(g); resetHud(); audio.playMusic('stage');
+  }
+}
 
 // r43: arm audio unlock on every REAL gesture (keyboard/mouse/touch — pads
 // don't count as gestures, per browser autoplay policy). Idempotent.
@@ -201,6 +242,8 @@ function frame(now) {
       if (pe.a) retryRun();
       else if (pe.start) openOptions();
       else if (pe.b || pe.sel) quitToTitle();
+    } else if (g.state === 'stageclear') { // r78: between stages — zero-input; SHOT skips the receipt hold
+      stepStageClear(pe.a || binds().fire.some((k) => keys[k]));
     } else { // play
       if (pe.start) openOptions();
     }
@@ -212,7 +255,7 @@ function frame(now) {
     }
     acc -= STEP_MS;
   }
-  syncReceipt(g, SECTIONS.find((x) => x.t === currentStart)?.label || 'FULL RUN'); // r44
+  syncReceipt(g, PRACTICE.find((x) => x.t === currentStart && x.level === currentLevel)?.label || 'FULL RUN', isBriefingOpen()); // r44 (r78: the briefing card replaces the receipt between stages)
   draw(g, ctx, bgScroll);
   titleEl.classList.toggle('hide', g.state !== 'title' || optionsOpen() || isHowToOpen()); // r42
   if (g.state === 'title') { // pad readout (the menu itself is DOM)
