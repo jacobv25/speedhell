@@ -12,6 +12,7 @@ import { draw, drawEnemy, drawPlayer, resetHud, setSkin, prefs } from '../src/re
 setSkin(new URLSearchParams(location.search).get('skin') || 'cute-occult'); // r60: node tools/peek.mjs 'tools/artpeek.html?skin=neon-vector' out.png
 // r75: ?shot=current|bolt — the Lab shotLook pref; the max-load scene then also FIRES (6 shots + impact blobs in
 // flight) so the two settings' draw times compare on the same scene. Without ?shot the sheet is the r73 sheet.
+// r76: ?shot=heavy (fxShot=2; the muzzle stamps carry the barrel side like main.js).
 const SHOT = new URLSearchParams(location.search).get('shot');
 if (SHOT) prefs.shotLook = SHOT;
 import { makeBot } from '../test/bot.mjs';
@@ -63,9 +64,13 @@ const yield_ = () => new Promise((r) => setTimeout(r, 0));
 }
 {
   const g = makeGame(7); g.state = 'play'; startRun(g); g.timeline = []; g.tlIndex = 0; stressScene(g); resetHud();
-  if (SHOT) { g.fxShot = SHOT === 'bolt' ? 1 : 0; g.input.fire = true; }
-  for (let f = 0; f < 45; f++) update(g);
-  if (SHOT) { for (let i = 0; i < g.sfxN; i++) if (g.sfx[i] === SFX.SHOT) prefs.muzzleAt = g.frame; }
+  if (SHOT) { g.fxShot = SHOT === 'bolt' ? 1 : SHOT === 'heavy' ? 2 : 0; g.input.fire = true; }
+  const stub2 = { next: () => 0.5, range: (a, b) => (a + b) / 2 };
+  for (let f = 0; f < 45; f++) {
+    update(g);
+    if (SHOT) for (let i = 0; i < g.sfxN; i++) if (g.sfx[i] === SFX.SHOT) { prefs.muzzlePrev = prefs.muzzleAt; prefs.muzzleAt = g.frame; prefs.muzzleSide ^= 1; break; }
+    if (SHOT === 'heavy' && f > 30) { const real = g.rng; g.rng = stub2; draw(g, octx, g.frame * 1.05); g.rng = real; } // warm heavy's draw-only state (per-bolt jitter/side, scorch dots)
+  }
   shot(g, 1410, 680, 'max-load b=' + g.eBullets.count + (SHOT ? ' shot=' + SHOT + ' s=' + g.pBullets.count : ''), 'maxload');
 }
 window.__done = true;
