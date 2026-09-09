@@ -205,10 +205,10 @@ function frame(now) {
       if (pe.start) openOptions();
     }
     g.fxMeta = renderPrefs.speedDress; // r52/r53 lab: explosion recipe + meta dressing are chosen at spawn in core (fx rng only)
-    g.fxShot = renderPrefs.shotLook === 'bolt' ? 1 : 0; // r75 lab shotLook: the impact blob spawns in core (fx rng only), same mirror as fxMeta
+    g.fxShot = renderPrefs.shotLook === 'bolt' ? 1 : renderPrefs.shotLook === 'heavy' ? 2 : 0; // r75/r76 lab shotLook: the impact blob (+ r76 up-sparks) spawns in core (fx rng only), same mirror as fxMeta
     if (!optionsOpen() && !isHowToOpen()) {
       pollInput(gp); update(g);
-      for (let i = 0; i < g.sfxN; i++) if (g.sfx[i] === SFX.SHOT) { renderPrefs.muzzleAt = g.frame; break; } // r75: the renderer strobes the muzzle off this stamp (read BEFORE drain empties the ring)
+      for (let i = 0; i < g.sfxN; i++) if (g.sfx[i] === SFX.SHOT) { renderPrefs.muzzlePrev = renderPrefs.muzzleAt; renderPrefs.muzzleAt = g.frame; renderPrefs.muzzleSide ^= 1; break; } // r75: the renderer strobes the muzzle off this stamp (read BEFORE drain empties the ring); r76: + the volley before it and which barrel flares (alternates)
       audio.drain(g); bgScroll += 1.05;
     }
     acc -= STEP_MS;

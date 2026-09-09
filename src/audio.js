@@ -218,13 +218,19 @@ export function sfxTest() { if (ac) explosion(1); } // r30: audible feedback for
 function arp(notes, step, dur, type = 'square', vol = 0.25) { notes.forEach((f, i) => osc(type, f, f, dur, vol, { t0: i * step })); }
 
 let shotTick = 0;
+// r76 lab shotLook=heavy: hit-sound WEIGHT — every hit keeps its tick, plus ONE 25ms low click (150 Hz sine, −6 dB
+// under the tick) per frame in which any shot landed (the Lazy Devs cart's rule: sfx once per frame, so point-blank
+// becomes a buzz, not a clip). drain() runs once per frame and resets the latch; boghog 101 "make damage sounds
+// more powerful". Off by default; lab.js sets it from the row.
+let hitWeight = false, hitClicked = false;
+export function setHitWeight(on) { hitWeight = !!on; }
 // r55 sound test: `dry` suppresses the music side-effects (cut/duck/switch)
 // that a few handlers carry, so the card auditions the sound, not the transition.
 let dry = false;
-export function playSfx(id) { if (!ac) return; const h = HANDLERS[id]; if (!h) return; dry = true; try { h(); } finally { dry = false; } }
+export function playSfx(id) { if (!ac) return; const h = HANDLERS[id]; if (!h) return; dry = true; hitClicked = false; try { h(); } finally { dry = false; } }
 const HANDLERS = {
   [SFX.SHOT]: () => { if ((shotTick++ & 1) === 0) { osc('square', 880, 220, 0.06, 0.12); noise(0.03, 0.08, { hp: 3000 }); } },
-  [SFX.HIT]: () => { osc('triangle', 300, 120, 0.04, 0.18); },
+  [SFX.HIT]: () => { osc('triangle', 300, 120, 0.04, 0.18); if (hitWeight && !hitClicked) { hitClicked = true; osc('sine', 150, 150, 0.025, 0.09); } },
   [SFX.KILL]: () => explosion(1),
   [SFX.KILL_BIG]: () => explosion(2),
   [SFX.PHASE]: () => { explosion(3); arp([523, 659, 784, 1047], 0.06, 0.25, 'square', 0.18); },
@@ -243,6 +249,7 @@ const HANDLERS = {
 
 export function drain(g) {
   if (!ac) { g.sfxN = 0; return; }
+  hitClicked = false; // r76: one heavy hit click per drained frame
   for (let i = 0; i < g.sfxN; i++) { const h = HANDLERS[g.sfx[i]]; if (h) h(); }
   g.sfxN = 0;
 }

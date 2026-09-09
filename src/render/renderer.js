@@ -23,7 +23,9 @@ import { SKINS } from './skins/index.js';
 // shotLook: r75 (open Q22) — 'current' = the 4×20 rect + 2×18 white core · 'bolt' = pixel bolt + trail + muzzle
 // flash + impact blob (core side: main.js mirrors it into g.fxShot). muzzleAt = the g.frame main.js last saw
 // SFX.SHOT in the ring (-1 = never); the renderer strobes the muzzle off it for 2 frames — no core change.
-export const prefs = { speedPopup: 'both', speedDress: 0, skin: 'cute-occult', shotLook: 'current', muzzleAt: -1 };
+// r76: 'heavy' = bolt + the six research recipes (drawBoltsHeavy below; core side g.fxShot = 2). muzzlePrev = the
+// volley before muzzleAt, muzzleSide = which barrel flares this volley (main.js toggles it per SFX.SHOT).
+export const prefs = { speedPopup: 'both', speedDress: 0, skin: 'cute-occult', shotLook: 'current', muzzleAt: -1, muzzlePrev: -1, muzzleSide: 0 };
 const FX_SIZE = 2; // r67: explosion draw-size multiplier, 2× shipped (Lab open Q12 decided 2026-09-07)
 
 // r62: cute-occult is THE look (Jacob's verdict 2026-09-05: "the most personality");
@@ -188,6 +190,7 @@ export function draw(g, ctx, bgScroll) {
   // r75 Lab `shotLook` (open Q22): 'bolt' swaps the rect for drawBolt + a 2-frame muzzle strobe on the
   // barrels; 'current' is this loop, untouched. Both stay BELOW enemy bullets (S2 display contract).
   if (prefs.shotLook === 'bolt') drawBolts(ctx, g);
+  else if (prefs.shotLook === 'heavy') drawBoltsHeavy(ctx, g); // r76
   else for (let i = 0; i < g.pBullets.count; i++) {
     const b = g.pBullets.items[i], x = Math.round(b.x), y = Math.round(b.y);
     ctx.fillStyle = SHIP.shot;
@@ -337,9 +340,117 @@ function drawBolts(ctx, g) {
   else { ctx.fillRect(x - 8, y - 12, 3, 2); ctx.fillRect(x + 6, y - 12, 3, 2); }
 }
 
+// --- r76 HEAVY shot (Lab `shotLook` = heavy, open Q22; research player-shot-juice-2026-09-09 §6 + §8) -------
+// The r75 bolt plus the six recipes, in the frame study's revised order. Everything here is DRAWN, not
+// simulated: hitboxes, speed, cap, damage and b.x / b.y are untouched (the only core touch is the gated blob
+// life + two up-sparks in game.js). Player family only (SHIP.shot / SHIP.shade / white); the whole pass sits
+// under enemy bullets (S2 display contract). `bolt` (drawBolts above) is left byte-for-byte as r75.
+// 1. MUZZLE at flame size — a flame per barrel, 10×12 with its rim (a third of the 28px ship: DaiOuJou's
+//    option-pod flare, Garegga's nose flame), 4 frames (10×12 → 10×12 licked → 8×8 → 4×5), white core →
+//    violet edge → dark-violet rim, ALTERNATING barrels per volley (main.js toggles prefs.muzzleSide and keeps
+//    prefs.muzzlePrev), so at the 3-frame cadence the other barrel's dying flare overlaps the new one.
+// 2. BOLT 6×28 — a 4px white head in a 1px rim (the head sits where the r75 head sat, so a hit still lands
+//    at the nose), a 12-row body, narrowing at row 18, a 4px tail — plus an ECHO (the same sprite 4px behind
+//    the tail at alpha 0.5: the Psikyo pair, drawn only) and a 16px TRAIL of four 3×4 ghosts behind the echo
+//    (alpha 0.6 / 0.4 / 0.25 / 0.12). Bolt, echo and ghosts are clipped above the barrel line (py − 12) so a
+//    28px bolt emerges from the flame instead of lying across the figurehead, and nothing trails over the
+//    ship. Each lone volley reads as a 76px streak; a full column shows 3 bright + 1 dim + smear.
+// 3. MESSIER stream — ±1px x-jitter per bolt, seeded on the frame it was first seen (stable, not sparkle),
+//    and the right rail drawn one frame (9px) behind the left. Draw offsets only.
+// 4. LAYERED impact — the blob lives 6 drawn frames at 8/6/4/3/2/1 px (pass 3 in drawFx), two up-sparks
+//    (core, gated), and a 1px SCORCH dot in SHIP.dark riding the hull for 10 frames (a renderer list keyed to
+//    the enemy, drawn UNDER the fx from drawScorch; no sprite-cache change). The popcorn hit-flash is the core
+//    field e.flash (already 2 frames) — untouched.
+// 5. Hit-sound weight lives in audio.js (setHitWeight, from lab.js). 6. SHIMMER — spine 1px / 2px by frame.
+function heavyRows(wide) { // per row [x offset, width, colour]* for the 6×28 sprite (cols −3..2); 0 rim 1 body 2 white
+  const rows = [[[-1, 2, 0]], [[-2, 1, 0], [-1, 2, 2], [1, 1, 0]]];
+  for (let r = 0; r < 4; r++) rows.push([[-3, 1, 0], [-2, 4, 2], [2, 1, 0]]); // the 4px white head
+  for (let r = 0; r < 12; r++) rows.push(wide ? [[-3, 1, 0], [-2, 1, 1], [-1, 2, 2], [1, 1, 1], [2, 1, 0]] : [[-3, 1, 0], [-2, 2, 1], [0, 1, 2], [1, 1, 1], [2, 1, 0]]);
+  for (let r = 0; r < 4; r++) rows.push(wide ? [[-2, 1, 0], [-1, 2, 2], [1, 1, 0]] : [[-2, 1, 0], [-1, 1, 1], [0, 1, 2], [1, 1, 0]]);
+  rows.push([[-2, 1, 0], [-1, 2, 1], [1, 1, 0]], [[-2, 1, 0], [-1, 2, 1], [1, 1, 0]]);
+  for (let r = 0; r < 4; r++) rows.push([[-1, 2, 1]]); // 2px tail
+  return rows; // 28 rows, drawn at dy = row − 10 (−10 … 17)
+}
+const HEAVY_ROWS = [heavyRows(false), heavyRows(true)];
+// flame frames, rows tip → base as [outer width, white-core width]; even widths centred on the barrel x
+const FLARE_ROWS = [
+  [[2, 0], [4, 0], [4, 2], [6, 2], [6, 4], [8, 4], [8, 6], [8, 6], [6, 4], [4, 2]],   // age 0: 8×10 + rim = 10×12
+  [[2, 0], [2, 0], [4, 2], [6, 2], [6, 4], [8, 4], [8, 6], [8, 6], [8, 6], [6, 4]],   // age 1: the lick (same box, fatter base)
+  [[2, 0], [2, 0], [4, 2], [6, 2], [6, 4], [4, 2]],                                   // age 2: 6×6 + rim = 8×8
+  [[2, 0], [2, 2], [2, 0]],                                                           // age 3: 2×3 + rim = 4×5
+];
+const TRAIL_A = [0.6, 0.4, 0.25, 0.12];
+const HEAVY_BLOB = [8, 6, 4, 3, 2, 1]; // impact blob diameter by drawn frame (px, at the 3-hit size)
+const BOLT_STATE = new WeakMap(); // pooled bolt object → { y, side, jit } (draw-only bookkeeping, never written back)
+const SCORCH = []; // { e, dx, dy, age, f } — a 1px dot riding an enemy's hull for 10 frames after a hit
+function heavySprite(k) {
+  const { SHIP } = skin.pal, key = 'heavy' + k;
+  return CACHE.get(key) || sprite(key, 32, null, (c) => {
+    const col = [SHIP.shade, SHIP.shot, WHITE], rows = HEAVY_ROWS[k];
+    for (let r = 0; r < rows.length; r++) for (const [dx, w, kk] of rows[r]) { c.fillStyle = col[kk]; c.fillRect(dx, r - 10, w, 1); }
+  });
+}
+function flareSprite(age) {
+  const { SHIP } = skin.pal, key = 'flare' + age;
+  return CACHE.get(key) || sprite(key, 22, SHIP.shade, (c) => { // rows end at dy −1: the base sits on the barrel mouth
+    const rows = FLARE_ROWS[age], h = rows.length;
+    for (let r = 0; r < h; r++) { const [w, cw] = rows[r]; c.fillStyle = SHIP.shot; c.fillRect(-w / 2, r - h, w, 1); if (cw) { c.fillStyle = WHITE; c.fillRect(-cw / 2, r - h, cw, 1); } }
+  });
+}
+function drawScorch(ctx, g) { // 4b. scorch dots (heavy only; called from drawFx so the dots sit under the blob)
+  // a blob particle on its first drawn frame marks the hull it hit (the nearest enemy within reach)
+  const live = new Set(); for (let i = 0; i < g.enemies.count; i++) live.add(g.enemies.items[i]);
+  for (let i = 0; i < g.particles.count; i++) {
+    const q = g.particles.items[i];
+    if (q.kind !== FX.CORE || q.ck !== 2 || q.life !== q.max - 1) continue;
+    let best = null, bd = 1e9;
+    for (const e of live) { const dx = q.x - e.x, dy = q.y - e.y, d = dx * dx + dy * dy; if (d < bd && d < (e.r + 8) * (e.r + 8)) { bd = d; best = e; } }
+    if (best && SCORCH.length < 64) SCORCH.push({ e: best, dx: Math.round(q.x - best.x), dy: Math.round(q.y - best.y), age: best.age, f: g.frame });
+  }
+  ctx.fillStyle = skin.pal.SHIP.dark;
+  for (let i = SCORCH.length - 1; i >= 0; i--) {
+    const sc = SCORCH[i], dt = g.frame - sc.f;
+    if (dt >= 10 || !live.has(sc.e) || sc.e.age !== sc.age + dt) { SCORCH[i] = SCORCH[SCORCH.length - 1]; SCORCH.pop(); continue; } // gone, or the slot was reused
+    ctx.fillRect(Math.round(sc.e.x) + sc.dx, Math.round(sc.e.y) + sc.dy, 1, 1);
+  }
+}
+function drawBoltsHeavy(ctx, g) {
+  const { SHIP } = skin.pal, p = g.player, px = Math.round(p.x), py = Math.round(p.y);
+  const n = g.pBullets.count, items = g.pBullets.items, s = heavySprite(g.frame & 1);
+  // per-bolt draw state: side + jitter fixed on the frame the bolt is first seen (a new bolt is at p.y − 10 − 9
+  // after its spawn tick; a reused pool slot shows up as y jumping DOWN). Nothing is written to the bolt.
+  const X = new Int16Array(n), Y = new Int16Array(n);
+  for (let i = 0; i < n; i++) {
+    const b = items[i]; let st = BOLT_STATE.get(b);
+    if (!st || b.y > st.y || b.y === p.y - 10 - 9) {
+      const side = b.x < p.x ? 0 : 1, h = ((g.frame * 3 + side + 1) * 2654435761) >>> 0;
+      st = { y: b.y, side, jit: (h >>> 8) % 3 - 1 }; BOLT_STATE.set(b, st);
+    }
+    st.y = b.y;
+    X[i] = Math.round(b.x) + st.jit; Y[i] = Math.round(b.y) + (st.side ? 9 : 0); // 3. jitter + the right rail a frame behind
+  }
+  // 2. trail ghosts, then echoes, then the bolts — all clipped above the barrel line (a bolt emerges from the
+  // flame; nothing trails over the ship)
+  ctx.save(); ctx.beginPath(); ctx.rect(-40, -40, W + 80, py - 12 + 40); ctx.clip();
+  ctx.fillStyle = SHIP.shot;
+  for (let k = 0; k < 4; k++) { ctx.globalAlpha = TRAIL_A[k]; for (let i = 0; i < n; i++) ctx.fillRect(X[i] - 1, Y[i] + 50 + 4 * k, 3, 4); }
+  ctx.globalAlpha = 0.5;
+  for (let i = 0; i < n; i++) ctx.drawImage(s.img, X[i] - s.o, Y[i] + 32 - s.o);
+  ctx.globalAlpha = 1;
+  for (let i = 0; i < n; i++) ctx.drawImage(s.img, X[i] - s.o, Y[i] - s.o);
+  ctx.restore();
+  // 1. the muzzle flames — this volley's barrel, and the previous volley's other barrel while its flare lives
+  if (g.state !== 'play' || (p.invuln > 0 && (g.frame & 2))) return;
+  const age = g.frame - prefs.muzzleAt, side = prefs.muzzleSide;
+  if (age >= 0 && age <= 3) { const f = flareSprite(age); ctx.drawImage(f.img, px + (side ? 7 : -7) - f.o, py - 12 - f.o); }
+  const ageP = g.frame - prefs.muzzlePrev;
+  if (ageP >= 0 && ageP <= 3 && prefs.muzzlePrev !== prefs.muzzleAt) { const f = flareSprite(ageP); ctx.drawImage(f.img, px + (side ? -7 : 7) - f.o, py - 12 - f.o); }
+}
+
 function drawFx(ctx, g) {
   const n = g.particles.count, items = g.particles.items;
   const S = FX_SIZE;
+  if (prefs.shotLook === 'heavy') drawScorch(ctx, g); // r76: scorch dots under every fx
   // r52 chunky pass 0: white constant-width shockwave UNDER everything, then
   // opaque shaded blobs in spawn order (centre blob of each grape drawn last).
   for (let i = 0; i < n; i++) {
@@ -436,6 +547,15 @@ function drawFx(ctx, g) {
     const r = q.life > 1 ? q.size : q.size - 1, x = Math.round(q.x), y = Math.round(q.y);
     ctx.fillStyle = FX_RAMP[0][3]; disc(ctx, x, y, r + 1);
     ctx.fillStyle = FX_RAMP[0][0]; disc(ctx, x, y, r);
+  }
+  // r76 (Lab shotLook = heavy): the same blob, six drawn frames, collapsing 8/6/4/3/2/1 px at the 3-hit size
+  // (scaled by hits: 1 hit starts at 4px, 2 at 6px); odd sizes are centred squares, even ones pixel discs.
+  else if (prefs.shotLook === 'heavy') for (let i = 0; i < n; i++) {
+    const q = items[i];
+    if (q.kind !== FX.CORE || q.ck !== 2 || q.life > 6) continue;
+    const d = Math.max(1, Math.round(HEAVY_BLOB[6 - q.life] * q.size / 4)), x = Math.round(q.x), y = Math.round(q.y);
+    if (d & 1) { const h = d >> 1; ctx.fillStyle = FX_RAMP[0][3]; ctx.fillRect(x - h - 1, y - h - 1, d + 2, d + 2); ctx.fillStyle = FX_RAMP[0][0]; ctx.fillRect(x - h, y - h, d, d); }
+    else { ctx.fillStyle = FX_RAMP[0][3]; disc(ctx, x, y, d / 2 + 1); ctx.fillStyle = FX_RAMP[0][0]; disc(ctx, x, y, d / 2); }
   }
 }
 

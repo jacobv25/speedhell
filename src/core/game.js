@@ -504,8 +504,17 @@ export function update(g) {
             // renderer draws it opaque, pixel-disc, in the player family. fxRng only (a 1px jitter so a held
             // point-blank stream shimmers); default fxShot=0 → not one spawn, not one fxRng pull.
             hits++;
-            const q = spawnFx(g, FX.CORE, b.x + g.fxRng.range(-1, 1), b.y - 1, 0, 0, 3, hits < 3 ? 1 + hits : 4, FAM.WHITE);
+            // r76 lab shotLook=heavy (fxShot=2): the blob lives SIX drawn frames (life 7 — updateFx ticks it once
+            // before its first draw; the renderer decays it 8/6/4/3/2/1 px) and TWO sparks kick UP off the contact
+            // (the Lazy Devs splash rides on the enemy; the r8 three kick down). fxShot=1 (bolt) pulls exactly the
+            // r75 rng: the same one range() call, no sparks.
+            const heavy = g.fxShot === 2;
+            const q = spawnFx(g, FX.CORE, b.x + g.fxRng.range(-1, 1), b.y - 1, 0, 0, heavy ? 7 : 3, hits < 3 ? 1 + hits : 4, FAM.WHITE);
             if (q) q.ck = 2;
+            if (heavy) for (let k = 0; k < 2; k++) {
+              const a = g.fxRng.range(3.6, 5.8), s = g.fxRng.range(1, 2.5); // upward fan (screen -y), player family
+              spawnFx(g, FX.SPARK, b.x, b.y, Math.cos(a) * s, Math.sin(a) * s, 6 + g.fxRng.range(0, 6), 1, FAM.WHITE);
+            }
           }
           sfx(g, SFX.HIT);
           if (g.player.bombActive > 0) e.hp -= 0.5;
