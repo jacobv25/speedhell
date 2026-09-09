@@ -15,7 +15,7 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-08 (r73 EXPERIMENT: boss parts bite back — clock / inherit / burst in the Lab (open Q17); r72: boss phase timeout 24s → 35s; §5.2b escalation clock written for the playtests; r71: boss hp 3× shipped — Jacob's verdict, Q16 decided; r70 EXPERIMENT: boss hp 1×–3× in the Lab; r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-08 (r74 EXPERIMENT: stem layers — the stage track's Demucs stems fade with the stage on bar lines, Lab `musicLayers` default OFF (open Q20; replaces the parked r66 music-cues seeks); r73 EXPERIMENT: boss parts bite back — clock / inherit / burst in the Lab (open Q17); r72: boss phase timeout 24s → 35s; §5.2b escalation clock written for the playtests; r71: boss hp 3× shipped — Jacob's verdict, Q16 decided; r70 EXPERIMENT: boss hp 1×–3× in the Lab; r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
@@ -717,6 +717,20 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     least legible (nothing on screen says why it got faster). Playtest by
     expert hands before the verdict; Jacob's difficulty is one data point.
 
+20. **Adaptive music, take two — does the stage track *breathing* read as a
+    story, or as a mix that keeps changing under you?** (r74 lab `musicLayers`,
+    default off; plan `docs/plans/stem-layers.md`; §10 r74.) The r66 answer to
+    Q16-as-music (bar-snapped section *seeks*) was Jacob's "scissor cut"; r74
+    never seeks — the song's Demucs stems play in sample-locked sync and stage
+    moments ramp three layer gains on the next bar line (opener held back,
+    midboss lift, rush full, release hush). Decide after Jacob's listen: keep
+    (then the per-section gains and the one-bar fade become constants, the row
+    goes, and the Suno gothic cover ships its own `layers.json`), retune the
+    table, or drop. Sub-questions only ears settle: the s1/s2 gains (is 0.35
+    lead too thin under sfx?), the s7 rhythm 0.25 hush (release or "the music
+    broke"?), whether a one-bar ramp is nuance or mush, and whether the mono
+    32 kHz downmix (the memory budget's price) is audible next to the mp3.
+
 ## 9. Practice notes (for humans)
 
 - `sandbox.html`: presets spawn any enemy or the boss at P1/P2/P3 (P1 via preset
@@ -762,16 +776,18 @@ and the `#lab` panel go.
   the HOW TO card (`src/howto.js` mirrors the art); fx particle counts stay on
   `g.fxRng`.
 
-Live experiments (r73): **skin** (§11, r60) · **speedPopup** (§2.6, open Q4) ·
+Live experiments (r74): **skin** (§11, r60) · **speedPopup** (§2.6, open Q4) ·
 **bossParts** (parts bite back: current / clock / inherit / burst, open Q17,
 r73, run-start tune knob) · **speedDress** (speed-kill reward dressing, open
-Q13, r53). Decided r71: bossHp
+Q13, r53) · **musicLayers** (stem layers — the stage track breathes with the
+stage, open Q20, r74; default OFF). Decided r71: bossHp
 → 3× (Q16; the r70 paragraph below is the record). Decided and
 removed in r67: fxSize → 2×, fxStyle → chunky (Q12), killAudio → heavy (Q14) —
 the r51/r52/r54 paragraphs below stay as the record of what was tried. Parked on
 branches, unmerged (2026-09-07, Jacob): `feat/music-cues` — **musicCues** (r66,
-open Q16; bar-snapped section jumps read as "a scissor cut"; keep its corrected
-125 BPM stage grid + cues-JSON loader for the stem-layering approach) and
+open Q16; bar-snapped section jumps read as "a scissor cut"; superseded by
+r74 stem layers, which carried over its corrected 125 BPM stage grid and its
+JSON-loader shape) and
 `feat/beat-pulse` — **beatPulse** (r68, open Q17; pixel-identical when off,
 but the bible-capped amplitudes are imperceptible in play — "not a terrible
 idea and we will likely come back to it"; next step would be a bold setting
@@ -781,6 +797,66 @@ to A/B). In progress on `design/ship-b` (r69, unmerged): Ship B
 the plan's starting numbers, popcorn-rate red + 2/6 robust clears recorded not
 fixed, art (step 4) and recert pending; details in that branch's wiki §6.4. Queued: destruction
 sequence (after the art overhaul), hit impact blob, sprite-shaped debris.
+
+**r74 "stem layers" (`audio.js` `setLayerSection` / `stemsStart`, `main.js`
+`layerTick`, lab `musicLayers`, data `docs/music/skyline-breaker.layers.json`).**
+Plan: `docs/plans/stem-layers.md` — Jacob on the parked r66 seeks: "felt too
+much like a scissor cut. too harsh and didn't flow." So the stage track never
+jumps. Its four Demucs stems (`tools/music/analyze.py`, gitignored `.m4a`) are
+decoded once at unlock into THREE layer buffers — **rhythm** = drums + bass,
+**lead** = other, **voice** = vocals — that start together at one `t0` as
+pure Web Audio `AudioBufferSourceNode`s (r30 forbids MediaElementSource, not
+buffers; the `<audio>` element is parked silent for the run) and loop on bar
+lines (3.844 → 192.004 s, bars 2 → 100). The shell watches the sim each frame
+— `sN` = `stageT` reaching `SECTIONS[N].t` (`>=`, the caravan steps stageT by
++4), `midboss` = the first frame a type-4 enemy exists — and audio.js ramps
+each layer's gain from the next bar line ≥ now + 60 ms over one bar
+(`fade_bars`). The layer table as shipped (a builder's starting guess; Jacob
+retunes by ear in the JSON, no code):
+
+| section | trigger | rhythm | lead | voice |
+|---|---|---|---|---|
+| s1 (opener; also every run start) | stageT ≥ 120 | 1.0 | 0.35 | 0 |
+| s2 turret alley | ≥ 720 | 1.0 | 0.6 | 0 |
+| s3 mid gauntlet | ≥ 1700 | 1.0 | 1.0 | 0.6 |
+| midboss (lift) | first type-4 frame | 1.0 | 1.0 | 1.0 |
+| s5 rush | ≥ 2460 | 1.0 | 1.0 | 1.0 |
+| s6 elite pair | ≥ 2900 | 1.0 | 1.0 | 1.0 |
+| s7 release (hush) | ≥ 3700 | 0.25 | 0.7 | 1.0 |
+
+The boss WARNING's `stopMusic(0.12)` cuts the stems exactly as it cuts the
+element and the boss track's element path is untouched (HOMAGE L3 ritual
+kept). Practice starts snap to the latest section at/below the start (no
+ramp); pause = every source stops and the song position is bookmarked, resume
+= every layer starts again at that position from one `t0` (a ramp that was
+armed but had not started is held and re-armed on the new timeline's next bar
+line); the options-menu burst plays from the bookmark and never moves it
+(r33); the slider and mute scale one stems master gain; DIE's duck is one
+duck gain over every layer; the row can be flipped in the pause menu and the
+run resumes on the other path at the same song position. First run before the
+decode finishes: the element carries the run and the stems take over at its
+position with a one-beat gain crossfade (measured in Chrome: hand-off at
+1.05 s). **Memory:** decoded straight into a 32 kHz mono
+`OfflineAudioContext` per stem and summed per layer — 3 × 192.43 s × 32 kHz ×
+4 B = **73.9 MB (70.5 MiB) of PCM** (stereo 44.1 kHz × 4 stems would be
+271 MB); the budget was ≤ 80 MB, and mono 32 kHz (16 kHz bandwidth) is the
+fidelity price. Grid: the r66 fit, 125 BPM / 0.480 s / first beat 0.004 /
+bar phase 0 (the JSON carries it and overrides the built-in; the analyzer's
+own 126.05 / 0.046 guess and the old 123 / 3.692 both sit at chance against
+the drum onsets). Core untouched (`git diff src/core` empty, no `g.rng`); the
+core never reads the audio clock. Row OFF = today's single `<audio>` path
+byte-for-byte — the probe `tools/probes/stem-layers-probe.mjs` (fake Web
+Audio, virtual clock) shows zero fetches, zero music gain nodes, one element
+seek at start and none after for a full run; row ON: s1 snapped at 0, then s2
+→ 11.524, s3 → 26.884, midboss → 38.404, s5 → 55.684, s6 → 63.364, s7 →
+76.804 s (every ramp start < 5 ms off a bar line, each one bar long, targets =
+JSON), the WARNING left zero sources, end gains = s7. Headless Chrome (Booth
+server, `?lab=musicLayers:on`): 3 sources at one `t0`, equal 192.43 s buffers,
+73,893,876 bytes, song position advancing with the wall clock, s2 ramp
+observed mid-flight; plain `index.html`: zero stem requests, no layers.json,
+the two mp3 element loads only. NOBODY HAS LISTENED — see open Q20 for what
+only ears settle. The wav/m4a stems are gitignored: a clone that never ran
+the analyzer falls back to the element path with one console warning.
 
 **r73 "boss parts" (core `g.tune.partBite`, lab `bossParts`, run start).** Jacob
 (2026-09-08): "I don't think killing the parts should make the boss easier. In
@@ -1922,3 +1998,49 @@ is placement, not authoring time. Not scheduled.
   anything is built; decisions it forces first: Q8 (suicide-for-bombs ×5) and an
   extend rule (options A1–A3). No design change today, no BUILD bump, §11
   roadmap unchanged until he rules.
+- 2026-09-08 — r74: STEM LAYERS (Lab `musicLayers`, default OFF — `docs/plans/
+  stem-layers.md`, replacing the parked r66 music-cues seeks after Jacob's
+  verdict: "felt too much like a scissor cut. too harsh and didn't flow"). The
+  stage track's Demucs stems play in sample-locked sync as three Web Audio
+  buffers (rhythm = drums + bass, lead = other, voice = vocals) and stage
+  moments ramp layer gains on the next bar line over one bar: s1 opener (lead
+  0.35, no voice) → s2 (lead 0.6) → s3 (lead 1, voice 0.6) → midboss lift (all
+  1) → s5/s6 (all 1) → s7 hush (rhythm 0.25, lead 0.7). Same song position at
+  every moment; the only seeks are pause/resume bookmarks. WARNING cut, boss
+  track, r30 element-volume rule all kept (buffers, no MediaElementSource).
+  Data, not code: `docs/music/skyline-breaker.layers.json` (gains + the 125 BPM
+  grid) + `docs/music/skyline-breaker.analysis.json` (analyzer output,
+  committed; stems gitignored). Memory 73.9 MB of PCM at 32 kHz mono (≤ 80 MB
+  budget). Corpus: **boghog** [T1] "musical layering: base layer carries the
+  player; add instruments; crescendo → relax" — this row IS that line (rhythm
+  carries, lead then voice are the instruments, midboss/rush the crescendo, s7
+  the relax); [T1] "tune transition time separately (snap = commitment, ramp =
+  nuance)" — the one-bar ramp is the nuance knob, exposed as `fade_bars`;
+  [T1] "sync key events to music beats loosely… not every note" — bar lines
+  only, the song follows the stage; the rubric's S5 tension-release MUST
+  (release after midboss and rush) now has an audible counterpart in s7.
+  **MSX** — presentation only, no scoring surface, the stage never waits for
+  the song (density, scoring, natural meta untouched — Pillars 1, 2); Pillar 4
+  restart still lands at the song's start in < 2 s; "difficulty clarifies
+  design" — the lift lands on the midboss's first frame, which the MIDBOSS
+  sfx and the bloom already announce, so the music telegraphs nothing the
+  bullets do not. **HOMAGE** L3 — the boss ritual's WARNING cut and the boss
+  track's own entry are untouched. Pushback recorded: the r30 Safari rule
+  argued against Web Audio music — answered with buffers, and the probe +
+  Chrome check cover mute/slider/duck on the stems path, but Safari itself is
+  unlistened; the memory budget forces a mono 32 kHz downmix the element path
+  does not pay (Q20 asks whether it is audible); Demucs bleed means a fully
+  muted voice layer can leave ghost vocals in "other" (the s1/s2 voice = 0
+  rows are where to listen for it); boghog's "not every note" argues against
+  ever going finer than a bar. Verification: `node --check` on audio.js /
+  main.js / lab.js / version.js; `tools/probes/stem-layers-probe.mjs` PASS on
+  seeds 1 and 7 (row off: 0 fetches, 0 music nodes, element path unchanged;
+  row on: 3 sources one t0, sections once in order, every ramp < 5 ms off a
+  bar line, targets = JSON, WARNING cuts, practice snaps, pause/burst/stop/
+  slider/mute/duck, element→stems hand-off); `node test/shell.mjs` PASS (row
+  only with `?lab`); headless Chrome via the Booth server: row on = 3 sources
+  @ one t0, 192.43 s buffers, 73,893,876 B, s2 ramp observed; row off = zero
+  stem requests; `git diff --stat d5b5483..HEAD -- src/core` empty; no
+  referee run (core byte-identical, sim never imports audio.js). Wiki: §8 Q20
+  added, §10 live list + r74 entry + the parked-branch note, this line; no
+  other section changed. BUILD r73 → r74.
