@@ -98,6 +98,11 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
    ±1.6, per-bolt lifetime, or a cap that doesn't count off-screen bolts);
    then art (second craft, HOW TO, artpeek `?ship=1`) and Ship-B referee
    runs (Jacob-authorized). Sandbox ship sliders no longer move the ship.
+   **Merge note (r77):** main's shot is now the heavy bolt (`drawShots` in
+   renderer.js); design/ship-b still draws the old rotated rect. At merge,
+   give B's three bolts the r77 look rotated along velocity (bolt + echo +
+   trail), a three-barrel muzzle, and 3-rail jitter/lag; impact + click carry
+   over as is.
 7. **Referee recert** after 1–2 land. The expert bot is below Jacob's target
    player at 3× — a stronger dodge (referee change) or re-read bars (§8.1).
 8. **Jacob's playtest notes 2026-09-09 (wiki Q21/Q22):** flow — S6 two elites
