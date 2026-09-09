@@ -792,6 +792,25 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     black-and-white readability check `img/r76-shot-heavy-bw.png`. Verdict
     pending Jacob's play; the row's three steps are there so each jump can be
     felt.
+23. **Remove the shot limit?** (Jacob, 2026-09-09: "part of me wants to remove
+    the shot limit. Zero Ranger doesn't have one. but part of me also feels
+    like it incentivises point blanking… for sure Ship B feels limited by
+    the shot limit"). Measured: referee with `shotLimit` 6 → 999, Ship A —
+    passive-human score 56,880 → 120,820 (its speed-kill rate 46 % → 56 %),
+    aggressive-vs-passive score ratio 3.15 → 1.79 (bar 3), and SIX checks go
+    red (s1_pointblank, s1_ttk_felt, s7_pressure, s5_deadair, s6_alignment,
+    s6_nocamp): with no cap the bottom of the screen deals full DPS, so
+    point-blank stops paying, enemies die before they arrive (dead air) and
+    camping works. The cap IS the mechanism behind §2's point-blank
+    invitation (57.6 dps at range vs 120 close). Corpus: BH101 "Shot limit":
+    "closer = faster fire = more DPS — the natural proximity dynamic", high
+    rate + low count → aggressive games; MSX imperfect tools / natural meta.
+    Ship B's complaint is a different fault: missed side bolts hold cap
+    slots (range DPS a fifth of A's) — a B-specific lever (side-bolt
+    lifetime, an angle that lands, or slots that don't count off-screen
+    bolts), not the cap rule. If a ZeroRanger-like "no cap" feel is wanted,
+    the honest alternative is a higher cap + damage falloff with distance,
+    which keeps the invitation; a question for Mark/boghog, not decided.
 
 ## 9. Practice notes (for humans)
 
