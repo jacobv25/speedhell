@@ -82,7 +82,7 @@ export function makeGame(seed = 1) {
     // r26 variant knobs (Booth experiments): deterministic — same knobs + seed
     // + inputs = same run. 0 / 'top' = shipped ENEMY_DEFS values. The referee
     // never sets these, so certified paths are untouched by construction.
-    tune: { eliteHp: 0, eliteEntry: 'side', eliteEscort: 1, midbossHp: 0, bossHp: 0, partBite: 0 }, // partBite: r73 Lab EXPERIMENT — 0 current (dead part = its emitter gone) · 1 'clock' (+1 rep per dead part) · 2 'inherit' (core takes the part's emitter, denser) · 3 'burst' (retaliation ring, then inherit) // bossHp: multiplier on every boss phase's hp (0/1 = shipped 390/402/405 since r71); a Booth/sandbox tune knob now, the r70 Lab row is gone // r27: side entry + escort are the shipped defaults (Booth verdict); chips roll back
+    tune: { eliteHp: 0, eliteEntry: 'side', eliteEscort: 1, midbossHp: 0, bossHp: 0, partBite: 0, s2tanks: 0, bellWalker: 0 }, // s2tanks / bellWalker: r81 stage-2 Lab knobs (run start; wiki §13.9, Q27/Q28) — 0 = the r80 stage byte-identical · s2tanks 1 'swarm' (kit.js tankFile + stage.js case 7) · bellWalker 1 'calm' (s2.js P2) // partBite: r73 Lab EXPERIMENT — 0 current (dead part = its emitter gone) · 1 'clock' (+1 rep per dead part) · 2 'inherit' (core takes the part's emitter, denser) · 3 'burst' (retaliation ring, then inherit) // bossHp: multiplier on every boss phase's hp (0/1 = shipped 390/402/405 since r71); a Booth/sandbox tune knob now, the r70 Lab row is gone // r27: side entry + escort are the shipped defaults (Booth verdict); chips roll back
     warn: 0, // r6 S3b arrival ritual: frames of WARNING remaining before the boss gate
 
     clearBonus: 0, clearAt: 0, endFrame: 0,

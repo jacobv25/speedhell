@@ -100,6 +100,8 @@ function beginRun(t = currentStart, level = currentLevel) { // every run-start p
   currentStart = t; currentLevel = level;
   audio.unlock(); startRun(g, t, level); resetHud(); audio.playMusic('stage');
   g.tune.partBite = { current: 0, clock: 1, inherit: 2, burst: 3 }[labGet('bossParts')] || 0; // r73 Lab experiment — AFTER startRun (it rebuilds g)
+  g.tune.s2tanks = labGet('s2tanks') === 'swarm' ? 1 : 0;       // r81 stage-2 Lab knobs (Q27 / Q28): read once here; the stage's
+  g.tune.bellWalker = labGet('bellWalker') === 'calm' ? 1 : 0;  // timeline events + the Bell read g.tune when they fire, never live
 }
 function retryRun() { g.seed = (Math.random() * 0xffffffff) >>> 0; beginRun(); } // same start, fresh seed — restart <2s (S7)
 function quitToTitle() { // r37: back to the picker

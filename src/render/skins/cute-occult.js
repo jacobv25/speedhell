@@ -228,7 +228,7 @@ function rimOf(type, phase) {
 // ENEMIES — identity from SHAPE first (S4). Sprites are painted nose-DOWN (+y,
 // toward the player) and the flying types rotate themselves by step*STEP.
 // ---------------------------------------------------------------------------
-function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra, K) {
+function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra, K, lvl = 0, tell = 0) { // r81: tell = sealed (renderer drawEnemy) — the turret's muzzle is capped
   const { poly, disc, STEP } = K;
   const F = (c) => { ctx.fillStyle = hit ? UI.white : c; };
   const S = (c) => F(flick ? DIM : c);
@@ -313,12 +313,12 @@ function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra, K) {
       S(GROUND.hi); ctx.fillRect(-9, -13, 18, 1);               // top-lit rim (§4)
       S(GROUND.plate); P([[-8, -11], [8, -11], [11, -7], [11, 7], [8, 11], [-8, 11], [-11, 7], [-11, -7]]);
       S(GROUND.base); ctx.fillRect(-9, 9, 18, 3);               // front step
-      ctx.save(); ctx.rotate(barrel);                            // barrel first: the skull sits over it
+      ctx.save(); ctx.rotate(barrel); if (tell) ctx.scale(0.65, 1); // barrel first: the skull sits over it (r81 tell: retracted along its axis)
       S(GROUND.plate); ctx.fillRect(0, -4, 16, 8);
       S(GROUND.base); ctx.fillRect(4, -3, 12, 3);
-      S(GROUND.hi); ctx.fillRect(4, -3, 12, 1);
+      if (!tell) { S(GROUND.hi); ctx.fillRect(4, -3, 12, 1); }
       S(HEAVY.wine); ctx.fillRect(12, -4, 2, 8);
-      S(GROUND.out); ctx.fillRect(14, -3, 2, 6);
+      S(GROUND.out); ctx.fillRect(14, -3, 2, 6); if (tell) ctx.fillRect(14, -4, 2, 8); // r81 tell: muzzle capped, no highlight
       ctx.restore();
       S(angry ? HEAVY.wineHi : GROUND.base); disc(ctx, 0, -1, angry ? 11 : 9); // collar flares red when angry
       S(angry ? HEAVY.wine : GROUND.shade); disc(ctx, 0, 0, angry ? 10 : 8);

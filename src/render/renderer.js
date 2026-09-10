@@ -12,6 +12,7 @@
 import { W, H, PLAYER, FX, EXTEND_AT } from '../core/game.js';
 import { SKINS } from './skins/index.js';
 import { stageAt } from '../core/stages/index.js'; // r78: section anchors come from the stage module, not a mirror
+import { sealed } from '../core/stage.js'; // r81: the r18 proximity seal, read (never written) for the sealed tell
 
 // r50 lab: presentation prefs the shell may switch live (src/lab.js writes
 // them). The renderer stays DOM-free; headless harnesses get the defaults.
@@ -537,10 +538,21 @@ export function drawEnemy(ctx, g, e) {
   // the cache key, so stage 1's sprites are keyed exactly as before (lvl 0).
   const lvl = (e.type === 4 || e.type === 5) ? g.level : 0;
   const sk = (e.type < skin.span.length && !(lvl > 0)) ? skin : SKINS.base;
-  const key = (((((((e.type * 4 + phase) * 2 + side) * STEPS + step) * 2 + prop) * 2 + hit) * 2 + flick) * 64 + extra) * 4 + lvl;
+  // r81 SEALED TELL (presentation only — wiki §13.9): a ground gun (turret, tank,
+  // wall, hull) that WOULD fire this frame but is sealed by proximity shows it:
+  // exactly mayFire's condition with the seal true — vulnerable, below the top dead
+  // zone, above the bottom band, inside 48 px. The painter RETRACTS the barrel (to
+  // ~0.65 of its length, capped with 1 px of `out`, its highlight gone) and the sprite dims
+  // for 2 frames in 4 (alpha toward the field = a washed value, bible §3; drawn
+  // under the bullets as ever, so nothing is masked). Reads core; writes nothing.
+  const tell = ((e.type === 2 || e.type === 7 || e.type === 8 || e.type === 9) && e.vulnAt >= 0 && e.y > 20 && e.y <= H - 60 && sealed(g, e)) ? 1 : 0;
+  const key = ((((((((e.type * 4 + phase) * 2 + side) * STEPS + step) * 2 + prop) * 2 + hit) * 2 + flick) * 64 + extra) * 4 + lvl) * 2 + tell;
   const s = CACHE.get(key) || sprite(key, sk.span[e.type], hit ? WHITE : sk.rimOf(e.type, phase),
-    (c) => sk.paintEnemy(c, e.type, phase, side ? 1 : -1, step, prop, hit, flick, extra, KIT, lvl));
+    (c) => sk.paintEnemy(c, e.type, phase, side ? 1 : -1, step, prop, hit, flick, extra, KIT, lvl, tell));
+  const dim = tell && !hit && (g.frame & 2); // the hit-flash (S4-MUST) always wins over the tell
+  if (dim) ctx.globalAlpha = 0.6;
   ctx.drawImage(s.img, Math.round(e.x) - s.o, Math.round(e.y) - s.o + dy);
+  if (dim) ctx.globalAlpha = 1;
 }
 
 // r80 STAGE 2 pendulums: the Hearse's anchor chain (type 10 → its type-4 owner)

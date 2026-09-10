@@ -33,6 +33,14 @@ export const EXPERIMENTS = [
     choices: [['off', 'current'], ['on', 'speed kill = tier up · rush = chain + big boom · cancels pop']],
     apply: (v) => { prefs.speedDress = v === 'on' ? 1 : 0; } },
   // r75/r76 shotLook (current / bolt / heavy) left the Lab in r77: heavy shipped as THE shot (open Q22 decided 2026-09-09)
+  // r81 EXPERIMENTS — stage 2 tune knobs from Jacob's first play (run-start → g.tune.s2tanks / g.tune.bellWalker; open Q27 / Q28).
+  // Six rows: over the ~5 cap (wiki §10) — said so; bossParts / speedDress are the ones due a verdict.
+  { id: 's2tanks', label: 'ST2 tank column (next run)', def: 'current', ref: 'wiki §13.9 / open Q27',
+    choices: [['current', 'current — staircases from the top, hp 24'], ['swarm', 'swarm — 2× tanks from the flanks, hp 12, fire every 55 f']],
+    apply: () => {} },
+  { id: 'bellWalker', label: 'ST2 Bell walker (next run)', def: 'current', ref: 'wiki §13.9 / open Q28',
+    choices: [['current', 'current — walk 4.2, dwell 170, stomp every landing'], ['calm', 'calm — walk 3.4, dwell 240, stomp every 2nd landing, sprays every 70 f']],
+    apply: () => {} },
 ];
 
 const KEY = 'speedhell.lab';

@@ -157,22 +157,28 @@ function updateBell(g, e) {
       if (rep >= 3 && t % 30 === 15 && Math.abs(th) > 0.45) staticFan(g, e.bobX, e.bobY, 4, 0.7, 2.4 * k, th + PI / 2 + 0.3); // timeout-rider tax: the off-beat fan
     }
   } else if (phase === 1) {  // P2 BELL WALKER
+    // r81 `calm` (Lab `bellWalker` → g.tune.bellWalker, wiki §13.9 / Q28 — Jacob: "the
+    // boss keeps running around extremely fast and is hard to catch"): walk 3.4
+    // (under the ship's 3.7, so pursuit catches it), dwell 240, flank sprays every
+    // 70 f, the stomp on every SECOND landing (e.bloomed counts landings — the
+    // field is the midboss's, free on the boss). hp / rope node / clapper unchanged.
+    const calm = g.tune.bellWalker | 0;
     const railX = latched ? pickSafeX(e) : W / 2 + e.side * 100;
     let landed = false; // sweepOff doubles as the "in transit" flag here (P3's handoff re-solves it)
-    if (Math.abs(e.x - railX) > 3) { e.x += Math.sign(railX - e.x) * 4.2; e.sweepOff = 1; }
+    if (Math.abs(e.x - railX) > 3) { e.x += Math.sign(railX - e.x) * (calm ? 3.4 : 4.2); e.sweepOff = 1; }
     else {
       if (e.sweepOff === 1) { e.sweepOff = 0; landed = true; }
       if (--e.holdT <= 0) {
         const far = g.player.x < W / 2 ? 1 : -1;
         e.side = (far === e.side && !(parked || latched)) ? -e.side : far;
-        e.holdT = 170; // a dwell long enough to be chased (boss 1's rail hop dwells 210)
+        e.holdT = calm ? 240 : 170; // a dwell long enough to be chased (boss 1's rail hop dwells 210)
       }
     }
     e.y += clamp(118 - e.y, -0.6, 0.6); // walks lower: into the pipeline's strong band
     if (mayFire(g, e)) {
-      if (t % 50 === 0) { staticFan(g, e.x - 24, e.y + 4, 4, 0.8, 2.2 * k, PI / 2 + 0.55); staticFan(g, e.x + 24, e.y + 4, 4, 0.8, 2.2 * k, PI / 2 - 0.55); } // outward flank sprays: under it is clear
+      if (t % (calm ? 70 : 50) === 0) { staticFan(g, e.x - 24, e.y + 4, 4, 0.8, 2.2 * k, PI / 2 + 0.55); staticFan(g, e.x + 24, e.y + 4, 4, 0.8, 2.2 * k, PI / 2 - 0.55); } // outward flank sprays: under it is clear
       if (t % 36 === 18 && Math.abs(th) > 0.3) staticFan(g, e.bobX, e.bobY, 5, 0.9, 1.9 * k, th + PI / 2); // the dialect, on the walker's slower beat
-      if (landed) ring(g, e.x, e.y, 12 + Math.min(rep, 4) * 2, 1.5 * k, 0);                  // stomp on landing (no rng)
+      if (landed && (!calm || (e.bloomed++ & 1) === 0)) ring(g, e.x, e.y, 12 + Math.min(rep, 4) * 2, 1.5 * k, 0); // stomp on landing (no rng); calm: every second landing
       if (rep >= 3 && t % 40 === 20) aimedFan(g, e.x, e.y + 16, 4, 0.6, 3.2 * k);            // timeout-rider tax
     }
   } else {                   // P3 THE CLAPPER — medley
@@ -219,13 +225,13 @@ export function buildTimeline() {
 
   // S1 TANK COLUMN — the ground layer introduced bare: sealing is the lesson.
   // rep 1: a four-tank staircase from the left; crossers over it from the right.
-  tankFile(120, -1, 4);
+  tankFile(120, -1, 4, { flank: 1 }); // flank: the r81 `swarm` knob reshapes this file (kit.js)
   crossers(300, 1, 5, 88);
   // rep 2 (denser): five from the right, faster; popcorn from the left; then
   // three HALF-TRACKS that creep toward your column (behaviour, not count [T2])
-  tankFile(420, 1, 5, { spd: 0.1 });
+  tankFile(420, 1, 5, { spd: 0.1, flank: 1 });
   zakoGroup(540, -1, 5);
-  tankFile(600, -1, 3, { half: 1 });
+  tankFile(600, -1, 3, { half: 1, flank: 1 });
 
   // S2 BONE-WALL BREACH — destructible terrain (WS05 theme). A wall with one
   // 90px lane arrives; every segment fires one prong as it crosses y 140 unless
@@ -235,7 +241,7 @@ export function buildTimeline() {
   boneWall(760, [2, 3, 4]);                 // lane centre x 115
   crossers(900, 1, 4, 60);
   boneWall(1000, [6, 7, 8]);                // rep 2: the lane switches sides (centre x 235)…
-  tankFile(1120, 1, 3, { spd: 0.1 });       // …with tanks rolling down behind it
+  tankFile(1120, 1, 3, { spd: 0.1 });       // …with tanks rolling down behind it (no `flank`: r80's shape under every knob — a wall AND a flank file is two strong things at once, WS05)
   zakoGroup(1180, -1, 6, { diver: true });
 
   // S3 HULL TURRET DECK — the turret alley grown up (HOMAGE R7, L1 structural):
@@ -258,10 +264,10 @@ export function buildTimeline() {
 
   // S5 RAIL RUSH — tanks + crossers + a mid (the metronome), risers from ONE
   // lane edge at a time (Q21 addendum), divers to close.
-  tankFile(2460, -1, 4, { spd: 0.15 }); crossers(2500, 1, 5, 60);
+  tankFile(2460, -1, 4, { spd: 0.15, flank: 1 }); crossers(2500, 1, 5, 60);
   risersOneSide(2560, 3, 1);
   at(2600, (g) => spawnEnemy(g, 1, W / 2 + 40, -12, { side: 1, holdT: 130 }));
-  tankFile(2640, 1, 4, { half: 1, spd: 0.15 }); zakoGroup(2700, -1, 8, { diver: true, spd: 0.2 });
+  tankFile(2640, 1, 4, { half: 1, spd: 0.15, flank: 1 }); zakoGroup(2700, -1, 8, { diver: true, spd: 0.2 });
   risersOneSide(2760, 3, -1);
 
   // S6 RELEASE — loot over the bell-tower approach, ending empty (L2 + BRDA#9)

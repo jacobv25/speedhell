@@ -149,7 +149,9 @@ function rimOf(type, phase) {
 // r80: `lvl` (11th arg) = g.level for the stage-owned types (4 midboss, 5 boss,
 // 6 part) — stage 2's Hearse and Bell are drawn here in base geometry; the
 // other skins fall back to this painter for them (renderer drawEnemy).
-function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra, K, lvl = 0) {
+// r81: `tell` (12th arg) = the sealed tell (renderer drawEnemy): the ground gun is
+// muted by proximity this frame — cap its muzzle, drop the barrel's highlight.
+function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra, K, lvl = 0, tell = 0) {
   const { poly, disc, STEP } = K;
   const F = (c) => { ctx.fillStyle = hit ? UI.white : c; };
   const S = (c) => F(flick ? BOSS.armor : c); // surface fill: armor shimmer applies
@@ -163,7 +165,7 @@ function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra, K, lv
       S(GROUND.plate); ctx.fillRect(-8, -8, 16, 16);                                     // hull
       S(GROUND.shade); disc(ctx, 0, -1, 6);
       S(angry ? HEAVY.stripe : GROUND.base); disc(ctx, -1, -2, 4);
-      ctx.save(); ctx.rotate(barrel); S(GROUND.shade); ctx.fillRect(0, -2, 14, 4); S(GROUND.hi); ctx.fillRect(3, -2, 10, 1); ctx.restore();
+      ctx.save(); ctx.rotate(barrel); if (tell) { S(GROUND.shade); ctx.fillRect(0, -2, 9, 4); S(GROUND.out); ctx.fillRect(8, -2, 1, 4); } else { S(GROUND.shade); ctx.fillRect(0, -2, 14, 4); S(GROUND.hi); ctx.fillRect(3, -2, 10, 1); } ctx.restore(); // r81 tell: the barrel RETRACTS (14 → 9), muzzle capped, no highlight
       break;
     }
     case 8: { // r80 BONE WALL segment — three courses of bone bricks, a skull set in the middle
@@ -172,6 +174,7 @@ function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra, K, lv
       for (let r = 0; r < 3; r++) { const y = -11 + r * 8, o = (r & 1) * 7; for (let c = -1; c < 2; c++) ctx.fillRect(-13 + o + c * 14, y, 12, 6); }
       S(GROUND.hi); for (let r = 0; r < 3; r++) ctx.fillRect(-13, -11 + r * 8, 26, 1);
       S(GROUND.shade); ctx.fillRect(-4, -3, 3, 3); ctx.fillRect(1, -3, 3, 3); ctx.fillRect(-1, 1, 2, 2); // the skull's sockets
+      if (tell) { S(GROUND.out); ctx.fillRect(-3, 4, 6, 1); } // r81 tell: the hidden gun's mouth shut
       break;
     }
     case 9: { // r80 THE HULL — an ossuary barge: a wide deck (decorative — the hittable core is the reliquary at the centre, r 20)
@@ -181,7 +184,7 @@ function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra, K, lv
       S(GROUND.hi); ctx.fillRect(-76, -22, 152, 1);
       S(HEAVY.shade); disc(ctx, 0, 0, 20);                                                          // the core: a reliquary drum
       S(HEAVY.base); disc(ctx, -1, -1, 16);
-      if (phase === 1) { S(HEAVY.stripe); disc(ctx, 0, 0, 9); S(HEAVY.core); disc(ctx, 0, 0, 5); }  // opened: the gun's window
+      if (phase === 1) { S(HEAVY.stripe); disc(ctx, 0, 0, 9); S(tell ? GROUND.out : HEAVY.core); disc(ctx, 0, 0, 5); }  // opened: the gun's window (r81 tell: capped dark)
       else { S(HEAVY.shade); ctx.fillRect(-14, -2, 28, 4); ctx.fillRect(-2, -14, 4, 28); }           // armored: barred shut
       S(HEAVY.hi); ctx.fillRect(-10, -14, 8, 2);
       break;
@@ -235,7 +238,7 @@ function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra, K, lv
       S(GROUND.plate); poly(ctx, TURRET_PLATE);
       S(GROUND.shade); disc(ctx, 0, 0, 9);
       S(angry ? HEAVY.stripe : GROUND.base); disc(ctx, -1, -1, 7);
-      ctx.save(); ctx.rotate(barrel); S(GROUND.shade); ctx.fillRect(0, -2, 15, 4); S(GROUND.hi); ctx.fillRect(4, -2, 11, 1); ctx.restore();
+      ctx.save(); ctx.rotate(barrel); if (tell) { S(GROUND.shade); ctx.fillRect(0, -2, 10, 4); S(GROUND.out); ctx.fillRect(9, -2, 1, 4); } else { S(GROUND.shade); ctx.fillRect(0, -2, 15, 4); S(GROUND.hi); ctx.fillRect(4, -2, 11, 1); } ctx.restore(); // r81 tell: the barrel RETRACTS (15 → 10), muzzle capped, no highlight
       S(GROUND.hi); ctx.fillRect(-4, -5, 3, 2);
       break;
     }

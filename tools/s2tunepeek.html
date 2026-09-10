@@ -1,0 +1,93 @@
+<!doctype html><meta charset="utf-8">
+<!-- STAGE 2 TUNE peek (r81): the two Lab knobs and the sealed tell, drawn by the BASE
+     skin. The referee's expert bot plays seed C0FFEE from startRun(g, 0, 1) with its
+     LIVES PINNED (probe-only), once per knob value, and the SAME frame index is
+     snapped from both runs.
+       node tools/peek.mjs 'tools/s2tunepeek.html?mode=swarm' docs/img/r81-s2-swarm.png   1300x1360
+       node tools/peek.mjs 'tools/s2tunepeek.html?mode=tellclean' docs/img/r81-sealed-tell.png 1040x760
+       node tools/peek.mjs 'tools/s2tunepeek.html?mode=tell'  (in-run: the first sealed tank of the swarm run, 4× crops with luminance)
+     mode=swarm: the tank column, current (left) vs swarm (right), at two frames — the
+     CURRENT run's stageT 250 (rep 1 mid-file) and 560 (rep 2), same frame index in both. mode=tell: the first frame of the swarm run
+     where a tank is SEALED (the r18 48 px seal, vulnerable, would otherwise fire): the
+     full frame, then the tank 4× on a lit frame and on a dim frame (the 2-in-4 flicker),
+     next to the same tank unsealed 4× for comparison. -->
+<body style="margin:0;background:#05060a">
+<canvas id="c" width="1400" height="1360"></canvas>
+<script type="module">
+import { makeGame, startRun, update, spawnEnemy, W, H } from '../src/core/game.js';
+import { draw, resetHud, setSkin } from '../src/render/renderer.js';
+import { sealed } from '../src/core/stage.js';
+import { makeBot } from '../test/bot.mjs';
+const Q = new URLSearchParams(location.search), MODE = Q.get('mode') || 'swarm', SC = 1.5;
+setSkin(Q.get('skin') || 'base');
+const c = document.getElementById('c'), ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = false;
+const label = (t, x, y) => { ctx.fillStyle = '#ffd24a'; ctx.font = 'bold 15px monospace'; ctx.textAlign = 'left'; ctx.fillText(t, x, y); };
+const off = document.createElement('canvas'); off.width = W; off.height = H; const octx = off.getContext('2d');
+const stub = { next: () => 0.5, range: (a, b) => (a + b) / 2 };
+function render(g) { const real = g.rng; g.rng = stub; octx.setTransform(1, 0, 0, 1, 0, 0); for (let i = 0; i < 30; i++) draw(g, octx, g.stageT * 1.05); g.rng = real; }
+const tiles = [];
+function snap(g, text) { render(g); const im = document.createElement('canvas'); im.width = W; im.height = H; im.getContext('2d').drawImage(off, 0, 0); tiles.push({ im, text }); }
+const EXPERT = { aggressive: true, lookahead: 14, reactDelay: 0 };
+function run(s2tanks) { const g = makeGame(0xC0FFEE); startRun(g, 0, 1); g.tune.s2tanks = s2tanks; return g; }
+const tanks = (g) => { let n = 0; for (let i = 0; i < g.enemies.count; i++) if (g.enemies.items[i].type === 7) n++; return n; };
+if (MODE === 'swarm') {
+  const runs = [[0, 'current'], [1, 'swarm']].map(([v, name]) => ({ g: run(v), bot: makeBot(EXPERT), name }));
+  for (const r of runs) resetHud();
+  const AT = [250, 560]; // the CURRENT run's stageT: rep 1 (the four-tank file mid-field) and rep 2 (the five-file + half-tracks); both runs are snapped at that same frame index
+  let done = 0;
+  for (let f = 0; f < 1200 && done < AT.length; f++) {
+    for (const r of runs) { r.bot(r.g); r.g.player.lives = 9; update(r.g); }
+    if (runs[0].g.stageT >= AT[done]) {
+      for (const r of runs) { resetHud(); snap(r.g, `${r.name.toUpperCase()} f${r.g.frame} stageT ${r.g.stageT} · tanks ${tanks(r.g)} bul ${r.g.eBullets.count} en ${r.g.enemies.count}`); }
+      done++;
+    }
+  }
+  const tw = W * SC, th = H * SC;
+  label('STAGE 2 — S1 TANK COLUMN · Lab s2tanks: current (left) vs swarm (right) · same frame index, seed C0FFEE, expert bot lives pinned · base skin · r81', 4, 16);
+  for (let i = 0; i < tiles.length; i++) { const x = (i % 2) * (tw + 4), y = Math.floor(i / 2) * (th + 30) + 46; ctx.drawImage(tiles[i].im, x, y, tw, th); label(tiles[i].text, x + 4, y - 8); }
+} else if (MODE === 'tellclean') {
+  // synthetic: one tank and one turret parked mid-field, nothing else on screen; the ship
+  // inside the 48 px seal (gap 40) vs 130 px away; each sprite 8× on a lit and a dim frame
+  const g = makeGame(0xC0FFEE); startRun(g, 0, 1); resetHud();
+  for (let i = 0; i < 40; i++) update(g); // past the title fade; the field is empty until stageT 120
+  for (let i = g.enemies.count - 1; i >= 0; i--) g.enemies.killAt(i);
+  const mk = (type, x) => { const e = spawnEnemy(g, type, x, 190); e.vulnAt = 1; e.age = 90; e.vy = 0; e.holdT = 0; return e; }; // vulnerable since frame 1 (the run is only 40 frames old)
+  const tank = mk(7, 110), tur = mk(2, 210);
+  const shots = []; // { im, text }
+  const shot = (name, e, near, dimFrame) => {
+    g.player.x = near ? e.x + 12 : e.x + 130; g.player.y = e.y + 38; g.frame = (g.frame & ~3) + (dimFrame ? 2 : 0);
+    render(g); const im = document.createElement('canvas'); im.width = 40; im.height = 40; const cx = im.getContext('2d'); cx.imageSmoothingEnabled = false;
+    cx.drawImage(off, Math.round(e.x) - 20, Math.round(e.y) - 20, 40, 40, 0, 0, 40, 40);
+    const on = e.vulnAt >= 0 && e.y > 20 && e.y <= H - 60 && sealed(g, e);
+    shots.push({ im, text: `${name} · ${near ? 'SEALED (gap 40)' : 'unsealed (gap 135)'} · ${dimFrame ? 'dim frame' : 'lit frame'} · tell ${on ? 1 : 0}` });
+  };
+  for (const [name, e] of [['RAIL TANK', tank], ['TURRET', tur]]) { shot(name, e, false, false); shot(name, e, true, false); shot(name, e, true, true); }
+  label('the SEALED TELL, clean (r81): a rail tank and a turret at 8× — unsealed · sealed lit frame (barrel retracted to ~0.65, 1 px muzzle cap, no highlight) · sealed dim frame (2 in 4, alpha 0.6) · base skin', 4, 16);
+  for (let i = 0; i < shots.length; i++) { const x = 10 + (i % 3) * 340, y = 40 + Math.floor(i / 3) * 360; ctx.drawImage(shots[i].im, x, y, 320, 320); label(shots[i].text, x, y + 340); }
+} else {
+  const g = run(1); const bot = makeBot(EXPERT); resetHud();
+  let found = null;
+  for (let f = 0; f < 4000 && !found; f++) {
+    bot(g); g.player.lives = 9; update(g);
+    for (let i = 0; i < g.enemies.count; i++) { const e = g.enemies.items[i]; if (e.type === 7 && !e.dead && e.vulnAt >= 0 && e.y > 20 && e.y <= H - 60 && sealed(g, e) && e.x > 40 && e.x < W - 40) { found = e; break; } }
+  }
+  const px = g.player.x, py = g.player.y, tx = found.x, ty = found.y, d = Math.hypot(tx - px, ty - py);
+  // lit frame and dim frame: the tell dims 2 frames in 4 (g.frame & 2); frame parity is forced on a copy of the frame counter
+  const crops = [];
+  const crop = (name) => { render(g); const im = document.createElement('canvas'); im.width = 72; im.height = 72; const cx = im.getContext('2d'); cx.imageSmoothingEnabled = false; cx.drawImage(off, Math.round(tx) - 36, Math.round(ty) - 36, 72, 72, 0, 0, 72, 72); const on = found.vulnAt >= 0 && found.y > 20 && found.y <= H - 60 && sealed(g, found); const d = cx.getImageData(24, 24, 24, 24).data; let lum = 0; for (let i = 0; i < d.length; i += 4) lum += d[i] + d[i + 1] + d[i + 2]; crops.push({ im, name: name + ` [tell ${on ? 1 : 0} flash ${found.flash} f&2 ${g.frame & 2} lum ${(lum / 1000) | 0}]` }); };
+  const f0 = g.frame;
+  snap(g, `swarm run · f${g.frame} stageT ${g.stageT} · sealed tank at (${tx | 0},${ty | 0}), ship at (${px | 0},${py | 0}), gap ${d.toFixed(0)} px < 48 · bullets ${g.eBullets.count}`);
+  g.frame = f0 - (f0 & 2); crop('SEALED, lit frame: muzzle cap,|no barrel highlight');
+  g.frame = f0 - (f0 & 2) + 2; crop('SEALED, dim frame: 2 in 4,|alpha 0.6 toward the field');
+  g.frame = f0; const keepX = g.player.x; g.player.x = tx > W / 2 ? tx - 120 : tx + 120; crop('the SAME tank unsealed|(ship moved 120 px away)'); g.player.x = keepX;
+  const tw = W * SC, th = H * SC;
+  label('STAGE 2 — the SEALED TELL (r81, presentation only): a ground gun inside the 48 px seal shows it is muted · seed C0FFEE, swarm run, expert bot · base skin', 4, 16);
+  ctx.drawImage(tiles[0].im, 0, 46, tw, th); label(tiles[0].text, 4, 38);
+  // the seal radius on the full frame
+  ctx.strokeStyle = '#37d6e0'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(px * SC, 46 + py * SC, 48 * SC, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = '#ffd24a'; ctx.strokeRect((tx - 36) * SC, 46 + (ty - 36) * SC, 72 * SC, 72 * SC);
+  for (let i = 0; i < crops.length; i++) { const x = tw + 30 + i * 300, y = 60; ctx.drawImage(crops[i].im, x, y, 288, 288); const [nm, dbg] = crops[i].name.split(' ['); const [l1, l2] = nm.split('|'); label(l1, x, y + 310); label(l2, x, y + 330); label('[' + dbg, x, y + 350); }
+  window.__found = { tx, ty, px, py, d, frame: f0 };
+}
+window.__tiles = tiles.length; window.__done = true;
+</script></body>

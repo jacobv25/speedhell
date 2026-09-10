@@ -49,8 +49,30 @@ export function makeKit() {
   // further across and 40f later (WS05: never a vertical tank stack; a diagonal
   // line reads as a route). opts.spd adds scroll speed; opts.half = half-tracks
   // that creep toward your column (behaviour escalation, T2).
+  // r81 `swarm` (Lab `s2tanks` → g.tune.s2tanks, wiki §13.9 / Q27 — Jacob: "many
+  // more tanks, approaching from the sides with lower HP"): the SAME n events
+  // (no extra timeline entries — the caravan pull reads the next event's t, so
+  // the current shape stays byte-identical) each spawn a PAIR from one flank at
+  // mid-height (y 96/120/144), sides alternating per event (WS05 Toaplan: spawn
+  // on opposite sides, never both at once — Q21). They roll inward along a rail
+  // (vx 1.8) to `bobX` — the leader crosses farthest, its trailer stops 64 px
+  // short, so the file lands as a diagonal again — then scroll with the stage
+  // (stage.js case 7, phase 1 → 0). The swarm tank is ONE tier carried on the
+  // entity: hp 12 (LOWER by design — popcorn 2 · swarm tank 12 · turret 24 —
+  // never inflation; value / window untouched), flank entry, and holdT 1 = a
+  // polite prong every 55 f instead of 75 (case 7); angry at 4 s as every tank.
+  // opts.flank marks the files the knob reshapes; without it a file keeps r80's shape under either knob.
   const tankFile = (t, side, n, opts = {}) => {
     for (let i = 0; i < n; i++) at(t + i * 40, (g) => {
+      if (g.tune.s2tanks && opts.flank) { // only the files that ask for it (s2.js: S1 + S5) — S2's tanks behind the wall stay r80: a wall AND a flank file is two strong things at once (WS05)
+        const s = i % 2 ? -side : side, y = 96 + (i % 3) * 24, far = s < 0 ? W - 56 - i * 22 : 56 + i * 22;
+        for (let k = 0; k < 2; k++) {
+          const e = spawnEnemy(g, 7, s < 0 ? -14 - k * 34 : W + 14 + k * 34, y, { vx: -s * 1.8, vy: 0.55 + (opts.spd || 0), side: opts.half ? 2 : 0 });
+          if (!e) continue;
+          e.phase = 1; e.bobX = far + s * k * 64; e.hp = e.prevHp = 12; e.holdT = 1; // holdT 1 = the swarm tier (stage.js case 7: fires every 55 f)
+        }
+        return;
+      }
       const x = side < 0 ? 60 + i * 45 : W - 60 - i * 45;
       spawnEnemy(g, 7, x, -16, { vy: 0.55 + (opts.spd || 0), side: opts.half ? 2 : 0 });
     });

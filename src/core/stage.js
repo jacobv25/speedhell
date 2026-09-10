@@ -372,9 +372,13 @@ export function updateEnemy(g, e) {
       e.fireT++;
       const angryT = e.vulnAt >= 0 && g.frame - e.vulnAt > 240;
       e.y += e.vy || 0.55;
+      if (e.phase === 1) { // r81 swarm flank entry (kit.js tankFile): rolls inward along its rail to bobX, then it is a rail tank like any other
+        e.x += e.vx;
+        if ((e.vx > 0 && e.x >= e.bobX) || (e.vx < 0 && e.x <= e.bobX)) { e.x = e.bobX; e.vx = 0; e.phase = 0; }
+      }
       if (e.side === 2) { const tx = Math.max(40, Math.min(W - 40, g.player.x)); e.x += Math.max(-0.35, Math.min(0.35, (tx - e.x) * 0.01)); } // half-track: creeps toward your column
-      const everyT = angryT ? 40 : 75;
-      if (e.fireT % everyT === 40 && mayFire(g, e)) aimedFan(g, e.x, e.y + 6, angryT ? 4 : 2, angryT ? 0.7 : 0.25, angryT ? 2.9 : 2.5);
+      const everyT = angryT ? 40 : (e.holdT === 1 ? 55 : 75); // r81 swarm tier (holdT 1, kit.js): a brisker polite cadence (Q27); every other tank is r80's
+      if (e.fireT % everyT === 40 && (e.phase === 0 || (e.x > 12 && e.x < W - 12)) && mayFire(g, e)) aimedFan(g, e.x, e.y + 6, angryT ? 4 : 2, angryT ? 0.7 : 0.25, angryT ? 2.9 : 2.5); // a flank tank still off the field's edge fires nothing (canon gate 1)
       break;
     }
     case 8: { // r80 BONE WALL segment — destructible terrain (WS05 theme; Garegga

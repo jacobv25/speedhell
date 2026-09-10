@@ -329,7 +329,7 @@ export const TURRET_PLATE = [[-9, -13], [9, -13], [13, -9], [13, 9], [9, 13], [-
 // nose-DOWN (+y); the flying types rotate themselves by step*K.STEP.
 // hit ⇒ every fill white · flick ⇒ dim flat armour fill (rule 5).
 // ---------------------------------------------------------------------------
-function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra, K) {
+function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra, K, lvl = 0, tell = 0) { // r81: tell = sealed (renderer drawEnemy) — the cannon's muzzle is capped
   const { poly, disc, STEP } = K;
   const F = (c) => { ctx.fillStyle = hit ? UI.white : c; };
   const S = (c) => F(flick ? BOSS.armor : c);
@@ -390,11 +390,11 @@ function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra, K) {
       S(GROUND.shade); disc(ctx, 0, 0, 9);
       S(angry ? HEAVY.stripe : GROUND.base); disc(ctx, -1, -1, 7);
       S(GROUND.hi); ctx.fillRect(-5, -6, 4, 2);
-      ctx.save(); ctx.rotate(barrel);
+      ctx.save(); ctx.rotate(barrel); if (tell) ctx.scale(0.65, 1); // r81 tell: retracted along its axis
       S(GROUND.shade); ctx.fillRect(0, -3, 16, 6);
       S(GROUND.base); ctx.fillRect(3, -2, 13, 4);
-      S(GROUND.hi); ctx.fillRect(3, -2, 13, 1);
-      S(GROUND.shade); ctx.fillRect(13, -3, 3, 6);
+      if (!tell) { S(GROUND.hi); ctx.fillRect(3, -2, 13, 1); }
+      S(GROUND.shade); ctx.fillRect(13, -3, 3, 6); if (tell) { S(GROUND.out); ctx.fillRect(14, -3, 2, 6); } // r81 tell: muzzle capped, no highlight
       ctx.restore();
       break;
     }
