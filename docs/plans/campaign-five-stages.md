@@ -147,6 +147,21 @@ template (L4).
 - **Numbers to start from:** needle speed as S1; tank hp 24 (turret class);
   bone wall 24 hp (turret class), pays 3 items; hull core 220 (elite class) — no new hp
   tiers.
+- **Stage 2 — built r80 (2026-09-09, core pass; wiki §13).** As specified, with
+  these deviations: (1) the hull's deck turrets are stage 1's turret type riding
+  the barge (`holdT` 2), and the core is *armored* until the deck is dead rather
+  than merely "chain-linked" — the armor drop is the link; (2) tanks and the hull
+  have no contact collision (the ship flies over ground — Toaplan), the bone wall
+  does (it is the barrier); (3) the Hearse's escort comes from one side at a
+  time and it has no arrival bloom (the Reliquary keeps that signature); (4) the
+  Bell's arcs are thrown from the swing's ENDS on a 30 f beat, not a stream (the
+  HOMAGE curtain guardrail); (5) the clock: pinned-expert 1:53–2:14 vs the 1:40
+  target, boss 48–55 % vs 30–50 % — rule 1's remedy (a lower multiplier for the
+  Bell) is Jacob's call (wiki Q24); (6) S1–S2 have no mid-or-bigger every 10 s
+  (Psikyo#5) — groups carry the metronome there, the rush has a mid; (7) the
+  timeline helpers live in `stages/kit.js` for stage 2+, s1.js keeps its inline
+  copy (byte-identical rule). Cute-occult creatures, a stage-2 cue, the referee
+  control run and the Booth debrief are the next passes (§7's cooldown applies).
 
 ### Stage 3 — THE CANDLE SEA (the set-piece climax)
 - **Place ramp:** open sky over a sea of votives → the moth shrine → the

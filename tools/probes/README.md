@@ -15,3 +15,9 @@ All import the core by ABSOLUTE path (adjust if the repo moves).
   faked two-stage run (`STAGES = [s1, s1]`) asserting the carry-over — rng objects
   unchanged, stock / score carried, chain reset, `g.level`, the final `'clear'`.
   Imports by RELATIVE path (runs in any worktree). Exit 1 on a failed assert.
+- `stage2-probe.mjs [seedsHex]` — r80 STAGE 2 (THE BONE RAIL): the referee's four
+  bots on `startRun(g, 0, 1)` over seed C0FFEE + the six robust seeds (outcome,
+  clock, time to boss, score, speed-kill rate per type, deaths per section, max
+  bullets, timeouts, dead air, boss forms reached), the expert with lives pinned
+  (the clock and every form), and the two-stage campaign with its carry-over.
+  Builder instrument — the stage-2 control run in `test/sim.mjs` is Jacob's.

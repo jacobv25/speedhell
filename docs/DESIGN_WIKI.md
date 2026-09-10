@@ -15,21 +15,24 @@ gating/density/ground-layer, hitbox display, playtest interviewing, ZeroRanger �
 see `research/README.md` for the roadmap state). This wiki is the explainer
 that sits underneath them.*
 
-Last updated: 2026-09-09 (r79: extend A1 + one-bomb refill; r78: CAMPAIGN INFRASTRUCTURE — stage modules (`src/core/stages/`), `g.level`, `startRun(g, atT, level)`, `nextStage`, a dormant clear → receipt → briefing → next-stage flow, stage select on the PRACTICE row only once a second stage exists; stage 1 byte-identical to HEAD (sim, shots replay, Booth replay); Jacob's override to start the stages 2–5 route — new §12; r77: SHOT LOOK DECIDED — `heavy` shipped as THE player shot (Jacob: "heavy is obviously the best"), the `shotLook` row + the rect and r75 bolt paths deleted, HOW TO card shows the bolt, Q22 decided; r76 EXPERIMENT: shotLook gains `heavy` — flame muzzle, 28 px bolt + echo + trail, messy stream, layered impact, hit click, shimmer (open Q22); r75 EXPERIMENT: the player shot as a BOLT — pixel bolt + trail + muzzle strobe + impact blob in the Lab (open Q22); r73 EXPERIMENT: boss parts bite back — clock / inherit / burst in the Lab (open Q17); r72: boss phase timeout 24s → 35s; §5.2b escalation clock written for the playtests; r71: boss hp 3× shipped — Jacob's verdict, Q16 decided; r70 EXPERIMENT: boss hp 1×–3× in the Lab; r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
+Last updated: 2026-09-09 (r80: STAGE 2 — THE BONE RAIL, core pass — the ground layer (rail tanks, bone walls, the hull with its turret deck), THE HEARSE (chained anchor on a pendulum), THE BELL (three forms; pendulum arcs), `STAGES = [s1, s2]` so the r78 seam / stage select are LIVE, base-skin drawing, `tools/probes/stage2-probe.mjs` — new §13; stage 1 byte-identical; r79: extend A1 + one-bomb refill; r78: CAMPAIGN INFRASTRUCTURE — stage modules (`src/core/stages/`), `g.level`, `startRun(g, atT, level)`, `nextStage`, a dormant clear → receipt → briefing → next-stage flow, stage select on the PRACTICE row only once a second stage exists; stage 1 byte-identical to HEAD (sim, shots replay, Booth replay); Jacob's override to start the stages 2–5 route — new §12; r77: SHOT LOOK DECIDED — `heavy` shipped as THE player shot (Jacob: "heavy is obviously the best"), the `shotLook` row + the rect and r75 bolt paths deleted, HOW TO card shows the bolt, Q22 decided; r76 EXPERIMENT: shotLook gains `heavy` — flame muzzle, 28 px bolt + echo + trail, messy stream, layered impact, hit click, shimmer (open Q22); r75 EXPERIMENT: the player shot as a BOLT — pixel bolt + trail + muzzle strobe + impact blob in the Lab (open Q22); r73 EXPERIMENT: boss parts bite back — clock / inherit / burst in the Lab (open Q17); r72: boss phase timeout 24s → 35s; §5.2b escalation clock written for the playtests; r71: boss hp 3× shipped — Jacob's verdict, Q16 decided; r70 EXPERIMENT: boss hp 1×–3× in the Lab; r67: Lab catch-up — 2× chunky explosions + heavy kill sound shipped, rows deleted; referee bot fix + recert at r65 — 16 green / 1 red; r65: midboss timeout 23s → 35s (design change, Jacob); referee recert at r64; r64: neon-vector + graphic-pop skins retired; r63: r59 needle caste merged into the skins line; r62: cute-occult is the game's look — Jacob's verdict; r61: four art skins merged for Jacob's playtest; r60: art SKINS — renderer split into skins/*.js, four concept directions built in parallel; r59: bullet caste by source — needles = special tier's aimed fire (design change, Jacob); r58: heading steps 16 → 32 after playtest; r57: ART_BIBLE Round 1 — pixel grid, named palette, family rims, pixel-disc bullets (renderer-only); r56: sound test z-order fix; r55: SOUND TEST card in OPTIONS; r54: kill sound weight in the Lab (open Q14); r53: speed-kill reward dressing (open Q13); Pillar 3 amended: modes, not a slider — §11 mode roadmap; r52: chunky explosion look in the Lab (open Q12). Reds = midboss bot-priority question only).
 
 ---
 
 ## 1. The game in one paragraph
 
-One stage, ~1.5–2 minutes for an expert, ~4–5 for a practiced human. A 320×427
+Two stages (r80; the campaign is five — Pillars, plan `docs/plans/campaign-five-stages.md`),
+each ~1.5–2.25 minutes for an expert, ~4–5 for a practiced human. A 320×427
 field, fixed 60Hz, seeded deterministic logic (the same seed and inputs always
-produce the same run — this is what makes the bot referee possible). Eight
-sections: popcorn intro → turret alley → mid gauntlet → midboss → rush → elite
-pair → release → 3-phase boss. You have 3 lives and 2 bombs; a death restores
-bombs to 2. Score is the only progression. There is no rank, no difficulty
-slider, no unlocks. Today there is one mode (arcade); the mode roadmap is §11.
-The code can hold more stages than it has (r78, §12) — with one stage module
-nothing about the run above changes.
+produce the same run — this is what makes the bot referee possible). Stage 1,
+THE CRYPT, is eight sections: popcorn intro → turret alley → mid gauntlet →
+midboss → rush → elite pair → release → 3-phase boss (§3–§5). Stage 2, THE
+BONE RAIL (§13), adds the ground layer: tank column → bone-wall breach → hull
+turret deck → the Hearse → rail rush → release → the Bell. You have 3 lives
+and 2 bombs; a death restores one bomb (r79); lives, bombs and score carry
+across the seam (§12). Score is the only progression. There is no rank, no
+difficulty slider, no unlocks. Today there is one mode (arcade); the mode
+roadmap is §11.
 
 ## 2. Scoring — "stopwatches, not run time"
 
@@ -532,6 +535,13 @@ differentiate by *source* (HOMAGE L6). What the genre does keep: elongated
 bullets travel along their long axis, bullets that move together look alike,
 ≤3 families, white core = hitbox — all retained. Rubric S2-MUST line
 rewritten under Jacob's authorization; HOMAGE L6 amended.
+
+**r80 (stage 2).** The tier gains the hull core (type 9, elite class):
+`NEEDLE_TIER = { 1, 3, 4, 5, 6, 9 }`. Tanks (7) and bone walls (8) are turret
+class and fire pink; the Hearse (type 4) and the Bell (5) with its parts (6)
+are in the tier by type. No new bullet shape: the Bell's pendulum arcs are
+pink rounds from a moving emitter (§13.5) — a dialect of *motion*, so the r20
+display contract is untouched.
 ## 7. The referee (how "balanced" is decided)
 
 `test/sim.mjs` runs the real core headlessly with scripted bots (expert,
@@ -815,6 +825,25 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     bolts), not the cap rule. If a ZeroRanger-like "no cap" feel is wanted,
     the honest alternative is a higher cap + damage falloff with distance,
     which keeps the invitation; a question for Mark/boghog, not decided.
+24. **The Bell at 3× vs the Psikyo clock** (r80, §13.7). Plan §4 rule 1: a
+    boss at 3× must fit 30–50 % of a ≤ 2:15 expert clock or run at a lower
+    multiplier. Measured with the lives-pinned expert: the Bell takes 55–74 s
+    of a 1:53–2:14 clock = 48–55 %, one P2 timeout on one of seven seeds.
+    Options: leave it (the bot dies 4–8× in the fight — a human who does not
+    finishes faster), a 2.5× multiplier for the Bell alone (`tune.bossHp` is
+    the knob), or shorten the walker's dwell. Hp is Jacob's; not decided.
+25. **Deck-turret and hull windows** (r80, §13.3). The expert speed-kills
+    0/4 deck turrets and 0/1 hull cores on every seed: the turrets' 150 f
+    clocks start while the barge is still descending (vulnerable at y 16, the
+    deck parks at y 120 ~100 f later), and the core's 380 f clock starts the
+    frame the deck falls — the bot is still on the last turret. Are those the
+    honest windows for a human (the r10 mid grammar: a race, not a slog), or
+    should the deck's clocks start at park? Playtest question; no change.
+26. **Ground = no contact** (r80, §13.2). Tanks and the hull have no contact
+    collision (the ship flies over Toaplan's tanks), the bone wall DOES (it is
+    the stage's physical barrier — T3). Two ground rules on one layer; the
+    alternative is walls as air-level obstacles drawn as such. Readability
+    (Pillar 6) decides in the Booth.
 
 ## 9. Practice notes (for humans)
 
@@ -1210,12 +1239,38 @@ is placement, not authoring time. Not scheduled.
 its infrastructure pass (§7 step 1) shipped at r78 — see §12. The mode order above
 is unchanged; the campaign grows *Arcade*, it is not a mode.
 
-## 12. Campaign (infrastructure, r78 — no stage content)
+## 12. Campaign (infrastructure r78 — LIVE at r80 with `STAGES = [s1, s2]`)
 
 *Jacob, 2026-09-09: "i kinda wanna go down the stage 2-5 route. even though stage 1
 is not perfect. im getting really tired of playtesting it." — his override of the
-plan's "settle stage 1 first" gate (§7 step 0). This pass is §7 step 1 only: the game
-can now hold N stages while stage 1 stays byte-identical. Nothing new to play.*
+plan's "settle stage 1 first" gate (§7 step 0). r78 was §7 step 1 only: the game
+could hold N stages while stage 1 stayed byte-identical.*
+
+**r80 status — everything below is LIVE.** `stages/index.js` is `STAGES = [s1, s2]`
+(s2 = THE BONE RAIL, §13). What that switched on, with no further code: a stage-1
+clear now ends in `'stageclear'` → receipt (`STAGE 1 CLEAR`, the stage line) →
+briefing card `STAGE 2 — THE BONE RAIL` → `nextStage` (lives, bombs, score, the rng
+stream carried; the extend counter carried) → the stage cue restarts; the PRACTICE
+row gains `STAGE 2 — THE BONE RAIL` plus its seven `ST2` sections; `?level=1` and
+`speedhell.level` work; the Booth's `?level=1`; the board stamps `ST2`. New at r80
+in the module contract: a stage may export **`enemyUpdate[type]`** — per-type
+update hooks it owns (`game.js` update loop: hook → else boss hook → else the
+shared `updateEnemy`); stage 1 exports none, so every one of its enemies takes the
+old path. Stage 2 owns type 4 (the Hearse), 10 (its anchor) and 6 (the Bell's
+parts) that way. `advanceBossPhase(g, e, killed, fade, parts = spawnParts)` gained
+the parts-spawner argument; the camp governor, entrance, burn telegraph, banded
+sweep and timeout were MOVED verbatim out of `updateBoss` into exported helpers
+(`campGovernor`, `bossEntrance`, `bossBurn`, `bandedSweep`, `bossTimeout`) so the
+Bell shares them instead of copying boss 1 (plan §6). Measured: `node test/sim.mjs`
+on the r80 tree equals the r79 HEAD control in every run, robust seed, check and
+the determinism string (`6208:82430:146:0:-1`), with ONE cosmetic difference — the
+passive-human's stage-1 outcome string reads `stageclear` instead of `clear` because
+the run no longer ends there; every number on that line is identical.
+**Referee consequence for Jacob:** `sim.mjs`'s `s7_clearable` / `s7_robust` test
+`outcome === 'clear'`; with two stages a clearing stage-1 expert reads
+`'stageclear'` and would go red — today it does not show because the r79 expert
+game-overs on stage 1's boss. The stage-1 recert needs a one-word referee edit
+(`'clear' || 'stageclear'`), a Jacob-authorized commit, not a builder's.*
 
 **Module layout.**
 - `src/core/stages/s1.js` — THE CRYPT. Exports `buildTimeline()` (the r77
@@ -1313,6 +1368,249 @@ and the Q8 suicide-for-bombs price (§5 B) *before stage 2 is built*; the Pillar
 identity line "V1 = one full stage" (this pass does not edit the pillars); the
 per-stage vs once stock bonus above; the S5 rubric amendment the Twin Moths need
 (plan §3); which stage's pass opens next (plan §7: stage 2, the ground layer).
+
+## 13. Stage 2 — THE BONE RAIL (r80, core pass)
+
+*Built 2026-09-09 (Jacob: "build stage 2") from plan §3; this is the core + a
+base-skin drawing + a probe. Cute-occult creatures for every new thing are a
+later pass; in cute-occult / synthwave the new types and the two bosses fall
+back to the base painter (renderer `drawEnemy`, r80). Music reuses the stage
+track and the boss track (the `SFX.BOSS` cue switches tracks as on stage 1).
+Module: `src/core/stages/s2.js`; the shared machinery it stands on: `stage.js`
+(`ENEMY_DEFS` 7–10, `updateEnemy` cases 7–10, the r18 seal, the boss ritual
+beats), `stages/kit.js` (the timeline helpers lifted from s1 — s1.js itself
+untouched), `patterns.js staticFan`. Probe: `tools/probes/stage2-probe.mjs`.
+Peeks: `img/r80-s2-sections.png`, `img/r80-s2-boss.png`, `img/r80-s2-hearse.png`.*
+
+### 13.1 Place ramp (L1) and the sections
+
+Catacomb mouth → ossuary canal → the rail yard → the hull's dock (the barge
+itself is an enemy; the dock is the landmark) → bell-tower approach → the
+arena. Base skin: `S2_LANDGEO` + `landmark2` in `skins/base.js`, FIELD-band
+values; the other skins show their stage-1 landmark for the section index
+(said so, plan §6). The expert reaches the boss gate at **0:56–1:01** on
+seven seeds (Psikyo#1: 42–80 s).
+
+| # | stageT | Section | What (reps ≤ 2, escalating) |
+|---|---|---|---|
+| S1 | 120 | TANK COLUMN | rep 1: a four-tank **staircase** from the left (x 60 + 45·i, every 40 f — WS05: never a vertical tank stack; a diagonal reads as a route) + crossers over it from the right (y 88); rep 2 (denser): five from the right, faster, popcorn from the left, then three **half-tracks** that creep toward your column (behaviour, not count [T2]) |
+| S2 | 760 | BONE-WALL BREACH | rep 1: a wall of 7 segments across 10 slots (x 25 + 30·i), one 90 px lane at slot 2–4 (centre x 115), crossers; rep 2: the lane switches sides (slots 6–8, centre 235) with tanks rolling down behind it and divers |
+| S3 | 1400 | HULL TURRET DECK | the barge parks at y 120 with four deck turrets at (−58,−6) (−22,16) (22,16) (58,−6); crossers from each side in turn (y 60), popcorn, crossers (y 88); one rep — it is the stage's elite |
+| S4 | 2400 | THE HEARSE | gate; §13.4 |
+| S5 | 2460 | RAIL RUSH | tanks (−) + crossers (+) → risers from ONE lane edge (x W−60) → a mid at x W/2+40 (the midsize metronome, Psikyo#5) → half-tracks (+) + divers (−) → risers from the other lane edge (x 60) |
+| S6 | 2880 | RELEASE | cancel wall 30/bullet + 14 × 150 over the bell tower, ending empty (L2, BRDA#9); WARNING at 3010 (70 f, gate) |
+| S7 | 3080 | THE BELL | gate; §13.5 |
+
+Flow (wiki Q21, Jacob's standing point): one strong thing at a time (the
+hull, the Hearse, the mid, the Bell never overlap); popcorn arrives from one
+side at a time — the Hearse's escort pair comes from ONE side and alternates,
+the rush's risers climb one lane edge at a time (`risersOneSide`, x 60 /
+W−60, not the screen edge); no lane at the screen edge (the walls' lanes sit
+at x 115 / 235).
+
+### 13.2 The niche — the ground layer, and how sealing is taught
+
+Stage 1 has one ground enemy (the turret) and one place where the r18
+proximity seal matters (the alley). Stage 2 is *made* of ground: everything
+new is sealed inside 48 px, so the tool the stage teaches is "go to the gun".
+
+- **Rail tank** (type 7; hp 24, 500 / 1,000, window 150 f, r 12 — turret
+  class). Scrolls with the stage at 0.55 px/f (rush: +0.15); one polite
+  2-round aimed prong (spread 0.25, 2.5 px/f) every 75 f from vulnerability;
+  angry at 4 s on screen: 4-round / 0.7 / 2.9 every 40 f. Half-tracks (`side`
+  2) creep ≤ 0.35 px/f toward your column. **No contact:** the ship flies
+  over it (`game.js GROUND` — Toaplan/Psikyo tanks; the research doc's Q1
+  table). Sitting on a tank is its reward; the column's other tanks are the
+  pressure. Pink fire (not in the needle tier).
+- **Bone wall** segment (type 8; hp 24, 500 / 1,000, 150 f, r 14). Scrolls at
+  0.8; its hidden gun fires ONCE as it crosses y 140 (~3.3 s after spawn) — a
+  3-round aimed prong (0.4 / 2.3) — unless it is dead or you are on it
+  (sealed). Below that it is a silent **physical barrier** (contact: r 14 + 3
+  at 30 px spacing leaves no gap — the one ground type that collides, T3
+  "checkmate from physical properties"). Breach three segments where you
+  stand (~0.6 s point-blank) and the loot spills — **3 items × 100** per
+  segment (`killEnemy`, fixed offsets, no rng; garnish-priced under the S7
+  coin, S6) — or take the lane it gives you, which is where the next wave
+  aims. Destructible-terrain theme (WS05); Garegga houses / Psikyo gold
+  under buildings (research doc).
+- **The hull** (type 9; hp 220, 3,000 / 6,000, 380 f, r 20 — elite class).
+  An ossuary barge ~164 px wide (the deck is drawn; the *hittable* core is
+  the reliquary drum at its centre, r 20 — bible §6's "visibly not body"
+  clause). Enters at 1.0 px/f, parks at y 120 for 800 f, leaves at 0.9.
+  Four **deck turrets** are ordinary type-2 turrets with `holdT` 2: position
+  slaved to the hull's (vx, vy) offset, the same turret sentence (3 / 0.4 /
+  2.3 every 85 f, angry 7 / 1.0 / 3.1 every 34 f), each sealed on its own —
+  the deck is wider than the seal, so you can never silence all of it at
+  once. The core is **armored until the deck is dead** (`armorUntil` = ∞ at
+  spawn; `updateEnemy` case 9 drops it the frame the last deck turret dies —
+  DDP#4 "killing its turrets chain-links into a core kill"); then the 380 f
+  window starts and its hidden gun opens: 4-needle aimed fans (0.5 / 3.0)
+  every 75 f — cyan, it IS the special tier. Its death fires the elite's
+  LOCAL 30/bullet cancel (r 90). No contact. Ignored, it leaves with
+  whatever is still bolted to it — 9,000+ unpaid.
+
+Fire gating is the r18 canon only — no new gate. The bot cannot learn the
+lesson: the referee's `type >= 4` homing (bot.mjs, untouched) now closes on
+tanks, walls and the hull too, which is where its stage deaths come from
+(one per run in S3–S5); Jacob's playtest is the test of the teaching.
+
+### 13.3 Windows and the route
+
+Every wave has its fuse: tanks fire at vulnerability + 40 f, walls at y 140,
+deck turrets on arrival (the r17 arrival shot — they honour the seal), the
+core the frame it opens. The expert bot speed-kills tanks 5–6 / 17–21 and
+walls 3 / 5–13 per run — it does not route for ground targets (Q25).
+Loot: 21 wall items × 100 = 2,100 if every segment falls; the S6 release
+14 × 150. Stage-2 budget for the lives-pinned expert: 140–183 k vs stage 1's
+150–190 k (plan §5: 1.0–1.3× through targets, no multiplier).
+
+### 13.4 The midboss — THE HEARSE (`s2.js updateHearse`, type 4 through `enemyUpdate`)
+
+The same row as stage 1's midboss (hp 400, 8,000 / 16,000, window 700 f,
+r 26, never sealed, `MIDBOSS_TIMEOUT` 35 s, the r9 speed-gated cancel and the
+8 × 800 shower in `killEnemy` by type). Enters to y 80, then **crawls** along
+the rail one stop at a time toward your column — stops at x 60 / 110 / 160 /
+210 / 260, 2.2 px/f, dwell 70 f (phase B: 3.0 / 40) — a stalker, not the
+Reliquary's tanh sweep. Its gimmick: a **chained anchor** (type 10; hp 24,
+1,000 / 2,000, 300 f, r 10 — part class) on a visible pendulum: chain 105 px
+(drops over the first 60 parked frames — the opening telegraph; no arrival
+bloom, that is the Reliquary's), ±1.0 rad, period 3.5 s, deterministic
+(`bobX/bobY` on the Hearse, the renderer draws the chain). The anchor is a
+**physical hazard** — contact r 10 + motion, no bullets — and the speed-kill
+sub-part: point-blank on the Hearse means standing inside the swing (T3). Kill
+it and the hazard is gone (parts behave like stage 1's; Q17 open).
+Fire — phase A: aimed 3-needle fans (0.4 / 3.1) from the two lanterns (x ∓ 20)
+every 80 f, a laned static arc (9 / 1.6 / 1.5, centre gap) every 150 f, the
+leave-alive hose past 780 f; phase B (hp < 45 %, announced with a ring the
+frame it flips, r14 grammar): rings every 130 f, bounded spray every 75 f,
+bendy pair past 950 f. Escort: a crosser pair from ONE side every 150 f,
+alternating (Q21 addendum). "No breather after it dies" [T2]: the gate opens
+on the kill, the rush's first tanks are at stageT 2460.
+Measured (7 seeds): expert kill 7.7–10.9 s (in-window), aggressive-human
+9–12 s, passive-human 23–30 s (no timeouts); the anchor dies to the expert
+in ~10 f of point-blank (`img/r80-s2-hearse.png` uses the passive bot so the
+pendulum lives long enough to swing).
+
+### 13.5 The boss — THE BELL (`s2.js updateBell`, three forms on the r6 ritual)
+
+Ritual as stage 1's, by construction: the S6 scoreless sweep + cancel, WARNING
+70 f over an emptied field, `bossEntrance` (90 f armored descent, parts on
+the last beat), `bossBurn` at each handoff, `advanceBossPhase` (cancel wall,
+item shower with the late-kill fade, 60 f armor, `BOSS_PHASE_HP` 390 / 402 /
+405 — the r71 3×), `bossTimeout` (35 s, flee telegraph), the camp governor
+(`campGovernor`, moved verbatim), the escalation clock `k` (§5.2b). Parts
+are type 6 through `enemyUpdate` (`updateBellPart`): ≥ 1 per form, each
+hosting an emitter, dying with its form.
+
+**Dialect (L6, WS03 #6 "emitter movement distorts the pattern"): pendulum
+arcs.** A clapper swings under the boss on a chain (deterministic; `bobX/bobY`,
+drawn by the renderer as a bob on a dotted chain) and throws a **static 5-round
+fan along the chain's radial** on a 30 f beat — but only at the swing's ends
+(|θ| > 0.45 rad), so the fans leave from the flanks pointing down-and-out and
+trace the arc across the lower field; the column under the tower is the aimed
+fire's, the flanks are the arcs'. Grouped beats, never a curtain (HOMAGE
+guardrail; an 8 f stream was the first draft and read as a wall). Nothing in
+the sections fires from a moving emitter (S3b-6). Pink rounds — no new shape.
+
+- **P1 — BELL TOWER** (hp 390). Near-static: the tower drifts ±40 px (or the
+  governor's safe spot when latched) at ≤ 1.2 px/f, y 93. Chain 96 px, ±1.05
+  rad, period 224 f. Arcs 5 + min(rep, 2) rounds / 0.9 rad / 2.1·k; tower
+  aimed fan 3 + min(rep, 3) needles / 0.5 / 3.1·k every 60 f; rep ≥ 3 an
+  off-beat 4-round arc. Parts: two **lanterns** at ±36 (hp 24) firing 3-needle
+  aimed fans every 90 f — the tower's aimed pressure lives in them: kill both
+  and the tower is arcs only (L7 "structure changes as you win").
+  **Point-blank invitation:** under the tower, above the clapper's swing
+  (y 93–140), nothing but the aimed fans reaches you.
+- **P2 — BELL WALKER** (hp 402). Hard strafing: the bell drops to y 118 on
+  strut legs and **steps rail to rail** (x W/2 ± 100, 4.2 px/f — faster than
+  the ship) to the rail on the far side of the player, never the same rail
+  twice for a player who moves (boss 1's P1 rule, `pickSafeX` when latched),
+  dwell 170 f. Static **flank sprays** outward from the rim (4 / 0.8 / 2.2·k
+  at π/2 ± 0.55 from x ± 24) every 50 f leave the column UNDER it clear — the
+  safe spot, re-earned every step (L7); a **stomp ring** (12 + 2·min(rep, 4)
+  at 1.5·k) on each landing; the clapper (chain 56) keeps a slower beat (every
+  36 f, |θ| > 0.3). Part: one **rope node** at +38 (hp 56) — the walker's only
+  aimed emitter (bounded spray 7 / 0.6 / 2.0–3.0 every 70 f), asymmetric on
+  purpose like P2's node on stage 1.
+- **P3 — THE CLAPPER** (hp 405). Bare core on the banded sweep (ω 0.005) with
+  the ±22 px bob; the desperation medley recombines only what came before:
+  the bare-core ring (14 + 2·min(rep, 4) at 1.45·k, t = 20), **two** clappers
+  (chain 70, mirrored, off-beat) throwing P1's arcs, P2's flank sprays twice a
+  cycle; rep ≥ 3 adds rings. Parts: two **relays** at ±38 (hp 24) firing
+  aimed needle pairs every 100 f.
+
+Camp governor: the same code, one property lookup away — P1's slow drift
+uses its safe-spot pick, P2's steps its far-rail rule, P3 its banded sweep
+walls. Parts bite back is Q17, unresolved: parts here behave as stage 1's.
+
+### 13.6 Numbers as built
+
+| Thing | hp | value | window | r | fires | contact |
+|---|---|---|---|---|---|---|
+| Rail tank (7) | 24 | 500 | 150 f | 12 | pink 2-prong / 75 f; angry 4 / 40 f | no |
+| Bone wall (8) | 24 | 500 | 150 f | 14 | pink 3-prong once at y 140 | yes |
+| Hull core (9) | 220 | 3,000 | 380 f | 20 | cyan 4-fan / 75 f once open | no |
+| Deck turret (2, holdT 2) | 24 | 500 | 150 f | 12 | the turret's own | yes |
+| Anchor (10) | 24 | 1,000 | 300 f | 10 | none — motion only | yes |
+| The Hearse (4) | 400 | 8,000 | 700 f | 26 | §13.4 | yes |
+| The Bell (5) | 390 / 402 / 405 | 12,000 / phase | 600 f | 30 | §13.5 | yes |
+| Bell parts (6) | 24 (P2 node 56) | 1,000 | 300 f | 7 | per form | yes |
+
+Zero new hp tiers (plan §4 rule 3). Castes: `NEEDLE_TIER` + 9. Bullet
+families on screen ≤ 3 (pink, cyan, the player's). Draw time on the densest
+frame of the C0FFEE pinned-expert run: **81 bullets in 0.13 ms** (headless
+Chrome, 60 draws averaged; budget 16.6 ms). Max bullets seen by any bot on
+any seed: 104 (an 800-bullet spike in the first draft was a bug — the
+walker's stomp ring re-firing every transit frame — fixed before the numbers
+below).
+
+### 13.7 The probe (`tools/probes/stage2-probe.mjs`, seed C0FFEE + the six robust seeds)
+
+The referee's four bots on stage 2 alone (`startRun(g, 0, 1)`). Remember the
+r79 baseline: at HEAD the same expert **game-overs on stage 1's boss** (4
+deaths in ~30 s of the Reliquary at 3×), so "the bot dies at the Bell" is
+the bot's ceiling at 3× hp, not stage 2's alone.
+
+| bot (C0FFEE) | outcome | clock | to boss | forms | score | kills / speed | deaths by section | max bullets | timeouts | Hearse |
+|---|---|---|---|---|---|---|---|---|---|---|
+| expert | game over in P2 | 1:21 | 0:58 | 2 (P1 11 s) | 119,010 | 106 / 45 | S5 1 · S7 3 | 77 | 0 | 8.3 s |
+| aggressive-human | game over in P2 | 1:22 | 1:00 | 2 (P1 15 s) | 101,400 | 88 / 42 | S2 1 · S4 1 · S5 1 · S7 1 | 75 | 0 | 10.0 s |
+| passive-human | clear (2 lives) | 3:12 | 1:21 | 3 (37 / 36 / 36 s) | 67,550 | 91 / 42 | S4 1 | 99 | 3 (every form) | 30.3 s |
+| blind | game over in S3 | 0:25 | — | 0 | 20,250 | 32 / 12 | S1 1 · S2 2 · S3 1 | 44 | 0 | — |
+
+Across the seven seeds: expert to-boss 0:56–1:01, forms reached 1–2 (P1
+10–22 s when killed), score 79–124 k, deaths 4 (one in S4/S5, three at the
+Bell), max bullets 71–104, dead air 1.3–1.9 s total; aggressive-human 1–3
+forms (one seed clears with 0 lives, P2 timed out); passive-human clears
+every seed with 2–3 lives and three timeouts; blind dies in S3 at 0:25 on
+every seed (its inputs are deterministic). Speed-kill rates, expert: zako
+~32/61, tank 5–6/17–21, wall 3/5–13, deck turrets 0/4, hull 0/1, Hearse 1/1,
+anchor 1/1.
+
+**The clock (expert with LIVES PINNED — probe-only, so every form is
+measured):** clear on 7/7 seeds, **1:53–2:14** (target 1:40; envelope
+1:30–2:15), boss reached at 0:56–1:01, forms P1 11–28 s / P2 19–34 s (one
+36 s timeout, feedf00d) / P3 15–26 s = **55–74 s of boss = 48–55 %** (band
+30–50 %; Q24), deaths at the Bell 4–8, score 140–183 k.
+
+**The two-stage campaign** (`startRun(g)` → seam → stage 2, expert, C0FFEE):
+the honest r79 expert ends stage 1 `gameover f6438 79,790` — nobody reaches
+the seam at r79 without the extend. With lives floored at 1 through stage 1
+(probe-only): stage 1 `stageclear f8461 174,230 / 145 kills / 1 life / 0
+bombs / clearBonus 1,000` → seam: `level 1, stageT 0, lives 1, bombs 0, score
+174,230, chain 0, extended 0, rng the same object` → stage 2 on the continued
+stream: game over in S4 after 0:42 (2 deaths, 1 life in), run total 3:03 /
+209,300. The extend at 400 k is not reached by this bot (plan §5 A1 sized it
+at "an expert's stage-2 clear").
+
+### 13.8 Open questions (this stage)
+
+Q24 (the Bell's share of the clock at 3×), Q25 (deck / hull windows), Q26
+(ground = no contact vs the wall) in §8. Also for the Booth: does the tank
+column TEACH sealing, or does a human just shoot tanks from the bottom (their
+prongs are slow: 2.5 px/f)? Is a 90 px lane in a 320 px field a lane or a
+funnel (WS03 roles)? The Hearse's anchor dies in ~10 f of point-blank — too
+cheap for a "physical checkmate", or exactly the Psikyo fuse?
 
 ## Changelog of decisions recorded here
 
@@ -2432,3 +2730,59 @@ per-stage vs once stock bonus above; the S5 rubric amendment the Twin Moths need
   amendment, per-stage vs once stock bonus, the S5 amendment for the elite pair.
   BUILD r78. `test/sim.mjs`, `CRITIC_RUBRIC.md`, `evidence/`, `DESIGN_PILLARS.md`
   untouched.
+- 2026-09-09 — **r80 STAGE 2 — THE BONE RAIL, core pass** (plan §3 stage 2 / §7
+  step 2; Jacob: "build stage 2"). Built: `src/core/stages/s2.js` registered as
+  `STAGES = [s1, s2]` (the r78 seam, receipt/briefing, stage select and `?level=1`
+  are live); the ground-layer niche — rail tank (7), bone wall (8), the hull (9)
+  with four deck turrets riding it, the anchor (10) — all turret / elite / part
+  class, zero new hp tiers, all sealed by proximity (r18 canon, no new gate),
+  tanks and the hull flown over (no contact), the wall a physical barrier; THE
+  HEARSE (type 4 through the new `enemyUpdate` hook: rail crawler dragging a
+  chained anchor on a deterministic pendulum — a physical hazard + the sub-part
+  speed-kill target; no bloom, one-side escort); THE BELL (three forms on the
+  shared ritual beats, moved verbatim out of `updateBoss`: tower → walker →
+  clapper; dialect = pendulum arcs from a swinging emitter, `patterns.js
+  staticFan`, boss-only); base-skin painters + a stage-2 landmark row, other
+  skins fall back; `tools/probes/stage2-probe.mjs`, `campaign-probe.mjs` on the
+  real table; three peek sheets. New §13, §12 status, Q24–Q26. **Corpus
+  clearance.** *MSX:* density over duration — every section carries a decision
+  (seal or snipe, breach or lane, deck-then-core), the caravan pull compresses
+  what a speed-killer clears, dead air 1.3–1.9 s; expert bias — the deck's core
+  opens only for the player who kills the deck, the walker's safe spot is
+  re-earned; the Psikyo clock is the guardrail: pinned-expert 1:53–2:14, boss
+  48–55 % (*pushback recorded:* over the 1:40 target and the 30–50 % boss band —
+  Q24, a 2.5× Bell is the rule's remedy, Jacob's). *Boghog:* [T1] niches not
+  counts (one niche: ground), chunk-with-escalation (≤ 2 reps, rep 2 = denser +
+  half-tracks), "start hard, scale back" (the first clapper draft was a curtain
+  and was cut to beats); [T2] escalate behaviour (half-tracks, risers later,
+  the walker's steps), "no breather after the midboss" (rush at 2460); [T3]
+  checkmate from physical properties (the anchor, the wall), balance = counters
+  (armor that the deck unlocks, not hp); [WS03] roles named per form (arcs =
+  area denial on the flanks, needles = pressure), #6 moving emitter; [WS04]
+  turrets and tanks don't fly off, sealing + bottom band + top dead zone; [WS05]
+  destructible-terrain theme, never two strong enemies at once, no vertical tank
+  stacks (staircases), nothing at the edges (lanes at x 115 / 235, risers at
+  the lane edge), release paid in loot. *Pushback recorded:* [T1] process order
+  — no stage 2 until the ship roster and the S1 pass settle; Jacob's r78
+  override stands; "work in passes with cooldown" — this is ONE pass, the Booth
+  and the recert come before stage 3. *Pillars:* 1, 2 (speed-kill unchanged;
+  the walls' loot and the extend are visible and binary), 3 (stage select is
+  the practice tool, now live), 4 (stock carries — the campaign probe shows the
+  r79 expert dying at the seam), 5 (the anchor is a real checkmate), 6
+  (readable: ≤ 3 families, no new shape, the densest frame 81 bullets), 7
+  (0.13 ms on the densest frame; pools unchanged). *HOMAGE:* L1 place ramp with
+  guns ON the landmark (the hull), L2 release over the bell tower ending empty,
+  L3 the ritual by construction, L5 fuses on every wave, L6 castes (tier + hull;
+  the dialect is motion, not colour), L7 parts + point-blank under the tower /
+  the walker, Psikyo#1 clock (to-boss 0:56–1:01 inside 42–80 s), Psikyo#5
+  metronome (the rush's mid; S1–S2 rely on groups — a SHOULD, noted), Psikyo#6
+  transform not phase, DDP#4 deck → core. *Stage 1 byte-identical:* campaign
+  probe identity lines (`gameover:6438:79790:139:66:4:0:-1:0` for all four bots,
+  = HEAD), `node test/sim.mjs` = the r79 control in every run / seed / check /
+  determinism (`6208:82430:146:0:-1`), the passive-human's stage-1 outcome now
+  spelled `stageclear` (same numbers). Shell PASS unchanged; shots DIVERGED vs
+  the r65 certificate as at HEAD. Not decided here (Jacob's): Q24–Q26, the
+  stage-2 referee control run + the one-word `sim.mjs` outcome edit (§12), the
+  cute-occult pass for the new creatures, a stage-2 music cue. BUILD r80.
+  `test/sim.mjs`, `test/bot.mjs`, `CRITIC_RUBRIC.md`, `evidence/`,
+  `DESIGN_PILLARS.md`, `stages/s1.js` untouched.
