@@ -165,6 +165,8 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
 
 - **r82 STAGE 3 THE CANDLE SEA merged** (wiki §14; `STAGES = [s1, s2, s3]`; types 11 leader / 12 carrier / 13 moth; midboss Twin Moths = the sanctioned S5 pair; boss the Moth Queen, egg dialect). Expert lives-pinned 1:45–2:03, boss at 1:00–1:02 (42–51 %). Swarm rush = 78 bullets / 45 bodies / 0.14 ms draw (S8). Q29–Q33 open. Decision defaults used: S5 pair exception (rubric edit is sitting UNCOMMITTED in the main tree — Jacob commits it), loop 2 unconditional.
 
+- **r83 THE IDOL skeleton merged** (wiki §16; `s5.js` NOT in `STAGES`; play via `index.html?boss=idol&level=3`). Four forms 220/220/402/405 (option A); expert times out on form 3 THE MIRROR 7/7 (dps denial, not hp — the mirror flees the firing lane, the camp governor bans its fixed point); aggressive-human kills it in 16 s. `quoteS4` hook inert at form-4 t 155 for stage 4's box trap. Q34–Q40 open; hp budget A/B/C table in §16 is Jacob's.
+
 ## State warnings (closeout 2026-09-10, r63–r81 session)
 
 - **Uncommitted, not this session's:** `docs/concepts/README.md` (modified,
