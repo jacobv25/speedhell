@@ -52,10 +52,14 @@ const SEC_STAR = ['#241a3a', '#281c42', '#2c1e3e', '#2e1e44', '#2e1c3c', '#2a203
 const SEC_LAND = ['#1c1430', '#1f1638', '#221836', '#25183c', '#2a1836', '#241c2e', '#1e2234', '#211636', '#2c1836'];
 const BG_WAX = '#2b1e12';  // candle bodies + flames in the far/near layers
 const BG_BONE = '#2c2632'; // bone-white read down into the band
-const BOSS_BG = ['#0c0716', '#140812', '#131018'];
-const BOSS_SLAB = ['#1a1233', '#281216', '#26242c'];
-const BOSS_STAR = ['#2a1c44', '#2c1a1e', '#2c2a32'];
-const BOSS_LAND = ['#221838', '#2a1a20', '#2a2830'];
+// r83: a FOURTH entry each — stage 5's Idol has four forms, so the arena restains
+// once more (S3b-SHOULD). Indexes 0-2 are untouched; index 3 is only ever reached
+// by a four-form boss, and without it drawBackground read `undefined` and left the
+// previous fill on the field (caught by tools/s5peek.html?skin=cute-occult).
+const BOSS_BG = ['#0c0716', '#140812', '#131018', '#160a18'];
+const BOSS_SLAB = ['#1a1233', '#281216', '#26242c', '#2c1230'];
+const BOSS_STAR = ['#2a1c44', '#2c1a1e', '#2c2a32', '#331c40'];
+const BOSS_LAND = ['#221838', '#2a1a20', '#2a2830', '#2a1a3c'];
 // landmark box per section [x, w, h] — one per section, distinct silhouette
 const SEC_LANDGEO = [
   [110, 100, 44], [40, 120, 96], [190, 96, 92], [50, 170, 84], [80, 150, 70],

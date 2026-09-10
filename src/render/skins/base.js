@@ -35,7 +35,13 @@ const UI     = { text: '#cdd3e8', dim: '#8a8fa8', score: '#e8ecf8', lives: '#e8f
                  hudBack: 'rgba(6,8,14,0.55)', bannerBack: 'rgba(6,8,14,0.72)', bombFlash: '#dff6ff' };
 // Boss surface is Round 2 (bible §10); r57 only named what r56 drew.
 const BOSS   = { hull: '#c8cde0', armor: '#3a3f55', burnA: '#e0604a', burnB: '#7a2a22', ember: '#ffb347', strut: '#8a8fa8', hot: '#fff6f0',
-                 cores: ['#ff4fa3', '#37d6e0', ITEM.gold] };
+                 // r83 (stage 5's four-form finale): a FOURTH core slot. The art bible
+                 // (§3 "never a fourth saturated hue", §10 "core colour per phase stays
+                 // pink / cyan / gold") has no fourth hue to give, so form 4 does NOT get
+                 // one — the hollow core burns in the boss row's OWN `ember`, which is
+                 // already sanctioned there for the burn beat. No new hue enters the game
+                 // and the exclusivity rule (pink/cyan = bullets, gold = value) holds.
+                 cores: ['#ff4fa3', '#37d6e0', ITEM.gold, '#ffb347'] };
 
 // FIELD family (bible §3): section place-identity (r5 S5-SHOULD-1) — each stage
 // section gets its own subtle background accent — hue-shifted slabs/stars near
@@ -167,10 +173,13 @@ function landmark3(ctx, sec, x, y, w, h, land, slab, K) {
 }
 // r6 S3b-SHOULD: arena restain per boss phase — deep blue → red-shifted →
 // white-hot dawn (homage BRDA#6), all values inside the washed band.
-const BOSS_BG = ['#0a0e1a', '#130a0e', '#141317'];
-const BOSS_SLAB = ['#111b30', '#261416', '#28262c'];
-const BOSS_STAR = ['#15233c', '#2c181a', '#302e33'];
-const BOSS_LAND = ['#16243e', '#2e1a1e', '#333038'];
+const BOSS_BG = ['#0a0e1a', '#130a0e', '#141317', '#160b12'];
+const BOSS_SLAB = ['#111b30', '#261416', '#28262c', '#2a1626'];
+const BOSS_STAR = ['#15233c', '#2c181a', '#302e33', '#311a2b'];
+// r83: a FOURTH entry each — stage 5's Idol restains once more (S3b-SHOULD, one
+// restain per form). Indexes 0-2 are byte-identical, so stages 1-3 are untouched;
+// index 3 is only ever reached by a four-form boss.
+const BOSS_LAND = ['#16243e', '#2e1a1e', '#333038', '#361d30'];
 
 export const TURRET_PLATE = [[-9, -13], [9, -13], [13, -9], [13, 9], [9, 13], [-9, 13], [-13, 9], [-13, -9]];
 
@@ -232,6 +241,11 @@ function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra, K, lv
   const S = (c) => F(flick ? BOSS.armor : c); // surface fill: armor shimmer applies
   if (lvl === 1 && (type === 4 || type === 5)) { paintStage2Boss(ctx, type, phase, side, prop, hit, flick, extra, K, F, S); return; }
   if (lvl === 2 && type === 5) { paintStage3Boss(ctx, phase, prop, flick, extra, K, F); return; }
+  // r83: stage 5's THE IDOL. Today STAGES = [s1, s2, s3], so the module is only
+  // ever at level 3 (the ?boss=idol dev flag / tools/s5peek.html / the probe) —
+  // hence `lvl >= 3`. When stage 4 registers, its painter is added ABOVE this
+  // line at lvl 3 and the Idol slides to lvl 4 with no edit here.
+  if (lvl >= 3 && type === 5) { paintStage5Boss(ctx, phase, side, prop, flick, extra, K, F); return; }
   switch (type) {
     case 11: { // r82 FORMATION LEADER — the head of a file: a zako's silhouette
       // grown one notch (r 12) with a swept delta and a bright CREST, so the
@@ -414,7 +428,10 @@ function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra, K, lv
       S(BOSS.hull);
       if (phase === 0) { poly(ctx, [[0, -9], [side * 13, -2], [side * 9, 6], [0, 8]]); F(BOSS.cores[0]); ctx.fillRect(side * 3 - 2, -2, 4, 4); }
       else if (phase === 1) { ctx.fillRect(-8, -8, 16, 16); F(BOSS.cores[1]); ctx.fillRect(-4, -3, 8, 6); }
-      else { poly(ctx, [[0, -9], [8, 0], [0, 9], [-8, 0]]); F(BOSS.cores[2]); poly(ctx, [[0, -5], [4, 0], [0, 5], [-4, 0]]); F(UI.white); ctx.fillRect(-1, -1, 2, 2); }
+      else if (phase === 2) { poly(ctx, [[0, -9], [8, 0], [0, 9], [-8, 0]]); F(BOSS.cores[2]); poly(ctx, [[0, -5], [4, 0], [0, 5], [-4, 0]]); F(UI.white); ctx.fillRect(-1, -1, 2, 2); }
+      // r83: a FOURTH part shape for stage 5's form 4 (the relay). Unreachable on
+      // stages 1-3, whose bosses never hold a phase-3 part.
+      else { poly(ctx, [[0, -8], [7, -3], [7, 3], [0, 8], [-7, 3], [-7, -3]]); F(BOSS.cores[3]); disc(ctx, 0, 0, 3); F(UI.white); ctx.fillRect(-1, -1, 2, 2); }
       break;
     }
   }
@@ -494,6 +511,73 @@ function paintStage3Boss(ctx, phase, prop, flick, extra, K, F) {
     F(burning ? BOSS.ember : BOSS.strut); ctx.fillRect(-27, -4, 10, 7); ctx.fillRect(17, -4, 10, 7); // the burnt wing roots
     F(core); disc(ctx, 0, -2, 9);
     F(BOSS.hot); disc(ctx, 0, -2, 4);
+  }
+}
+
+// r83 STAGE 5's final boss in base geometry (cute-occult creatures are a later
+// pass; every other skin falls back here — renderer drawEnemy). THE IDOL's FOUR
+// FORMS (S3b MUST 2: silhouette, movement and dialect all change per form):
+//   P0 THE IDOL              — a seated stone effigy on a plinth: broad, hooded,
+//                              utterly still, one lidded eye for a core.
+//   P1 THE DEMON             — it tears off the altar: horned skull, folded
+//                              wings, the censer hung under it (the chain and
+//                              its bob are drawn by the renderer, not here).
+//   P2 THE PRIESTESS'S MIRROR — the SHIP'S SILHOUETTE at boss scale.
+//   P3 THE HOLLOW CORE       — the stripped body, burnt wing roots, ember.
+//
+// ART-BIBLE DEVIATION, DECLARED (CLAUDE.md: a renderer change stays inside the
+// bible or says where and why it does not). Form 3 draws the PLAYER'S SHAPE on
+// an enemy, which the bible does not cover, and three of its rules pull against
+// it: §3 exclusivity ("violet only on the player"), §6's ladder (a boss "reads
+// as the biggest thing on screen", 84-110 span, vs the ship's 28), and §1's
+// "big things are slow and strong". The resolution keeps all three:
+//   · the SHAPE is the ship's; the PALETTE is the boss's (bone hull, boss armor,
+//     the form's core hue) — not one violet pixel, so S2-MUST-3 holds and the
+//     player still reads their own ship by colour at a glance;
+//   · it is drawn at BOSS SCALE (~86 px span, three times the ship), so the size
+//     ladder is intact and the silhouette reads as an idol wearing your shape,
+//     never as a second player ship;
+//   · it is the only form whose motion matches the player's (3.7 px/f), which is
+//     the point — the lie about the threat class is the story beat.
+// Burn-in and the per-form core hues are boss 1's painter's, exactly.
+function paintStage5Boss(ctx, phase, side, prop, flick, extra, K, F) {
+  const { poly, disc } = K;
+  const burning = extra > 0;
+  const body = burning ? (extra === 2 ? BOSS.burnA : BOSS.burnB) : (flick ? BOSS.armor : BOSS.hull);
+  const core = burning ? BOSS.ember : (BOSS.cores[phase] || UI.white);
+  if (phase === 0) {            // THE IDOL — a seated effigy, dead still
+    F(BOSS.armor); ctx.fillRect(-40, 14, 80, 14);                                     // the plinth
+    F(flick ? BOSS.hull : BOSS.strut); ctx.fillRect(-40, 12, 80, 3);
+    F(body); poly(ctx, [[0, -30], [24, -18], [30, 10], [-30, 10], [-24, -18]]);        // the hooded body
+    F(body); poly(ctx, [[-34, -6], [-24, -14], [-24, 8]]); poly(ctx, [[34, -6], [24, -14], [24, 8]]); // the shoulder wings (braziers ride here)
+    F(flick ? BOSS.hull : BOSS.armor); poly(ctx, [[0, -26], [15, -14], [15, 2], [-15, 2], [-15, -14]]); // the cowl's shadow
+    F(core); poly(ctx, [[0, -16], [11, -8], [0, 0], [-11, -8]]);                       // the lidded eye
+    F(BOSS.hot); ctx.fillRect(-2, -10, 4, 3);
+    F(flick ? BOSS.armor : BOSS.strut); for (let i = -1; i <= 1; i++) ctx.fillRect(i * 12 - 3, 4, 6, 6); // votive niches
+  } else if (phase === 1) {     // THE DEMON — horned, wings folded, censer below
+    F(burning ? BOSS.ember : BOSS.strut); poly(ctx, [[-14, -20], [-26, -38], [-8, -26]]); poly(ctx, [[14, -20], [26, -38], [8, -26]]); // horns
+    F(body); poly(ctx, [[-30, 2], [-16, -22], [16, -22], [30, 2], [18, 20], [-18, 20]]); // the skull
+    F(body); poly(ctx, [[-28, -6], [-46, 4], [-30, 16]]); poly(ctx, [[28, -6], [46, 4], [30, 16]]); // the folded wings
+    F(flick ? BOSS.hull : BOSS.armor); ctx.fillRect(-18, 6, 36, 4);                     // the jaw line
+    F(core); poly(ctx, [[-13, -8], [-3, -2], [-13, 4]]); poly(ctx, [[13, -8], [3, -2], [13, 4]]); // the two eyes
+    F(BOSS.hot); ctx.fillRect(-2, 12, 4, 4);                                            // the censer's mouth (the chain hangs from here)
+  } else if (phase === 2) {     // THE PRIESTESS'S MIRROR — the ship's shape, boss-scaled
+    // paintShip's outline at ~3.1× (span 28 → 86), boss palette, nose DOWN
+    // (every enemy sprite is drawn nose-+y and this one must not read as the
+    // player's nose-up ship). Bible deviation declared above.
+    F(flick ? BOSS.hull : BOSS.armor); poly(ctx, [[-43, -37], [-12, -12], [12, -12], [43, -37], [31, -46], [-31, -46]]); // the engine block, mirrored to the top
+    F(body); poly(ctx, [[0, 52], [12, 25], [40, -34], [15, -25], [0, -37], [-15, -25], [-40, -34], [-12, 25]]);          // the hull
+    F(flick ? BOSS.armor : BOSS.strut); poly(ctx, [[12, 25], [40, -34], [34, -34], [9, 18]]); poly(ctx, [[-12, 25], [-40, -34], [-34, -34], [-9, 18]]); // the wing edges
+    F(core); poly(ctx, [[0, 24], [10, 6], [0, -12], [-10, 6]]);                          // where the player's dot would be — the core, in the form's hue
+    F(BOSS.hot); ctx.fillRect(-3, 2, 6, 6);
+    F(flick ? BOSS.hull : BOSS.armor); ctx.fillRect(side * 20 - 4, 30, 8, 5);            // the option pod's mount, on the live side
+    if (prop) { F(BOSS.ember); ctx.fillRect(-26, -40, 9, 3); ctx.fillRect(17, -40, 9, 3); } // the mirror's thrust, pointing the wrong way
+  } else {                      // THE HOLLOW CORE — bare, burning
+    F(body); poly(ctx, [[0, -26], [14, -6], [11, 16], [0, 24], [-11, 16], [-14, -6]]);
+    F(burning ? BOSS.ember : BOSS.strut); ctx.fillRect(-28, -4, 11, 7); ctx.fillRect(17, -4, 11, 7); // the burnt wing roots
+    F(flick ? BOSS.hull : BOSS.armor); for (let i = 0; i < 3; i++) ctx.fillRect(-12 + i * 9, -20 + i * 2, 5, 2);
+    F(core); disc(ctx, 0, -1, 10);
+    F(BOSS.hot); disc(ctx, 0, -1, 4);
   }
 }
 

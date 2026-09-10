@@ -1,0 +1,63 @@
+<!doctype html><meta charset="utf-8">
+<!-- STAGE 5 peek (r83): headless sheet of THE IDOL's four FORMS drawn by the BASE skin
+     (the cute-occult creatures for the finale are a later pass; every other skin falls
+     back to the base painter — renderer drawEnemy). Stage 5 is NOT in STAGES, so this
+     page pushes the module on at runtime exactly as tools/probes/idol-probe.mjs does.
+     The referee's expert bot plays seed C0FFEE from startRun(g, 0, <that index>) with its
+     LIVES PINNED and — because form 3 times out on the expert at option A's hp (wiki §16)
+     — with forms 1-3 MELTED to 1 hp once vulnerable, so one run reaches all four forms.
+     Both are probe-only edits; the honest bot table is idol-probe.mjs.
+       node tools/peek.mjs 'tools/s5peek.html?mode=forms' docs/img/r83-s5-idol.png 1940x700
+     mode=forms: each form ~150 f in, plus the draw time of 60 draws averaged (S8 budget
+     16.6 ms). ?skin=cute-occult shows the base-skin fallback. -->
+<body style="margin:0;background:#05060a">
+<canvas id="c" width="1940" height="700"></canvas>
+<script type="module">
+import { makeGame, startRun, update, W, H } from '../src/core/game.js';
+import { draw, resetHud, setSkin } from '../src/render/renderer.js';
+import { STAGES } from '../src/core/stages/index.js';
+import s5 from '../src/core/stages/s5.js';
+import { makeBot } from '../test/bot.mjs';
+const Q = new URLSearchParams(location.search), MODE = Q.get('mode') || 'forms', SC = 1.5;
+setSkin(Q.get('skin') || 'base');
+if (!STAGES.some((s) => s.id === 5)) STAGES.push(s5);
+const LV = STAGES.findIndex((s) => s.id === 5);
+const FORMS = ['THE IDOL', 'THE DEMON', "THE PRIESTESS'S MIRROR", 'THE HOLLOW CORE'];
+const c = document.getElementById('c'), ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = false;
+const label = (t, x, y) => { ctx.fillStyle = '#ffd24a'; ctx.font = 'bold 15px monospace'; ctx.textAlign = 'left'; ctx.fillText(t, x, y); };
+const off = document.createElement('canvas'); off.width = W; off.height = H; const octx = off.getContext('2d');
+const stub = { next: () => 0.5, range: (a, b) => (a + b) / 2 };
+function render(measure) {
+  const real = g.rng; g.rng = stub; octx.setTransform(1, 0, 0, 1, 0, 0);
+  for (let i = 0; i < 30; i++) draw(g, octx, g.stageT * 1.05); // settle the HUD tick
+  let ms = 0;
+  if (measure) { const t0 = performance.now(); for (let i = 0; i < 60; i++) draw(g, octx, g.stageT * 1.05); ms = (performance.now() - t0) / 60; }
+  g.rng = real; return ms;
+}
+const tiles = [];
+function snap(text, measure) { const ms = render(measure); const im = document.createElement('canvas'); im.width = W; im.height = H; im.getContext('2d').drawImage(off, 0, 0); tiles.push({ im, text: text + (measure ? ` · draw ${ms.toFixed(2)} ms` : '') }); return ms; }
+const g = makeGame(0xC0FFEE); startRun(g, 0, LV); resetHud();
+const bot = makeBot({ aggressive: true, lookahead: 14, reactDelay: 0 });
+let prevPhase = -1, phaseAt = 0, maxDraw = 0, maxB = 0;
+for (let f = 0; f < 20000 && g.state === 'play' && tiles.length < 4; f++) {
+  bot(g); g.player.lives = 9; update(g);
+  let boss = null;
+  for (let i = 0; i < g.enemies.count; i++) { const e = g.enemies.items[i]; if (e.type === 5) { boss = e; break; } }
+  if (!boss) continue;
+  // probe-only: melt forms 1-3 so one run shows all four (see the header note)
+  if (boss.phase < 3 && boss.vulnAt >= 0 && g.frame - phaseAt > 160 && boss.hp > 1) boss.hp = 1;
+  if (boss.phase !== prevPhase) { prevPhase = boss.phase; phaseAt = g.frame; }
+  if (g.frame === phaseAt + 150) {
+    maxB = Math.max(maxB, g.eBullets.count);
+    maxDraw = Math.max(maxDraw, snap(`FORM ${boss.phase + 1} · ${FORMS[boss.phase]} · +150f · hp ${boss.hp | 0} · bullets ${g.eBullets.count} · parts ${(() => { let n = 0; for (let i = 0; i < g.enemies.count; i++) if (g.enemies.items[i].type === 6) n++; return n; })()}`, true));
+  }
+}
+const cols = tiles.length || 1, tw = W * SC, th = H * SC;
+label(`STAGE 5 — THE IDOL (r83 skeleton, base skin${Q.get('skin') ? ' fallback via ?skin=' + Q.get('skin') : ''}) · seed C0FFEE · expert bot, lives pinned + forms 1-3 melted · outcome ${g.state} f${g.frame} · worst draw ${maxDraw.toFixed(2)} ms (budget 16.6)`, 4, 16);
+for (let i = 0; i < tiles.length; i++) {
+  const x = (i % cols) * (tw + 4), y = Math.floor(i / cols) * (th + 30) + 46;
+  ctx.drawImage(tiles[i].im, x, y, tw, th);
+  label(tiles[i].text, x + 4, y - 8);
+}
+window.__perf = { maxDraw, maxB }; window.__tiles = tiles.length; window.__done = true;
+</script></body>
