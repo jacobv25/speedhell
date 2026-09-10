@@ -160,3 +160,28 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
 - **Sound "dead" while music plays** = a wedged AudioContext in the tab —
   reload; each dev port has its own localStorage (SFX slider).
 - **Two sessions, one tree:** always `git add` by filename.
+
+## State warnings (closeout 2026-09-10, r63–r81 session)
+
+- **Uncommitted, not this session's:** `docs/concepts/README.md` (modified,
+  +26 lines) and `docs/concepts/2026-09-09-soul-jazz/` (untracked; `.png` are
+  gitignored but the `.jpg` copies are not) — a Codex concept set from the
+  companion session / Jacob. Commit or discard deliberately.
+- **All branches pushed** (main, design/needle-tier, feat/*, design/ship-b,
+  campaign/*). No stashes. This session's worktrees were removed at closeout;
+  the parked branches keep their commits, but their gitignored stems
+  (`assets/music/stems/`) went with the worktrees — to listen to
+  `feat/stem-layers` again, check it out and run `tools/music/analyze.py`
+  (`sh tools/music/setup.sh` once per checkout, or use the main tree's
+  `tools/music/.venv/bin/python`).
+- **Servers:** this session's Booth servers (:8005 music lab, :8007/8008/8010/
+  8011 branch previews) were stopped. **:8001 (python no-cache, main tree) is
+  still running** — it serves r81; hard-reload after any checkout. :8003/:8004
+  belong to the ended companion session's (now-pruned) worktrees.
+- **Verification at close:** `node test/shell.mjs` PASS and
+  `tools/probes/campaign-probe.mjs` PASS on r81; `node test/sim.mjs` matches
+  the r80 control; the referee **certificate is still r65** (stale by design —
+  recert is Jacob-authorized, per stage). `test/shots.mjs` reports DIVERGED vs
+  r65 (expected until recert).
+- **Token note (Jacob):** Fable at ~80 % with two days to reset — the next
+  session is planned on Opus 5 per `docs/plans/next-session-stages-3-5.md`.
