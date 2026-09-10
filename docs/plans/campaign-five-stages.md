@@ -162,6 +162,15 @@ template (L4).
   timeline helpers live in `stages/kit.js` for stage 2+, s1.js keeps its inline
   copy (byte-identical rule). Cute-occult creatures, a stage-2 cue, the referee
   control run and the Booth debrief are the next passes (§7's cooldown applies).
+- **Stage 2 — tune pass r81 (2026-09-09, wiki §13.9, Q27 / Q28).** Jacob's first
+  play: the tank column does not teach sealing; P2 of the Bell kills him every
+  time. Two run-start Lab knobs, defaults byte-identical to r80: `s2tanks` =
+  swarm (2× tanks in flank pairs at mid-height, hp 12, prong every 55 f — a lower
+  tier) and `bellWalker` = calm (walk 3.4, dwell 240, sprays every 70 f, stomp
+  every second landing); the sealed tell ships (a proximity-sealed ground gun
+  retracts and dims). Measured in `tools/probes/stage2-tune-probe.mjs`; the
+  walker's transit share follows the camp governor's latch, not the walk speed
+  (Jacob's question). Verdicts are Jacob's in the Lab.
 
 ### Stage 3 — THE CANDLE SEA (the set-piece climax)
 - **Place ramp:** open sky over a sea of votives → the moth shrine → the

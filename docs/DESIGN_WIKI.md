@@ -844,6 +844,37 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     the stage's physical barrier — T3). Two ground rules on one layer; the
     alternative is walls as air-level obstacles drawn as such. Readability
     (Pillar 6) decides in the Booth.
+27. **Does the tank column teach sealing?** (r81, §13.9; Lab `s2tanks`.)
+    Jacob, first play: "im not even noticing the tank sealing. they all
+    approach from the top and they are very easy to kill. i expect having
+    many more tanks, approaching from the sides with lower HP may cause
+    sealing to happen more often." `swarm` builds that shape (2× tanks in
+    flank pairs at mid-height, alternating sides, hp 12, prong every 55 f)
+    as a lower tier, not inflation. The bot cannot answer the question (0 →
+    1.3 sealed kills of 30.7 — it never goes to a gun); the sealed tell
+    (r81) now SHOWS a muted gun, so a human can see the choice paying. For
+    the Booth: with `swarm`, does going to the gun read as the quiet option,
+    and does the bottom read as "more, faster fire"? Is hp 12 too cheap to
+    bother sealing (then the lever is fire, not hp — CLAUDE.md), and is the
+    rep-2 half-track tail (six low, creeping, soon-angry tanks into the
+    wall's arrival) a curtain or the sentence [T2]? Jacob's call.
+28. **The Bell walker: hard to catch, or the governor?** (r81, §13.9; Lab
+    `bellWalker`.) Jacob: "i am always dying at the boss's phase 2. the boss
+    keeps running around extremely fast and is hard to catch. feels
+    frustrating and annoying but maybe i just suck." `calm` (walk 3.4 <
+    the ship's 3.7, dwell 240, sprays every 70 f, stomp every second
+    landing) is the direct remedy, and it helps a little (P2 deaths 1.6 →
+    1.3 mortal, 3.4 → 2.6 pinned; P3 reached 0/7 → 2/7; damage landed on a
+    walking boss up 30 %) — but the walker's transit share is unchanged
+    (38 → 40 %) because it follows the **camp governor's latch**, not the
+    walk speed: a player who holds the bottom gets banned and the walker
+    re-targets the far safe rail every frame (§5.5; boss 1's P1 rail hop
+    behaves the same). So the question is two: (a) does `calm` make P2 feel
+    catchable for Jacob (the Lab answers it), and (b) is the governor's
+    pursuit — which reads as "running around" to a bottom-holder — the
+    intended pressure (MSX: difficulty is content; the safe spot under it
+    must stay legible) or the frustration (boghog: hard, never unfair)?
+    The governor is shared with stage 1 and is not touched here; Jacob's.
 
 ## 9. Practice notes (for humans)
 
@@ -890,10 +921,13 @@ and the `#lab` panel go.
   the HOW TO card (`src/howto.js` mirrors the art); fx particle counts stay on
   `g.fxRng`.
 
-Live experiments (r77): **skin** (§11, r60) · **speedPopup** (§2.6, open Q4) ·
+Live experiments (r81): **skin** (§11, r60) · **speedPopup** (§2.6, open Q4) ·
 **bossParts** (parts bite back: current / clock / inherit / burst, open Q17,
 r73, run-start tune knob) · **speedDress** (speed-kill reward dressing, open
-Q13, r53). Decided r77: shotLook → heavy (Q22; the r75 / r76 paragraphs below
+Q13, r53) · **s2tanks** (stage 2 tank column: current / swarm, open Q27, r81,
+run-start tune knob) · **bellWalker** (the Bell's P2: current / calm, open
+Q28, r81, run-start tune knob). Six rows — over the ~5 cap; bossParts and
+speedDress are the ones due a verdict. Decided r77: shotLook → heavy (Q22; the r75 / r76 paragraphs below
 are the record of what was tried). Decided r71: bossHp
 → 3× (Q16; the r70 paragraph below is the record). Decided and
 removed in r67: fxSize → 2×, fxStyle → chunky (Q12), killAudio → heavy (Q14) —
@@ -911,6 +945,21 @@ the plan's starting numbers, popcorn-rate red + 2/6 robust clears recorded not
 fixed, art (step 4) and recert pending; details in that branch's wiki §6.4. Queued: destruction
 sequence (after the art overhaul), sprite-shaped debris (the hit impact blob
 landed in r75 as part of `shotLook`).
+
+**r81 stage-2 tune knobs (core `g.tune.s2tanks` / `g.tune.bellWalker`, lab
+`s2tanks` / `bellWalker`, run start).** Jacob's first play of stage 2 (§13.9,
+Q27 / Q28): the tank column does not teach sealing ("they all approach from
+the top and they are very easy to kill"), and P2 of the Bell kills him every
+time ("keeps running around extremely fast and is hard to catch"). Two knobs
+on the r70 / r73 pattern, defaults byte-identical to r80: **s2tanks = swarm**
+(2× tanks entering in flank pairs at mid-height, sides alternating, hp 12,
+prong every 55 f — one lower tier on the tank, `kit.js tankFile` + `stage.js`
+case 7) and **bellWalker = calm** (walk 3.4, dwell 240, sprays every 70 f,
+stomp every second landing — `s2.js` P2). Measured table in §13.9: swarm
+kills 3.7× as many tanks at +30 % bullets and the bot still never seals
+(1.3 of 30.7); calm trims P2 deaths (3.4 → 2.6 pinned) and lets 2/7 mortal
+runs reach P3, but the transit share is the camp governor's, not the walk
+speed's. Shipped alongside (not a knob): the sealed tell.
 
 **r77 "shot look" DECIDED — heavy shipped (renderer `drawShots` + `drawScorch`
 + fx pass 3 + `drawShot` for the card, core hit block, audio hit click; row
@@ -1380,7 +1429,8 @@ Module: `src/core/stages/s2.js`; the shared machinery it stands on: `stage.js`
 (`ENEMY_DEFS` 7–10, `updateEnemy` cases 7–10, the r18 seal, the boss ritual
 beats), `stages/kit.js` (the timeline helpers lifted from s1 — s1.js itself
 untouched), `patterns.js staticFan`. Probe: `tools/probes/stage2-probe.mjs`.
-Peeks: `img/r80-s2-sections.png`, `img/r80-s2-boss.png`, `img/r80-s2-hearse.png`.*
+Peeks: `img/r80-s2-sections.png`, `img/r80-s2-boss.png`, `img/r80-s2-hearse.png`.
+r81 (Jacob's first play): two Lab tune knobs + the sealed tell — §13.9.*
 
 ### 13.1 Place ramp (L1) and the sections
 
@@ -1611,6 +1661,107 @@ column TEACH sealing, or does a human just shoot tanks from the bottom (their
 prongs are slow: 2.5 px/f)? Is a 90 px lane in a 320 px field a lane or a
 funnel (WS03 roles)? The Hearse's anchor dies in ~10 f of point-blank — too
 cheap for a "physical checkmate", or exactly the Psikyo fuse?
+
+### 13.9 r81 — the tune pass: two Lab knobs and the sealed tell
+
+*Jacob's first play of stage 2 (2026-09-09), verbatim: "im not even noticing
+the tank sealing. they all approach from the top and they are very easy to
+kill. i expect having many more tanks, approaching from the sides with lower
+HP may cause sealing to happen more often." — and — "i am always dying at the
+boss's phase 2. the boss keeps running around extremely fast and is hard to
+catch. feels frustrating and annoying but maybe i just suck." Jacob's rule:
+gameplay changes go in the Lab. Both knobs default `current` and the stage is
+byte-identical to r80 at the defaults (identity lines in the changelog). They
+are run-start tune knobs on the r70 / r73 pattern (`main.js beginRun` sets
+`g.tune.s2tanks` / `g.tune.bellWalker` AFTER `startRun`; the timeline events
+and the Bell read `g.tune` when they fire, never live; stamped on receipts).
+Open questions Q27 / Q28 in §8. Probe: `tools/probes/stage2-tune-probe.mjs`.
+Peeks: `img/r81-s2-swarm.png` (the column, current vs swarm, same frame
+index), `img/r81-sealed-tell.png` (a sealed tank and turret, 8×).*
+
+**Knob 1 — Lab `s2tanks`: current / swarm** (`stages/kit.js tankFile`,
+`stage.js` case 7). `swarm` is Jacob's shape, built as ONE lower tier carried
+on the tank itself: the same n timeline events (no extra entries — the
+caravan pull reads the next event's `t`, which is how the default stays
+byte-identical) each spawn a **pair from one flank at mid-height** (y 96 /
+120 / 144, x −14 / W+14 and 34 px behind), **sides alternating per event**
+(WS05 Toaplan "spawn on opposite sides", never both at once — Q21). They roll
+inward at 1.8 px/f along a rail to a stop (the leader crosses farthest, its
+trailer stops 64 px short, so the file still lands as a diagonal), then are
+rail tanks like any other (case 7 `phase` 1 → 0), scrolling with the stage.
+**hp 12** (popcorn 2 · swarm tank 12 · turret 24 — a lower tier by design,
+never inflation; value 500 / window 150 f untouched: scoring is Jacob's),
+**polite prong every 55 f** instead of 75 (`holdT` 1 marks the tier — every
+non-flank tank keeps r80's 75 f under either knob), angry at 4 s unchanged,
+no contact unchanged. A flank tank still off the field's edge fires nothing
+(canon gate 1). Only the column's files carry `flank: 1` (S1: 120 / 420 /
+600; S5: 2460 / 2640) — S2's three tanks behind the bone wall stay r80 under
+every knob: a wall AND a flank file is two strong things at once (WS05). Rep 1
+/ rep 2 escalation kept (rep 2's half-tracks creep after landing).
+
+**Knob 2 — Lab `bellWalker`: current / calm** (`s2.js updateBell` P2).
+`calm`: walk 4.2 → **3.4 px/f** (under the ship's 3.7, so pursuit catches
+it), dwell 170 → **240 f**, the flank sprays every 50 → **70 f** (same
+geometry — x ± 24 at π/2 ± 0.55 — so the column under it stays clear: the
+safe spot is still the invitation), the **stomp ring on every second landing**
+(`e.bloomed` counts landings; the field is the midboss's, free on the boss),
+rope node / clapper / hp unchanged (Q24 is Jacob's).
+
+**The sealed tell** (ships, presentation only — `renderer.js drawEnemy`,
+`skins/base.js` types 2 / 7 / 8 / 9, `cute-occult.js` + `synthwave.js` type 2).
+A ground gun that WOULD fire this frame but is sealed by proximity shows it:
+the renderer reads exactly `mayFire`'s condition with the seal true
+(vulnerable, below the top dead zone, above the bottom band, inside 48 px —
+`stage.js sealed`, the pure function, imported; no core state written) and
+the painter draws the barrel **retracted** to ~0.65 of its length with a 1 px
+`GROUND.out` muzzle cap and no highlight (the wall: the skull's mouth shut;
+the hull: its opened gun window capped dark), while the sprite **dims 2
+frames in 4** (alpha 0.6 toward the field — a washed value, bible §3; drawn
+under the bullets as ever, so nothing is masked; the hit-flash wins). One
+cache-key bit (`tell`), a 12th painter arg; the other skins' type-2 barrels
+retract along their axis.
+
+**Measured (`stage2-tune-probe.mjs`, expert bot, 7 seeds, stage 2 alone;
+sealed kill = the ship inside 48 px at the kill; transit = the walker
+stepping between rails; latched = the camp governor's ban in force):**
+
+| knobs | mode | tanks spawned / killed / sealed (S1+S5) | column deaths (run) | max bullets | P2 reached / P3 / boss killed | P2 s | transit % (latched % of P2 / of transit) | P2 deaths | hp dwell / transit | outcome (min) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| current / current | mortal | 20.0 / 8.4 / 0.0 | 0.7 (4.0) | 70 | 6/7 · 0/7 · 0/7 | 13.3 | 24 % (20 / 12) | 1.6 | 184 / 15 | game over 7 (1.5) |
+| current / current | pinned | 20.0 / 8.4 / 0.0 | 0.7 (7.6) | 70 | 7/7 · 7/7 · 7/7 | 26.6 | 38 % (56 / 69) | 3.4 | 304 / 95 | clear 7 (2.1) |
+| swarm / current | mortal | 40.0 / 30.7 / 1.3 | 1.0 (4.0) | 91 | 2/7 · 0/7 · 0/7 | 7.7 | 31 % (20 / 13) | 0.3 | 42 / 3 | game over 7 (1.2) |
+| swarm / current | pinned | 40.0 / 30.7 / 1.3 | 1.0 (8.4) | 91 | 7/7 · 7/7 · 7/7 | 19.3 | 33 % (49 / 61) | 2.1 | 335 / 65 | clear 7 (2.0) |
+| current / calm | mortal | 20.0 / 8.4 / 0.0 | 0.7 (4.0) | 70 | 6/7 · 2/7 · 0/7 | 12.6 | 25 % (42 / 37) | 1.3 | 154 / 26 | game over 7 (1.5) |
+| current / calm | pinned | 20.0 / 8.4 / 0.0 | 0.7 (6.7) | 70 | 7/7 · 7/7 · 7/7 | 22.9 | 40 % (64 / 75) | 2.6 | 258 / 123 | clear 7 (2.0) |
+| swarm / calm | mortal | 40.0 / 30.7 / 1.3 | 1.0 (4.0) | 91 | 2/7 · 1/7 · 0/7 | 9.6 | 43 % (56 / 70) | 0.1 | 65 / 7 | game over 7 (1.2) |
+| swarm / calm | pinned | 40.0 / 30.7 / 1.3 | 1.0 (8.6) | 91 | 7/7 · 7/7 · 7/7 | 22.6 | 44 % (75 / 83) | 2.4 | 285 / 115 | clear 7 (2.1) |
+
+What moved, and what did not:
+
+- **The column.** Swarm doubles the tanks (20 → 40) and the bot kills 3.7×
+  as many (8.4 → 30.7 — flank tanks at mid-height stay in the shot's reach;
+  from the top, 12 of 20 scroll past the r80 bot unkilled) at 30 % more
+  bullets (70 → 91) and +0.3 column deaths. **Sealed kills: 0 → 1.3 per run
+  (4 %)** — the bot snipes from y 374 and never goes to a gun (§13.2 said it
+  cannot learn the lesson; its `type ≥ 4` homing closes on tanks only to
+  shoot them). The sealing choice is a human measurement — the Booth's. The
+  dead air rises 1.3 → 2.2 s (the flank files clear faster).
+- **The Bell's P2.** The mortal r80 picture reproduces: P2 reached 6/7, dies
+  there on every seed, P3 0/7, ~13 s in P2, 1.6 deaths. `calm` moves it a
+  little — P3 reached 2/7, P2 deaths 1.3 (pinned 3.4 → 2.6), P2 shorter
+  (26.6 → 22.9 s pinned) — but the **transit share does not fall (38 → 40 %)**,
+  and the per-seed lines say why: transit tracks the **camp governor's
+  latch**, not the walk speed (seeds latched 90 %+ of P2 walk 50 %+ of it;
+  seeds latched < 30 % walk ~25 %). The bot camps y 374, gets banned, and
+  the walker re-targets `pickSafeX` every frame — "running around" is the
+  governor pursuing a camper, the same code as boss 1's rail hop (§5.5).
+  hp dealt while walking rises with `calm` (95 → 123 pinned): a 3.4 px/f
+  walker IS caught. The swarm rows' mortal P2 columns are thin (2/7 reach it)
+  because that bot spends a life at S2 stageT 1316 on every seed — one
+  deterministic path (S1–S2 draw no rng): a bullet in a 47-bullet field with
+  the bot pinned at x 289; read the pinned rows for P2 under swarm.
+- **Not moved:** hp, values, windows, scoring, the seal radius, the rope node,
+  the clapper, stage 1 (identity lines in the changelog).
 
 ## Changelog of decisions recorded here
 
@@ -2784,5 +2935,59 @@ cheap for a "physical checkmate", or exactly the Psikyo fuse?
   the r65 certificate as at HEAD. Not decided here (Jacob's): Q24–Q26, the
   stage-2 referee control run + the one-word `sim.mjs` outcome edit (§12), the
   cute-occult pass for the new creatures, a stage-2 music cue. BUILD r80.
+  `test/sim.mjs`, `test/bot.mjs`, `CRITIC_RUBRIC.md`, `evidence/`,
+  `DESIGN_PILLARS.md`, `stages/s1.js` untouched.
+- 2026-09-09 — **r81 STAGE 2 TUNE PASS** (Jacob's first play; §13.9, Q27 /
+  Q28; plan §3 status). Two run-start Lab knobs on the r70 / r73 pattern
+  (`main.js beginRun` sets `g.tune.s2tanks` / `g.tune.bellWalker` AFTER
+  `startRun`; timeline events and the Bell read them when they fire; stamped
+  on receipts) + one presentation change that ships. **`s2tanks` = swarm**
+  (`stages/kit.js tankFile` `flank` files, `stage.js` case 7): the same n
+  events spawn flank PAIRS at mid-height from alternating sides, rolling
+  inward on rails to a diagonal of stops, hp 12 / prong every 55 f carried on
+  the tank (`holdT` 1) — a lower tier, not inflation; value / window / angry
+  untouched; S2's wall tanks stay r80. **`bellWalker` = calm** (`s2.js` P2):
+  walk 3.4, dwell 240, flank sprays every 70 f (same geometry — the column
+  under it stays clear), stomp every second landing (`e.bloomed` counts
+  landings). **The sealed tell** (`renderer.js drawEnemy` reads `stage.js
+  sealed` — the pure function, exported since r18 — with `mayFire`'s other
+  gates; `skins/base.js` types 2 / 7 / 8 / 9, `cute-occult.js` / `synthwave.js`
+  type 2; one cache-key bit, a 12th painter arg): a proximity-sealed ground
+  gun retracts its barrel to ~0.65 with a 1 px `GROUND.out` cap and no
+  highlight, and the sprite dims 2 frames in 4 (alpha 0.6, under the
+  bullets, hit-flash wins). Probe `tools/probes/stage2-tune-probe.mjs` (the
+  expert bot's opts copied verbatim from `test/sim.mjs`; mortal + pinned;
+  table in §13.9): swarm 20 → 40 tanks, 8.4 → 30.7 killed, sealed kills 0 →
+  1.3, bullets 70 → 91, column deaths 0.7 → 1.0; calm P2 deaths 3.4 → 2.6
+  pinned / 1.6 → 1.3 mortal, P3 reached 0/7 → 2/7, transit share 38 → 40 %
+  — the walker's transit follows the camp governor's latch (seeds latched
+  90 %+ walk 50 %+), not the walk speed. **Corpus clearance.** *BH101:*
+  "killing fast must be hugely beneficial and leaving alive dangerous" —
+  the swarm tier dies in four bolts and its tail turns angry low on the
+  field; "bullet sealing" as a minor mechanic made legible (the tell);
+  "approaching for a kill must never be disproportionately dangerous" — a
+  sealed tank is quiet, and the tell says so. *Boghog:* [WS05] spawn on
+  opposite sides / never both at once (Q21), never let the player linger
+  (flank pairs keep coming), no vertical tank stacks (the stops are a
+  diagonal), never two strong enemies at once (S2's tanks excluded from the
+  swarm); [T2] escalate behaviour, kill fast or be blanketed; [T3] balance =
+  counters (a seal, not hp). *Pushback recorded:* boghog "I balance it so
+  that I never feel comfortable dodging it myself" [T2] — `calm` is a
+  softening, and a walker the ship outruns is a walker you can sit under;
+  it stays a Lab option, not the constant. *MSX:* difficulty is content, but
+  frustration is not difficulty — the safe spot under the walker must be
+  legible, and Q28 separates "hard to catch" (the knob) from "the governor
+  chasing a camper" (a rule question; Jacob's). No hp inflation (12 is a
+  lower tier); no scoring math; `g.rng` untouched (spawn geometry and the
+  tell draw none); core DOM-free (the renderer reads core, writes nothing).
+  *Identity:* knobs at `current` → stage 2 byte-identical (probe row
+  current/current = the r80 numbers: mortal P2 6/7, P3 0/7, 13.3 s, 1.6
+  deaths); `node test/sim.mjs` = the r80 control in every run / seed / check
+  / determinism (only the wall-clock S8 stress line differs), evidence
+  restored; `campaign-probe` 30 ok, `gameover:6438:79790:139:66:4:0:-1:0`;
+  `stages/s1.js` diff empty; `test/shell.mjs` PASS with six Lab rows (over
+  the ~5 cap — said so in §10). Peeks `img/r81-s2-swarm.png`,
+  `img/r81-sealed-tell.png` (`tools/s2tunepeek.html`). Not decided here
+  (Jacob's): Q27, Q28, the governor question, Q24. BUILD r81.
   `test/sim.mjs`, `test/bot.mjs`, `CRITIC_RUBRIC.md`, `evidence/`,
   `DESIGN_PILLARS.md`, `stages/s1.js` untouched.

@@ -21,3 +21,12 @@ All import the core by ABSOLUTE path (adjust if the repo moves).
   bullets, timeouts, dead air, boss forms reached), the expert with lives pinned
   (the clock and every form), and the two-stage campaign with its carry-over.
   Builder instrument — the stage-2 control run in `test/sim.mjs` is Jacob's.
+- `stage2-tune-probe.mjs [seedsHex]` — r81 stage-2 tune knobs (wiki §13.9, Q27 /
+  Q28): for each `s2tanks` × `bellWalker` combo the expert bot (opts verbatim
+  from `test/sim.mjs`) plays stage 2 alone on the seven seeds, mortal and lives
+  pinned — tank column (S1 + S5) tanks spawned / killed / killed WHILE SEALED
+  (ship inside 48 px at the kill), column deaths, max bullets, dead air; the
+  Bell's P2 reached / P3 / killed, P2 seconds, transit share, the camp
+  governor's latched share, P2 deaths, hp dealt in dwell vs transit; each death
+  with its section, stageT, live / angry tanks, ship y. `COMBOS=swarm/current,…`
+  and `MODES=mortal|pinned` narrow the table. Builder instrument.
