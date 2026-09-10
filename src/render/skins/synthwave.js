@@ -59,13 +59,18 @@ const SKY = [
   [[17, 9, 27], [42, 17, 44], [72, 42, 32]],   // 8 s8      — final sunset
 ];
 // boss arena restain per phase (S3b): indigo night → red-shifted → white-hot dawn
+// r83: a FOURTH row — stage 5's Idol restains once more (S3b-SHOULD). Rows 0-2
+// are untouched, so stages 1-3 build the same three skies; row 3 is only ever
+// reached by a four-form boss (without it, BTONE[3] was undefined and buildSky
+// threw on the finale's last form).
 const BOSS_SKY = [
   [[8, 9, 28], [20, 14, 48], [52, 28, 46]],
   [[20, 8, 14], [44, 14, 20], [78, 30, 22]],
   [[22, 18, 20], [46, 38, 36], [80, 66, 48]],
+  [[24, 10, 26], [50, 20, 50], [88, 40, 62]],
 ];
 const SUN = [[172, 128, 56], [122, 54, 30]];        // gold crown → burnt-orange base (kept well under the bullet layer)
-const BOSS_SUN = [[[150, 110, 70], [104, 52, 46]], [[178, 96, 40], [132, 40, 26]], [[186, 166, 128], [146, 96, 52]]];
+const BOSS_SUN = [[[150, 110, 70], [104, 52, 46]], [[178, 96, 40], [132, 40, 26]], [[186, 166, 128], [146, 96, 52]], [[196, 120, 150], [140, 50, 84]]]; // r83: a fourth (see BOSS_SKY)
 // silhouette kind per section: 0 palms · 1 mountains · 2 skyline · 3 skyline+palms
 const SIL = [3, 1, 2, 0, 2, 1, 2, 0, 3];
 // landmark [x, w, h, kind] — kind 0 carrier deck · 1 dam · 2 hangar · 3 tower block

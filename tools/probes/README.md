@@ -40,3 +40,17 @@ All import the core by ABSOLUTE path (adjust if the repo moves).
   (levels 0 → 1 → 2 on the continued rng stream) printing each stage's outcome,
   the seams and the total clock. Builder instrument — the stage-3 control run in
   `test/sim.mjs` is Jacob's.
+- `idol-probe.mjs [seedsHex]` — r83 STAGE 5's final boss (THE IDOL, the four-form
+  skeleton). Stage 5 is NOT in `STAGES`, so the probe pushes the module onto the
+  table at runtime and plays the finale alone from `startRun(g, 0, <that index>)`.
+  Three passes: (1) the referee's four bots on seed C0FFEE + the six robust seeds
+  — outcome, total boss time (WARNING → resolution) against the ≤ 65 s target,
+  forms reached, seconds per form with the hp still standing at any timeout,
+  deaths per FORM, max bullets, timeouts; (2) the expert with lives pinned;
+  (2b) the expert with forms 1-3 held at 1 hp (probe-only) so the MEDLEY is
+  measured on every seed; (3) the hp-budget table — measured hp/s per form, each
+  form against HOMAGE's 15-25 s guardrail, and the multiplier option B would need.
+  `IDOLHP=220,220,220,405 node tools/probes/idol-probe.mjs` measures any hp budget
+  without editing `s5.js` (it writes the exported table in place) — that is how
+  wiki §16's options A / B / C were measured. Builder instrument — the stage-5
+  control run in `test/sim.mjs` is Jacob's.
