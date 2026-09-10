@@ -33,7 +33,21 @@ export const ENEMY_DEFS = [
   // you win"). Small r so the under-boss point-blank spot never becomes a
   // contact trap. Dies with its phase (see updateEnemy case 6).
   /*6 part   */ { hp: 24,  value: 1000,  window: 300, r: 7 },
+  // r80 STAGE 2 — the GROUND LAYER (plan §3 stage 2; research/raw-ground-layer-
+  // findings.md). Zero new hp tiers: tank + wall = turret class, hull = elite
+  // class, anchor = part class. Ground types are SEALED by proximity like every
+  // non-boss enemy (r18 canon) and — like Toaplan/Psikyo tanks the plane flies
+  // over — the tank and the hull have NO contact collision (game.js GROUND):
+  // the deck is a place you stand on, not a thing that rams you. The bone wall
+  // is the exception: it is a physical barrier (T3 "checkmate from physical
+  // properties"), so it DOES collide.
+  /*7 tank   */ { hp: 24,  value: 500,   window: 150, r: 12 }, // rail tank: scrolls with the stage, aimed pink prongs, angry at 4s (turret grammar on tracks)
+  /*8 wall   */ { hp: 24,  value: 500,   window: 150, r: 14 }, // bone-wall segment: blocks its slot (contact), one hidden prong at y≈140, pays 3 loot on death
+  /*9 hull   */ { hp: 220, value: 3000,  window: 380, r: 20 }, // ossuary barge core: armored until every deck turret is dead (DDP#4 chain-link), then a cyan gun opens
+  /*10 anchor*/ { hp: 24,  value: 1000,  window: 300, r: 10 }, // the Hearse's chained anchor: a swinging physical hazard + the midboss's speed-kill sub-part (stages/s2.js)
 ];
+// r80: the types the ship flies OVER (no contact collision — game.js reads it).
+export const GROUND = { 7: 1, 9: 1 };
 
 // Per-boss-phase sub-part geometry: [dx, dy] off the boss center. Offsets sit
 // OUTSIDE the boss's r=30 collision circle horizontally, so parts are hittable
@@ -55,8 +69,8 @@ export function spawnParts(g, boss) {
   }
 }
 
-const MIDBOSS_TIMEOUT = 2100;          // r65: 35s (was 1400/23s) — Jacob's call after watching the certified fight; a timeout stays (S6: the post-bloom crosser pulse is an infinite point source)
-const BOSS_PHASE_HP = [110, 402, 405]; // r71: 3× (was 134/135) — "3x felt challenging… design for difficulty and challenge" (Jacob, 2026-09-08); // HP is a pattern-duration knob [BOGHOG T1]; index 0 unused
+export const MIDBOSS_TIMEOUT = 2100;          // r65: 35s (was 1400/23s) — Jacob's call after watching the certified fight; a timeout stays (S6: the post-bloom crosser pulse is an infinite point source)
+export const BOSS_PHASE_HP = [110, 402, 405]; // r71: 3× (was 134/135) — "3x felt challenging… design for difficulty and challenge" (Jacob, 2026-09-08); // HP is a pattern-duration knob [BOGHOG T1]; index 0 unused
 // (spawn hp is ENEMY_DEFS[5].hp). P2/P3 trimmed r6.3: the camp governor's bands hold campers to
 // near-zero income (referee probes: 0 kills, pure timeouts), so HP now only needs to fit the honest
 // expert's tail under the timeout across every robust seed, with kills under the 1200f decay knee.
@@ -79,19 +93,19 @@ export const BOSS_PHASE_TIMEOUT = 2100; // r72: 35s per phase (was 1450/24s) —
 //   The boss is never sealed (Ikeda hunts safe spots; Psikyo bosses are ridden
 //   at point-blank and still fire); its position pressure is the camp governor.
 const SEAL_R2 = 48 * 48; // H is read at call time — game.js imports this module first (circular)
-function sealed(g, e) {
+export function sealed(g, e) {
   const dx = e.x - g.player.x, dy = e.y - g.player.y;
   return dx * dx + dy * dy < SEAL_R2;
 }
 // r22: a timed-out boss/midboss FLEES — it must not look like a kill. Popup +
 // a fixed fan of departure streaks via spawnFx. Deterministic: draws no rng.
-function fleeTelegraph(g, e) {
+export function fleeTelegraph(g, e) {
   addPopup(g, e.x, e.y, 'FLED +0', 1);
   for (let k = -2; k <= 2; k++) spawnFx(g, FX.SMOKE, e.x + k * 9, e.y + 4, k * 0.5, -2.6, 34, 4, FAM.WHITE);
   for (let k = -1; k <= 1; k++) spawnFx(g, FX.SPARK, e.x + k * 6, e.y, k * 0.9, -3.4, 22, 2, FAM.CYAN);
 }
 
-function mayFire(g, e) {
+export function mayFire(g, e) {
   if (e.vulnAt < 0 || e.y <= 20) return false;
   if (e.type === 5 || e.type === 4) return true; // r19: the midboss is a boss — never sealed (r18 let a hugger mute its whole fight, bloom included)
   if (e.y > H - 60) return false;
@@ -184,6 +198,21 @@ export function updateEnemy(g, e) {
     }
     case 2: { // turret — scrolls; kill fast or be blanketed [T2]
       e.fireT++;
+      // r80: a DECK turret (holdT 2, stage 2's hull) rides its hull instead of
+      // scrolling: position slaved to the live type-9 core at its (vx, vy)
+      // offset; if the hull is gone (killed or scrolled off) the turret goes
+      // with it. Stage 1 never sets holdT on a turret — this branch is dead there.
+      if (e.holdT === 2) {
+        let hull = null;
+        for (let i = 0; i < g.enemies.count; i++) { const o = g.enemies.items[i]; if (o.type === 9 && !o.dead) { hull = o; break; } }
+        if (!hull) { e.dead = 1; break; }
+        e.x = hull.x + e.vx; e.y = hull.y + e.vy;
+        const angryM = e.vulnAt >= 0 && g.frame - e.vulnAt > 240;
+        if (e.vulnAt >= 0 && e.phase === 0) { e.phase = 1; if (!sealed(g, e)) aimedFan(g, e.x, e.y + 6, 3, 0.4, 2.3); }
+        const everyM = angryM ? 34 : 85;
+        if (e.fireT % everyM === 30 && mayFire(g, e)) aimedFan(g, e.x, e.y + 6, angryM ? 7 : 3, angryM ? 1.0 : 0.4, angryM ? 3.1 : 2.3);
+        break;
+      }
       // anger at 4s on-screen (decoupled from the SCORING window — that knob is
       // for speed-kill feel, this one is behavior): a router who works the
       // turret queue never sees it; ignoring it hands the turret the screen (S4)
@@ -333,6 +362,60 @@ export function updateEnemy(g, e) {
       }
       break;
     }
+    case 7: { // r80 RAIL TANK — the turret's sentence on tracks (WS04 "turrets and
+      // tanks don't fly off"). Scrolls with the stage; the barrel aims at the ship
+      // (renderer); one polite 2-round prong every 75f, angry at 4s (4-round,
+      // every 40f, faster). Sealed by proximity like a turret, and the ship flies
+      // OVER it (GROUND: no contact) — sitting on a tank is the canon reward;
+      // the column's OTHER tanks are the pressure. side = lateral drift toward
+      // the ship's column on the rail (0 = a fixed rail). No rng.
+      e.fireT++;
+      const angryT = e.vulnAt >= 0 && g.frame - e.vulnAt > 240;
+      e.y += e.vy || 0.55;
+      if (e.side === 2) { const tx = Math.max(40, Math.min(W - 40, g.player.x)); e.x += Math.max(-0.35, Math.min(0.35, (tx - e.x) * 0.01)); } // half-track: creeps toward your column
+      const everyT = angryT ? 40 : 75;
+      if (e.fireT % everyT === 40 && mayFire(g, e)) aimedFan(g, e.x, e.y + 6, angryT ? 4 : 2, angryT ? 0.7 : 0.25, angryT ? 2.9 : 2.5);
+      break;
+    }
+    case 8: { // r80 BONE WALL segment — destructible terrain (WS05 theme; Garegga
+      // houses / Star Soldier tiles by way of the research doc). Scrolls at 0.8;
+      // its one hidden gun fires ONCE as it crosses y 140 (~3.3s after spawn):
+      // a 3-round aimed prong — "kill fast or be blanketed" [T2] per segment,
+      // sealed if you are on it. Below that it is a silent physical barrier:
+      // the ship must be in a lane (or have breached one) before it arrives.
+      // Loot on death is in game.js killEnemy (3 items, garnish-priced). No rng.
+      e.fireT++;
+      e.y += 0.8;
+      if (e.phase === 0 && e.y >= 140) { e.phase = 1; if (mayFire(g, e)) aimedFan(g, e.x, e.y + 8, 3, 0.4, 2.3); }
+      break;
+    }
+    case 9: { // r80 THE HULL — an ossuary barge (elite class) carrying a turret deck
+      // (HOMAGE R7 / L1 structural: guns bolted ON the landmark). Enters, parks at
+      // y 120 for ~13s, then scrolls off. Its core is ARMORED (armorUntil = ∞ at
+      // spawn, timeline) until every deck turret (type 2, holdT 2) is dead —
+      // killing the deck chain-links into the core kill (DDP#4): the armor drops,
+      // the 380f elite window starts, and the core's hidden gun opens: cyan
+      // 4-needle aimed fans every 75f (it IS the special tier). Sealed by
+      // proximity; no contact (GROUND). fireT counts parked frames. No rng.
+      if (e.y < 120) { e.y += 1.0; break; }
+      e.fireT++;
+      if (e.armorUntil > g.frame + 1e6) { // still sealed shut: any deck turret alive?
+        let deck = 0;
+        for (let i = 0; i < g.enemies.count; i++) { const o = g.enemies.items[i]; if (o.type === 2 && o.holdT === 2 && !o.dead) deck++; }
+        if (deck === 0) { e.armorUntil = g.frame; e.phase = 1; } // the deck is down → the core opens (vulnAt stamps next frame)
+      }
+      if (e.phase === 1 && e.fireT % 75 === 20 && mayFire(g, e)) aimedFan(g, e.x, e.y + 12, 4, 0.5, 3.0);
+      if (e.fireT > 800) e.y += 0.9; // leaves with whatever is still bolted to it (outro, S4)
+      break;
+    }
+    case 10: { // r80 THE ANCHOR — the Hearse's chained sub-part. Its motion is the
+      // Hearse's business (stages/s2.js enemyUpdate[10] owns it); this case only
+      // exists so a stray anchor with no owner despawns scorelessly.
+      let hearse = null;
+      for (let i = 0; i < g.enemies.count; i++) { const o = g.enemies.items[i]; if (o.type === 4 && !o.dead) { hearse = o; break; } }
+      if (!hearse) e.dead = 1;
+      break;
+    }
     case 6: { // r6 boss sub-part: position slaved to the boss every frame; hosts
       // one of the phase's emitters, so killing it REDUCES the phase's output
       // (DDP: the structure changes as you win). Dies with its phase.
@@ -377,7 +460,7 @@ function latchDist(e, x) {
 // BOSS's current side (no flap-crossings); near a field edge, the side with open
 // field — a 1.2px/f crawler otherwise herds the boss into the clamp corner and
 // gets served continuously there (critic B's drift probe, P3).
-function bandSide(e, bandC) {
+export function bandSide(e, bandC) {
   if (bandC < 90) return 55;
   if (bandC > W - 90) return -55;
   return e.x >= bandC ? 55 : -55;
@@ -386,7 +469,7 @@ function bandSide(e, bandC) {
 // r6.3: P1 dwell spot for a rationed phase — the candidate farthest from every
 // banned band. A 2-spot rail shuffler bans both rails and the boss holds the
 // middle; a center camper bans the middle and the rails stay in play.
-function pickSafeX(e) {
+export function pickSafeX(e) {
   const cands = [52, 106, 160, 214, 268];
   let best = 160, bestD = -1;
   for (const c of cands) {
@@ -396,42 +479,9 @@ function pickSafeX(e) {
   return best;
 }
 
-export function updateBoss(g, e) {
-  g.emitter = e; // r59: needle-tier context (see patterns.js fire)
-  const phase = e.phase; let rep = e.fireT / 240 | 0;
-  // escalation per cycle (S3); super-linear past rep 3 — killers resolve phases
-  // by rep 2-4, so the steep tail is what riding a timeout costs (S4/S6, r3)
-  // r73 EXPERIMENT (Lab `bossParts`, open Q17): parts bite back. Jacob: "I don't
-  // think killing the parts should make the boss easier. In DoDonPachi and in
-  // Blue Revolver, destroying the parts often makes the fight harder!" Variant
-  // 1/3: each dead part advances the escalation clock one rep (fireT += 240
-  // keeps t, bumps rep → faster + denser for the rest of the phase). Variant 3
-  // also answers the kill with a retaliation ring. Variant 2/3: the core
-  // INHERITS the dead part's emitter, denser (see the phase blocks).
-  const bite = g.tune.partBite | 0;
-  if (bite && e.partKills > e.partSeen) {
-    const n = e.partKills - e.partSeen; e.partSeen = e.partKills;
-    if (bite === 1 || bite === 3) { e.fireT += 240 * n; rep = e.fireT / 240 | 0; }
-    if (bite === 3 && mayFire(g, e)) ring(g, e.x, e.y, 16, 1.6, g.rng.range(0, 0.3));
-  }
-  const k = Math.min(1 + (e.fireT / 240 | 0) * 0.08 + Math.max(0, (e.fireT / 240 | 0) - 3) * 0.22, 2.2);
-  if (e.age < 90) { // gravitas entrance — the one allowed pause. The wing pods
-    // deploy on the last beat, so the spawn-frame field is bare (S3b arrival
-    // ritual: no live enemies but the boss itself at spawn).
-    e.y += 1.33;
-    if (e.age === 89 && e.phase === 0) spawnParts(g, e);
-    return;
-  }
-  // (descends to y≈93: fights inside the capped-pipeline's effective range, so
-  // closing on the boss is rewarded the same way it is against everything else)
-  // r6 S3b burn telegraph: during the 60f handoff armor the outgoing form BURNS —
-  // ember spray from logic (deterministic; renderer adds the red tint/flicker).
-  if (e.phase > 0 && g.frame < e.armorUntil && (g.frame & 3) === 0) {
-    for (let i = 0; i < 3; i++) { // r8-fx: small burn-red flame licks (reads as burning, not confetti)
-      if (!spawnFx(g, FX.FIRE, e.x + g.fxRng.range(-24, 24), e.y + g.fxRng.range(-20, 20),
-        g.fxRng.range(-0.8, 0.8), g.fxRng.range(-2.4, -0.6), 16 + g.fxRng.range(0, 12), 3 + g.fxRng.range(0, 3), FAM.BURN)) break;
-    }
-  }
+// r80: the camp governor, MOVED verbatim out of updateBoss (stage 1) so every
+// boss module shares it (plan §6: bosses share the r6 ritual code, never copy it).
+// Returns the three facts the phase blocks read: latched / parked / vLead.
   // r6.3 camp governor (critic 3, F1-F3). What the referee's probes share —
   // and honest play never does — is STILLNESS: pinned and shuttle campers hold
   // input-still at their stops, while a live player is perpetually dodging the
@@ -450,6 +500,7 @@ export function updateBoss(g, e) {
   //    bands and the ration. A blind shuffler's stops stay ≥55px from the
   //    latched boss forever, so it can never demonstrate tracking; a live
   //    player who follows the relocation keeps shooting the whole time.
+export function campGovernor(g, e) {
   const pVx = g.player.x - g.player.prevX;
   const gap = Math.abs(g.player.x - e.x);
   e.pxEma += (g.player.x - e.pxEma) * 0.04;
@@ -585,12 +636,94 @@ export function updateBoss(g, e) {
         e.latchX = g.player.x; latched = true;
       }
       e.latchN++;
-      if (phase === 0) e.holdT = Math.min(e.holdT, 1); // P1: this dwell ends now
+      if (e.phase === 0) e.holdT = Math.min(e.holdT, 1); // P1: this dwell ends now
     }
   }
   // r6.5 led-aim input: the target's NET x-velocity, read off the boss's own
   // player-position ema (a drifter's 1.2px/f reads exactly; a hoverer reads ~0)
   const vLead = (g.player.x - e.pxEma) * 0.04;
+  return { latched, parked, vLead };
+}
+
+// r80: the r6 ritual's shared beats, MOVED verbatim out of updateBoss so a
+// second boss module shares them instead of copying boss 1 (plan §6).
+// bossEntrance: the 90f armored descent; returns true while still entering.
+// `parts` = the stage's part-spawner (stage 1: spawnParts below).
+export function bossEntrance(g, e, parts) {
+  if (e.age < 90) { // gravitas entrance — the one allowed pause. The wing pods
+    // deploy on the last beat, so the spawn-frame field is bare (S3b arrival
+    // ritual: no live enemies but the boss itself at spawn).
+    e.y += 1.33;
+    if (e.age === 89 && e.phase === 0) parts(g, e);
+    return true;
+  }
+  return false;
+}
+// (descends to y≈93: fights inside the capped-pipeline's effective range, so
+// closing on the boss is rewarded the same way it is against everything else)
+// r6 S3b burn telegraph: during the 60f handoff armor the outgoing form BURNS —
+// ember spray from logic (deterministic; renderer adds the red tint/flicker).
+export function bossBurn(g, e) {
+  if (e.phase > 0 && g.frame < e.armorUntil && (g.frame & 3) === 0) {
+    for (let i = 0; i < 3; i++) { // r8-fx: small burn-red flame licks (reads as burning, not confetti)
+      if (!spawnFx(g, FX.FIRE, e.x + g.fxRng.range(-24, 24), e.y + g.fxRng.range(-20, 20),
+        g.fxRng.range(-0.8, 0.8), g.fxRng.range(-2.4, -0.6), 16 + g.fxRng.range(0, 12), 3 + g.fxRng.range(0, 3), FAM.BURN)) break;
+    }
+  }
+}
+// The P2/P3 full-width tanh sweep with the governor's banned bands as WALLS
+// (r6.4) — the same statements P2 and P3 ran inline, omega = 0.006 / 0.005.
+export function bandedSweep(e, latched, omega) {
+  e.holdT += Math.max(-0.4, Math.min(0.4, -e.holdT));
+  e.vy += Math.max(-0.25, Math.min(0.25, 100 - e.vy));
+  let tx = W / 2 + e.holdT + Math.tanh(3.5 * Math.sin(e.age * omega + e.sweepOff)) / Math.tanh(3.5) * e.vy;
+  // r6.4: bands are WALLS, not detours — the boss stays on its side of every
+  // banned stop until a refund drops the bands. (The old push only redirected
+  // targets INSIDE a band; a raw target beyond it made the boss glide
+  // THROUGH the camper's stop, ~23 dmg per crossing — the last income leak
+  // for mid-field stops.) bandSide picks the boss's side, or open field near
+  // an edge so a crawler can't corner the boss against the clamp.
+  if (latched) { const s = bandSide(e, e.latchX); if (s > 0 ? tx < e.latchX + 55 : tx > e.latchX - 55) tx = e.latchX + s; }
+  if (e.latchX2 > -1e8) { const s = bandSide(e, e.latchX2); if (s > 0 ? tx < e.latchX2 + 55 : tx > e.latchX2 - 55) tx = e.latchX2 + s; }
+  tx = Math.max(52, Math.min(W - 52, tx)); // parts ride at ±38: keep them off the edge band (s5_edges)
+  e.x += Math.max(-4.4, Math.min(4.4, tx - e.x)); // continuity governor
+}
+// per-phase timeout: advance without reward, bullets stay (no milking, S6)
+export function bossTimeout(g, e, parts) {
+  if (e.vulnAt >= 0 && g.frame - e.vulnAt > BOSS_PHASE_TIMEOUT) {
+    g.stats.timeouts++; g.stats.timeoutLog.push('boss-p' + (e.phase + 1));
+    fleeTelegraph(g, e); // r22 (Booth report: "after killing the boss his laser
+    // kept flying at me and killed me" — an unrecorded run's P3 TIMED OUT and
+    // the silent despawn read as a kill, leaving the lances as a betrayal).
+    // The scoring law is untouched: pays nothing, cancels nothing. The flee is
+    // now LEGIBLE: popup + deterministic departure fx, zero rng, zero gameplay
+    // delta — referee byte-identical.
+    advanceBossPhase(g, e, false, 1, parts);
+  }
+}
+
+export function updateBoss(g, e) {
+  g.emitter = e; // r59: needle-tier context (see patterns.js fire)
+  const phase = e.phase; let rep = e.fireT / 240 | 0;
+  // escalation per cycle (S3); super-linear past rep 3 — killers resolve phases
+  // by rep 2-4, so the steep tail is what riding a timeout costs (S4/S6, r3)
+  // r73 EXPERIMENT (Lab `bossParts`, open Q17): parts bite back. Jacob: "I don't
+  // think killing the parts should make the boss easier. In DoDonPachi and in
+  // Blue Revolver, destroying the parts often makes the fight harder!" Variant
+  // 1/3: each dead part advances the escalation clock one rep (fireT += 240
+  // keeps t, bumps rep → faster + denser for the rest of the phase). Variant 3
+  // also answers the kill with a retaliation ring. Variant 2/3: the core
+  // INHERITS the dead part's emitter, denser (see the phase blocks).
+  const bite = g.tune.partBite | 0;
+  if (bite && e.partKills > e.partSeen) {
+    const n = e.partKills - e.partSeen; e.partSeen = e.partKills;
+    if (bite === 1 || bite === 3) { e.fireT += 240 * n; rep = e.fireT / 240 | 0; }
+    if (bite === 3 && mayFire(g, e)) ring(g, e.x, e.y, 16, 1.6, g.rng.range(0, 0.3));
+  }
+  const k = Math.min(1 + (e.fireT / 240 | 0) * 0.08 + Math.max(0, (e.fireT / 240 | 0) - 3) * 0.22, 2.2);
+  if (bossEntrance(g, e, spawnParts)) return; // r80: moved verbatim (see bossEntrance)
+  bossBurn(g, e);                             // r80: moved verbatim (see bossBurn)
+  const { latched, parked, vLead } = campGovernor(g, e); // r80: moved verbatim (see campGovernor)
   e.fireT++;
   const t = e.fireT % 240;
 
@@ -652,23 +785,7 @@ export function updateBoss(g, e) {
     // latched pursuer only has to re-track the ordinary sweep (an earlier
     // receding-sweep variant starved the honest expert too). holdT/vy relax
     // back to the default center/amplitude.
-    {
-      e.holdT += Math.max(-0.4, Math.min(0.4, -e.holdT));
-      e.vy += Math.max(-0.25, Math.min(0.25, 100 - e.vy));
-    }
-    {
-      let tx = W / 2 + e.holdT + Math.tanh(3.5 * Math.sin(e.age * 0.006 + e.sweepOff)) / Math.tanh(3.5) * e.vy;
-      // r6.4: bands are WALLS, not detours — the boss stays on its side of every
-      // banned stop until a refund drops the bands. (The old push only redirected
-      // targets INSIDE a band; a raw target beyond it made the boss glide
-      // THROUGH the camper's stop, ~23 dmg per crossing — the last income leak
-      // for mid-field stops.) bandSide picks the boss's side, or open field near
-      // an edge so a crawler can't corner the boss against the clamp.
-      if (latched) { const s = bandSide(e, e.latchX); if (s > 0 ? tx < e.latchX + 55 : tx > e.latchX - 55) tx = e.latchX + s; }
-      if (e.latchX2 > -1e8) { const s = bandSide(e, e.latchX2); if (s > 0 ? tx < e.latchX2 + 55 : tx > e.latchX2 - 55) tx = e.latchX2 + s; }
-      tx = Math.max(52, Math.min(W - 52, tx)); // parts ride at ±38: keep them off the edge band (s5_edges)
-      e.x += Math.max(-4.4, Math.min(4.4, tx - e.x)); // continuity governor
-    }
+    bandedSweep(e, latched, 0.006); // r80: moved verbatim (see bandedSweep)
     if (mayFire(g, e)) {
       if (t % 28 === 10) twinSpiral(g, e.x, e.y + 8, (e.fireT * 0.11) % 6.28, 3 + (rep > 2 ? 1 : 0) + (rep > 3 ? 1 : 0), 1.35 * k, 1, 0.012);
       if (rep >= 3 && t % 30 === 22) twinSpiral(g, e.x, e.y + 8, (e.fireT * 0.13 + 1.7) % 6.28, 2, 1.6 * k, -1, 0.012); // timeout-rider tax: counter-spiral
@@ -679,18 +796,8 @@ export function updateBoss(g, e) {
     // recombining ONLY the earlier signatures: P1's lances (mirrored, scissoring
     // at the player), P2's spirals, plus the stripped core's radial ring beat.
     // Riding the full-width sweep: stay on it or watch it time out (anti-camp).
-    { // starve geometry same as P2: bands carry the guarantee, sweep stays normal
-      e.holdT += Math.max(-0.4, Math.min(0.4, -e.holdT));
-      e.vy += Math.max(-0.25, Math.min(0.25, 100 - e.vy));
-    }
-    {
-      let tx = W / 2 + e.holdT + Math.tanh(3.5 * Math.sin(e.age * 0.005 + e.sweepOff)) / Math.tanh(3.5) * e.vy;
-      // bands are walls, same as P2 (see bandSide there)
-      if (latched) { const s = bandSide(e, e.latchX); if (s > 0 ? tx < e.latchX + 55 : tx > e.latchX - 55) tx = e.latchX + s; }
-      if (e.latchX2 > -1e8) { const s = bandSide(e, e.latchX2); if (s > 0 ? tx < e.latchX2 + 55 : tx > e.latchX2 - 55) tx = e.latchX2 + s; }
-      tx = Math.max(52, Math.min(W - 52, tx)); // parts ride at ±38: keep them off the edge band (s5_edges)
-      e.x += Math.max(-4.4, Math.min(4.4, tx - e.x)); // continuity governor
-    }
+    // starve geometry same as P2: bands carry the guarantee, sweep stays normal
+    bandedSweep(e, latched, 0.005); // r80: moved verbatim (see bandedSweep)
     // r6.2 (critic 1 partial, S3b-2): P3's movement STYLE is its own — the full
     // sweep gains a slow vertical LUNGE between two heights (fireT-keyed, so the
     // bob starts from rest at the t23 flip: the boss holds y≈91-93 there and the
@@ -716,20 +823,10 @@ export function updateBoss(g, e) {
     }
   }
 
-  // per-phase timeout: advance without reward, bullets stay (no milking, S6)
-  if (e.vulnAt >= 0 && g.frame - e.vulnAt > BOSS_PHASE_TIMEOUT) {
-    g.stats.timeouts++; g.stats.timeoutLog.push('boss-p' + (e.phase + 1));
-    fleeTelegraph(g, e); // r22 (Booth report: "after killing the boss his laser
-    // kept flying at me and killed me" — an unrecorded run's P3 TIMED OUT and
-    // the silent despawn read as a kill, leaving the lances as a betrayal).
-    // The scoring law is untouched: pays nothing, cancels nothing. The flee is
-    // now LEGIBLE: popup + deterministic departure fx, zero rng, zero gameplay
-    // delta — referee byte-identical.
-    advanceBossPhase(g, e, false);
-  }
+  bossTimeout(g, e, spawnParts); // r80: moved verbatim (see bossTimeout)
 }
 
-export function advanceBossPhase(g, e, killed, fade = 1) {
+export function advanceBossPhase(g, e, killed, fade = 1, parts = spawnParts) { // r80: `parts` = the stage's part-spawner (default: stage 1's)
   g.stats.bossPhaseFrames.push(e.fireT);
   if (killed) {
     bulletCancelWall(g, e.x, e.y);
@@ -767,7 +864,7 @@ export function advanceBossPhase(g, e, killed, fade = 1) {
   e.sweepOff = theta - e.age * omega;
   // r6: the incoming form's sub-part(s) ride in with the new phase; the old
   // phase's parts despawn themselves (updateEnemy case 6 checks boss.phase).
-  spawnParts(g, e);
+  parts(g, e);
 }
 
 // --- timeline ------------------------------------------------------------

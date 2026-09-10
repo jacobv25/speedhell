@@ -2,7 +2,7 @@
 // Runs identically in browser and Node (sim harness imports this file).
 import { makeRng } from './rng.js';
 import { makePool } from './pool.js';
-import { updateEnemy, ENEMY_DEFS, BOSS_PHASE_TIMEOUT } from './stage.js';
+import { updateEnemy, ENEMY_DEFS, BOSS_PHASE_TIMEOUT, GROUND } from './stage.js'; // r80: GROUND = types the ship flies over (no contact)
 import { STAGES, stageAt } from './stages/index.js'; // r78: the campaign table — g.timeline / the boss hook come from STAGES[g.level]
 
 export const W = 320, H = 427;
@@ -50,7 +50,7 @@ export function sfx(g, id) {
 // Sim (seed C0FFEE, expert): needles 45% → 22% of all fire; first needle now
 // appears with the s3 mids; s1/s2/s5 are all-pink. Set g.needleTier = null
 // to replay the old rule. Referee recert pending (bullet stream changed).
-export const NEEDLE_TIER = { 1: 1, 3: 1, 4: 1, 5: 1, 6: 1 };
+export const NEEDLE_TIER = { 1: 1, 3: 1, 4: 1, 5: 1, 6: 1, 9: 1 }; // r80: + the stage-2 hull core (elite class); tanks (7) and bone walls (8) stay pink
 
 // r79 (Jacob, 2026-09-09: "let's go with the extend rule A1"): ONE extend per loop at a
 // fixed, announced score — visible, binary, no math (Pillar 2). 400,000 ≈ an expert's
@@ -110,6 +110,7 @@ export function makeGame(seed = 1) {
       grazeT: 0, // r6.4: frames since a bullet grazed the player's core (in-fire window)
       grindHp: 0, // r6.4: per-phase hp dealt from IN-FIRE play — the grind account
       flash: 0, // r8-fx S4-MUST: hit-flash frames remaining (renderer paints the silhouette white)
+      bobX: 0, bobY: 0, bobX2: 0, bobY2: 0, // r80: pendulum emitter positions (stage 2's Bell) — written by the stage's boss hook, read by the renderer only
     })),
     items: makePool(200, () => ({ x: 0, y: 0, vy: 0, val: 0, tw: 0 })),
     particles: makePool(400, () => ({
@@ -290,6 +291,7 @@ export function spawnEnemy(g, type, x, y, opts = {}) {
   e.grazeT = 0; e.grindHp = 0; e.lastDir = 0; e.monoT = 0; e.latchT = 0; e.stillRun = 0; e.flash = 0; e.bloomed = 0;
   e.vulnAt = -1; e.armorUntil = 0; // vuln set once on-screen (top dead zone + intro armor)
   e.partKills = 0; e.partSeen = 0; // r73: parts killed this phase (killEnemy counts, updateBoss reacts)
+  e.bobX = e.bobY = e.bobX2 = e.bobY2 = 0; // r80
   // r6.4: the boss's entrance armor lives HERE, not in the timeline event, so
   // every spawn path (referee camp probes included) gets the untouchable 90f
   // descent. (r6.3 shipped this line BEFORE the armorUntil reset above — the
@@ -323,9 +325,9 @@ function killEnemy(g, e, idx) {
   g.score += v; g.kills++;
   g.stats.killLog.push({ t: e.type, f: aliveFrames, s: speed ? 1 : 0 });
   if (e.type === 6) for (let i = 0; i < g.enemies.count; i++) { const b = g.enemies.items[i]; if (b.type === 5 && b.phase === e.phase) b.partKills++; } // r73: parts bite back (stage.js updateBoss reads partKills)
-  const big = e.type === 3 || e.type === 4; // elite/midboss get the shake (S4);
+  const big = e.type === 3 || e.type === 4 || e.type === 9; // elite/midboss get the shake (S4); r80: + the hull core (elite class)
   // boss sub-parts (type 6) pop like popcorn — shake stays reserved (S4-SHOULD)
-  const med = e.type === 1 || e.type === 2; // turret / mid: heavier than popcorn, no shake
+  const med = e.type === 1 || e.type === 2 || e.type === 7 || e.type === 8; // turret / mid: heavier than popcorn, no shake; r80: + tank / wall (turret class)
   let tier = big ? TIER.BIG : med ? TIER.MED : TIER.POP;
   // r53 EXPERIMENT (wiki §10, research/explosion-and-weapon-feel): the reward
   // the natural meta pays is dressed, not the gun — a speed kill explodes one
@@ -353,7 +355,12 @@ function killEnemy(g, e, idx) {
   //    space-controller, and its full wipe erased the next mid's entry fan
   //    (r10), un-toothing the gauntlet the moment it grew teeth.
   // Garnish-priced like the S7 release wall so it can't out-earn the core (S6).
-  if (e.type === 3) bulletCancelWall(g, e.x, e.y, 30, 90);
+  if (e.type === 3 || e.type === 9) bulletCancelWall(g, e.x, e.y, 30, 90); // r80: the hull core relieves its own deck the way an elite does
+  // r80: a bone-wall segment pays 3 loot items — destructible terrain hides
+  // loot (Garegga houses, Psikyo gold under buildings; research doc Q1), priced
+  // as routing signage (100 each, below the S7 release coin — S6 garnish). Fixed
+  // offsets, no rng: the referee's stream is untouched by breaching.
+  if (e.type === 8) for (let k = -1; k <= 1; k++) spawnItem(g, e.x + k * 9, e.y + 4 + (k & 1) * 6, 100);
   g.enemies.killAt(idx);
 }
 
@@ -504,6 +511,7 @@ export function update(g) {
   }
 
   // --- enemies ---
+  const st = stageAt(g.level); // r80: one lookup per frame (was per boss tick)
   for (let i = g.enemies.count - 1; i >= 0; i--) {
     const e = g.enemies.items[i];
     e.age++;
@@ -515,7 +523,11 @@ export function update(g) {
     // sweep below removed them — a killed P3 boss could fire a final lance
     // volley AFTER its kill's full-screen cancel, from beyond the grave, with
     // nothing left alive to ever cancel it. Dead enemies never update.
-    if (!e.dead) { if (e.type === 5) stageAt(g.level).boss.update(g, e); else updateEnemy(g, e); } // r78: the boss runs through the stage module's hook (stage 1: stage.js updateBoss)
+    // r78: the boss runs through the stage module's hook (stage 1: stage.js updateBoss).
+    // r80: a stage may also own OTHER types through `enemyUpdate[type]` (stage 2:
+    // the Hearse = type 4, its anchor = 10, the Bell's parts = 6); stage 1 exports
+    // none, so every one of its enemies takes the shared updateEnemy path as before.
+    if (!e.dead) { const hook = st.enemyUpdate && st.enemyUpdate[e.type]; if (hook) hook(g, e); else if (e.type === 5) st.boss.update(g, e); else updateEnemy(g, e); }
     // outro: off-screen enemies despawn silently, fire nothing (S4)
     if (e.dead || e.y > H + 40 || e.y < -80 || e.x < -60 || e.x > W + 60) {
       if (e.dead === 2) killEnemy(g, e, i); // marked killed by script (timeout phases use dead=1: no score)
@@ -601,6 +613,7 @@ export function update(g) {
   if (p.invuln === 0) {
     for (let i = 0; i < g.enemies.count; i++) {
       const e = g.enemies.items[i];
+      if (GROUND[e.type]) continue; // r80: the ship flies OVER tanks and the hull (Toaplan/Psikyo ground layer); stage 1 has no ground types
       const dxx = e.x - p.x, dyy = e.y - p.y, rr = e.r + PLAYER.hitR;
       if (dxx * dxx + dyy * dyy < rr * rr) { playerDie(g, 'contact'); break; }
     }

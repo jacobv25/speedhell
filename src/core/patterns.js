@@ -121,3 +121,16 @@ export function twinSpiral(g, x, y, step, count, speed, dir, curve) {
     fire(g, x, y, -step - k * 0.42 * dir, speed, B_ROUND, 0, -curve * dir);
   }
 }
+
+// r80 (stage 2's boss-only dialect, WS03 #6 "emitter movement distorts the
+// pattern"): a STATIC fan of rounds about an arbitrary base angle. The Bell's
+// clapper swings on a pendulum and fires this along the chain's radial, so a
+// fixed fan stretches into curved sheets on screen — pendulum arcs. Pink
+// rounds (static = positional, S3); no rng. Nothing in a stage section calls
+// it (S3b-6: the dialect is the boss's alone).
+export function staticFan(g, x, y, n, spread, speed, base) {
+  for (let i = 0; i < n; i++) {
+    const t = n === 1 ? 0 : i / (n - 1) - 0.5;
+    fire(g, x, y, base + t * spread, speed, B_ROUND);
+  }
+}
