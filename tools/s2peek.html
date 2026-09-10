@@ -1,0 +1,71 @@
+<!doctype html><meta charset="utf-8">
+<!-- STAGE 2 peek (r80): headless sheets of THE BONE RAIL drawn by the BASE skin (the
+     cute-occult creatures for the new types are a later pass). The referee's expert
+     bot plays seed C0FFEE from startRun(g, 0, 1) with its LIVES PINNED (a probe-only
+     edit so one run reaches every form; the honest bot table is stage2-probe.mjs).
+       node tools/peek.mjs 'tools/s2peek.html?mode=sections' docs/img/r80-s2-sections.png 1940x1340
+       node tools/peek.mjs 'tools/s2peek.html?mode=boss'     docs/img/r80-s2-boss.png     1460x700
+       node tools/peek.mjs 'tools/s2peek.html?mode=hearse'   docs/img/r80-s2-hearse.png   1940x700
+     mode=sections: each section at its entry frame + 120f, plus the DENSEST frame of the
+     run (max enemy bullets) with the draw time of 60 draws averaged (S8 budget 16.6 ms).
+     mode=boss: the three forms, ~150f into each. mode=hearse: four consecutive frames
+     25f apart mid-fight (the pendulum's motion; passive-human bot so the anchor lives). ?skin=cute-occult shows the fallback. -->
+<body style="margin:0;background:#05060a">
+<canvas id="c" width="1940" height="1340"></canvas>
+<script type="module">
+import { makeGame, startRun, update, W, H } from '../src/core/game.js';
+import { draw, resetHud, setSkin } from '../src/render/renderer.js';
+import { STAGES } from '../src/core/stages/index.js';
+import { makeBot } from '../test/bot.mjs';
+const Q = new URLSearchParams(location.search), MODE = Q.get('mode') || 'sections', SC = 1.5;
+setSkin(Q.get('skin') || 'base');
+const c = document.getElementById('c'), ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = false;
+const label = (t, x, y) => { ctx.fillStyle = '#ffd24a'; ctx.font = 'bold 15px monospace'; ctx.textAlign = 'left'; ctx.fillText(t, x, y); };
+const off = document.createElement('canvas'); off.width = W; off.height = H; const octx = off.getContext('2d');
+const stub = { next: () => 0.5, range: (a, b) => (a + b) / 2 };
+function render(measure) {
+  const real = g.rng; g.rng = stub; octx.setTransform(1, 0, 0, 1, 0, 0);
+  for (let i = 0; i < 30; i++) draw(g, octx, g.stageT * 1.05); // settle the HUD tick
+  let ms = 0;
+  if (measure) { const t0 = performance.now(); for (let i = 0; i < 60; i++) draw(g, octx, g.stageT * 1.05); ms = (performance.now() - t0) / 60; }
+  g.rng = real; return ms;
+}
+const tiles = []; // { img, text }
+function snap(text, measure) { const ms = render(measure); const im = document.createElement('canvas'); im.width = W; im.height = H; im.getContext('2d').drawImage(off, 0, 0); tiles.push({ im, text: text + (measure ? ` · draw ${ms.toFixed(2)} ms` : '') }); return ms; }
+const SEC = STAGES[1].SECTIONS;
+const g = makeGame(0xC0FFEE); startRun(g, 0, 1); resetHud();
+const bot = makeBot(MODE === 'hearse' ? { aggressive: false, lookahead: 10, reactDelay: 7 } : { aggressive: true, lookahead: 14, reactDelay: 0 }); // hearse: the passive-human bot keeps its distance, so the anchor lives long enough to swing
+const entered = {}; let maxB = -1, maxAt = 0, prevPhase = -1, phaseAt = 0, hearseAt = 0, hearseShots = 0, denseSnapDone = false;
+const perf = { maxBullets: 0, draw: 0 };
+// pass 1: find the densest frame (so pass 2 can capture it exactly)
+{
+  const q = makeGame(0xC0FFEE); startRun(q, 0, 1); const b2 = makeBot({ aggressive: true, lookahead: 14, reactDelay: 0 });
+  while (q.state === 'play' && q.frame < 20000) { b2(q); q.player.lives = 9; update(q); if (q.eBullets.count > maxB) { maxB = q.eBullets.count; maxAt = q.frame; } }
+}
+for (let f = 0; f < 20000 && g.state === 'play'; f++) {
+  bot(g); g.player.lives = 9; update(g);
+  let boss = null, hearse = null;
+  for (let i = 0; i < g.enemies.count; i++) { const e = g.enemies.items[i]; if (e.type === 5) boss = e; if (e.type === 4) hearse = e; }
+  if (MODE === 'sections') {
+    for (let i = 1; i < SEC.length; i++) if (!(i in entered) && g.stageT >= SEC[i].t) entered[i] = g.frame;
+    for (let i = 1; i < SEC.length; i++) if (entered[i] === g.frame - 120 && !entered['s' + i]) { entered['s' + i] = 1; snap(`${SEC[i].label} · stageT ${g.stageT} f${g.frame} · enemies ${g.enemies.count} bullets ${g.eBullets.count}`); }
+    if (g.frame === maxAt && !denseSnapDone) { denseSnapDone = true; perf.maxBullets = g.eBullets.count; perf.draw = snap(`DENSEST FRAME · stageT ${g.stageT} f${g.frame} · bullets ${g.eBullets.count} enemies ${g.enemies.count}`, true); }
+  } else if (MODE === 'boss') {
+    if (boss && boss.phase !== prevPhase) { prevPhase = boss.phase; phaseAt = g.frame; }
+    if (boss && g.frame === phaseAt + 150) snap(`THE BELL form ${boss.phase + 1} · ${['BELL TOWER', 'BELL WALKER', 'THE CLAPPER'][boss.phase]} · +150f · bullets ${g.eBullets.count} · hp ${boss.hp | 0}`);
+  } else if (MODE === 'hearse') {
+    if (hearse && !hearseAt && hearse.fireT >= 70) hearseAt = g.frame; // the chain is fully dropped at 60 parked frames
+    if (hearseAt && hearseShots < 4 && (g.frame - hearseAt) % 25 === 0) { hearseShots++; snap(`THE HEARSE · f${g.frame} (+${g.frame - hearseAt}) · anchor at (${hearse.bobX | 0},${hearse.bobY | 0}) · bullets ${g.eBullets.count}`); }
+  }
+  if (MODE === 'boss' && tiles.length >= 3) break;
+  if (MODE === 'hearse' && tiles.length >= 4) break;
+}
+const cols = MODE === 'sections' ? 4 : tiles.length || 1, tw = W * SC, th = H * SC;
+label(`STAGE 2 — THE BONE RAIL (r80, base skin${Q.get('skin') ? ' fallback via ?skin=' + Q.get('skin') : ''}) · seed C0FFEE · ${MODE === 'hearse' ? 'passive-human bot' : 'expert bot'}, lives pinned · outcome ${g.state} f${g.frame}` + (MODE === 'sections' ? ` · densest frame ${perf.maxBullets} bullets drawn in ${perf.draw.toFixed(2)} ms (budget 16.6)` : ''), 4, 16);
+for (let i = 0; i < tiles.length; i++) {
+  const x = (i % cols) * (tw + 4), y = Math.floor(i / cols) * (th + 30) + 46;
+  ctx.drawImage(tiles[i].im, x, y, tw, th);
+  label(tiles[i].text, x + 4, y - 8);
+}
+window.__perf = perf; window.__tiles = tiles.length; window.__done = true;
+</script></body>
