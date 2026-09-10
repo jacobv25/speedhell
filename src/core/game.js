@@ -118,6 +118,12 @@ export function makeGame(seed = 1) {
     warn: 0, // r6 S3b arrival ritual: frames of WARNING remaining before the boss gate
 
     clearBonus: 0, clearAt: 0, endFrame: 0,
+    // r85 (plan §3 stage 5, the CAMPAIGN RECEIPT): one record per stage the run
+    // has finished, appended by the clear tally below. Core emits the data and
+    // never formats it — the shell draws the card (src/results.js). Pure
+    // instrumentation: no rng, no behaviour, and `nextStage` carries it, so a
+    // five-stage clear ends holding all five rows.
+    stageLog: [],
     // pools — capacities are hard caps (rubric S8)
     pBullets: makePool(64, () => ({ x: 0, y: 0, vy: 0, alive: 0 })),
     needleTier: NEEDLE_TIER, emitter: null, // r59: bullet caste by source (null = every aimed shot is a needle, the r5–r58 rule)
@@ -143,6 +149,13 @@ export function makeGame(seed = 1) {
       grindHp: 0, // r6.4: per-phase hp dealt from IN-FIRE play — the grind account
       flash: 0, // r8-fx S4-MUST: hit-flash frames remaining (renderer paints the silhouette white)
       bobX: 0, bobY: 0, bobX2: 0, bobY2: 0, // r80: pendulum emitter positions (stage 2's Bell) — written by the stage's boss hook, read by the renderer only
+      // r85 (stage 5's returning-midboss gauntlet): which stage module OWNS this
+      // body. 0 = the stage that is playing, which is every enemy on stages 1-4;
+      // stage 5 reuses the shared type-4 midboss slot for TWO different returning
+      // midbosses (the Hearse, level 1, and the Gatekeeper, level 3) and stamps
+      // the owner's level here, so its `enemyUpdate[4]` hook and the renderer's
+      // painter both know which one this is. Never read on stages 1-4.
+      role: 0,
     })),
     items: makePool(200, () => ({ x: 0, y: 0, vy: 0, val: 0, tw: 0 })),
     particles: makePool(400, () => ({
@@ -201,6 +214,7 @@ export function nextStage(g) {
     rng: g.rng, fxRng: g.fxRng, frame: g.frame, score: g.score, kills: g.kills, speedKills: g.speedKills,
     stats: g.stats, tune: g.tune, needleTier: g.needleTier, fxMeta: g.fxMeta, fxHitstop: g.fxHitstop,
     practice: g.practice, startLevel: g.startLevel, level: g.level + 1, extended: g.extended, // r79: one extend per LOOP, not per stage
+    stageLog: g.stageLog, // r85: the campaign receipt's rows survive the seam
   };
   Object.assign(g, makeGame(g.seed), carry);
   g.player.lives = lives; g.player.bombs = bombs;
@@ -324,6 +338,7 @@ export function spawnEnemy(g, type, x, y, opts = {}) {
   e.vulnAt = -1; e.armorUntil = 0; // vuln set once on-screen (top dead zone + intro armor)
   e.partKills = 0; e.partSeen = 0; // r73: parts killed this phase (killEnemy counts, updateBoss reacts)
   e.bobX = e.bobY = e.bobX2 = e.bobY2 = 0; // r80
+  e.role = opts.role || 0; // r85: 0 = the playing stage owns this body (every enemy on stages 1-4); stage 5 stamps a returning midboss's OWNER level here — reset every spawn, so a pooled slot never carries a stale owner
   // r6.4: the boss's entrance armor lives HERE, not in the timeline event, so
   // every spawn path (referee camp probes included) gets the untouchable 90f
   // descent. (r6.3 shipped this line BEFORE the armorUntil reset above — the
@@ -754,6 +769,17 @@ export function update(g) {
     // receipt, the target-briefing card, then calls nextStage(g). With one
     // stage (STAGES.length === 1) this is today's 'clear', byte for byte.
     g.state = g.level >= STAGES.length - 1 ? 'clear' : 'stageclear'; g.endFrame = g.frame; sfx(g, SFX.CLEAR);
+    // r85: the stage's own numbers, banked for the CAMPAIGN receipt (plan §3).
+    // Deltas against g.stageBase — exactly what the per-stage receipt already
+    // prints — so nothing new is computed and no scoring math is added: the
+    // campaign card is a re-READ of numbers the run already paid for.
+    const sb = g.stageBase;
+    g.stageLog.push({
+      level: g.level, frames: g.frame - sb.frame, score: g.score - sb.score,
+      kills: g.kills - sb.kills, speedKills: g.speedKills - sb.speedKills,
+      deaths: g.stats.deaths.length - sb.deaths, bombsUsed: g.stats.bombsUsed - sb.bombsUsed,
+      bonus: g.clearBonus, lives: p.lives, bombs: p.bombs,
+    });
   }
 
   // --- instrumentation (fixed cadence, bounded size) ---

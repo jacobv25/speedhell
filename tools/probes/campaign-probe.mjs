@@ -68,7 +68,10 @@ if (cert) {
 // probe-only edit of the flow under test, printed as such.
 console.log(`campaign-probe — 2. the campaign seam (STAGES = [${STAGES.map((s) => s.name).join(', ')}])`);
 const N0 = STAGES.length;
-ok(N0 >= 2 && STAGES[1].name === 'THE BONE RAIL', `stage 2 registered: ${STAGES[1]?.name}`);
+// r85: the roster assert is the whole campaign now — five stages, in order
+// (plan §7 step 6 done; Pillars "V1 = a five-stage campaign").
+const ROSTER = ['THE CRYPT', 'THE BONE RAIL', 'THE CANDLE SEA', 'THE BLOOD GATE', 'THE GREAT ALTAR'];
+ok(N0 === 5 && ROSTER.every((n, i) => STAGES[i]?.name === n), `all five stages registered, in order: ${STAGES.map((s) => s.name).join(' → ')}`);
 {
   const g = startRun(makeGame(SEED), 0, 0);
   const rng0 = g.rng, fx0 = g.fxRng, bot = makeBot(BOTS.expert);
@@ -117,7 +120,17 @@ ok(N0 >= 2 && STAGES[1].name === 'THE BONE RAIL', `stage 2 registered: ${STAGES[
       play(q, b2);
       console.log(`  invulnerable through stage ${q.level + 1} → ${sig(q)}  level ${q.level}  that stage alone: f=${q.frame - f1} score=${q.score - s1} timeouts ${q.stats.timeouts}`);
     }
-    ok(q.state === 'clear' && q.level === N0 - 1 && q.bossKilled, `final stage's boss down → g.state === 'clear' at level ${q.level} (the last stage's clear is today's clear), bossKilled`);
+    // r85: `bossKilled` came OUT of this assert. It is not a plumbing fact — it is
+    // false when the last form TIMED OUT, and stage 5's Idol has four forms, so an
+    // invulnerable bot that is not routing for damage can (and on seed C0FFEE
+    // does) ride one out. The plumbing claim is the state and the level; whether
+    // the finale was killed or timed out is printed, not asserted.
+    ok(q.state === 'clear' && q.level === N0 - 1, `final stage's boss down → g.state === 'clear' at level ${q.level} (the last stage's clear is today's clear)`);
+    console.log(`  note  the last form was ${q.bossKilled ? 'KILLED' : 'TIMED OUT'} (timeouts [${q.stats.timeoutLog}]) — either way the tally runs; bossKilled is a scoring fact, not a plumbing one`);
+    // r85: the CAMPAIGN RECEIPT's data (core emits, the shell draws — src/results.js)
+    ok(q.stageLog.length === N0, `g.stageLog holds one row per cleared stage (${q.stageLog.length}/${N0}) — the campaign receipt's own data, carried across every seam`);
+    console.log('  campaign receipt rows: ' + q.stageLog.map((r) => `ST${r.level + 1} ${(r.frames / 60).toFixed(0)}s/${r.score}`).join(' · '));
+    ok(q.stageLog.reduce((a, r) => a + r.frames, 0) === q.frame && q.stageLog.reduce((a, r) => a + r.score, 0) === q.score, 'the receipt totals ARE the run totals (no new scoring math: the rows are deltas of counters the run already paid)');
     ok(q.clearBonus === q.player.lives * 1000 + q.player.bombs * 500, `the last stage's tally paid today's stock bonus (${q.clearBonus})`);
   }
   // determinism of the whole two-stage run
