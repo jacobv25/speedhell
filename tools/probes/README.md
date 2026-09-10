@@ -30,3 +30,13 @@ All import the core by ABSOLUTE path (adjust if the repo moves).
   governor's latched share, P2 deaths, hp dealt in dwell vs transit; each death
   with its section, stageT, live / angry tanks, ship y. `COMBOS=swarm/current,…`
   and `MODES=mortal|pinned` narrow the table. Builder instrument.
+- `stage3-probe.mjs [seedsHex]` — r82 STAGE 3 (THE CANDLE SEA): the referee's four
+  bots on `startRun(g, 0, 2)` over seed C0FFEE + the six robust seeds (outcome,
+  clock, time to boss, boss forms, score, speed-kill rate per type, deaths per
+  section, max bullets AND max enemies for the run and for the SWARM RUSH alone —
+  the stage's S8 stress scene, timeouts, dead air, the Twin Moths' fight length,
+  and the formation ledger: files seen, files scattered vs turned), the expert
+  with lives pinned (the clock and every form), and ONE full campaign run
+  (levels 0 → 1 → 2 on the continued rng stream) printing each stage's outcome,
+  the seams and the total clock. Builder instrument — the stage-3 control run in
+  `test/sim.mjs` is Jacob's.

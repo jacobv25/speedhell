@@ -202,6 +202,26 @@ template (L4).
   pulse before hatching (S2 warning rule).
 - **Boghog's novice test here** [T1]: after routes burn in, wait ~1 s after
   each formation spawn before moving; the file must still be survivable.
+- **Stage 3 — built r82 (2026-09-10, core pass; wiki §14).** As specified, with these
+  deviations: (1) the leader is a TYPE (11, the turret row verbatim — §6's
+  "leader is a popcorn `phase`" would have needed a renderer-wide phase-encoding
+  change and would leave the primary skin unable to draw it; 24 hp, not popcorn's
+  2, so the decision can be failed); (2) each Twin Moth is an elite-tier body
+  (220, 440 for the pair) rather than the midboss tier split, because 400/2 = 200
+  is not an existing tier — the pair dies to the expert in 11.1–11.8 s inside the
+  35 s timeout; the stagger is geometric (the right Moth holds 95 f above the
+  edge) since the gate freezes the timeline; (3) the carrier's just-in-time
+  cancel keeps the elite's garnish RATE (30/bullet) and the speed kill buys
+  RADIUS (130 vs 70) — a reach reward, not new scoring math; (4) the swarm rush
+  is the campaign's peak in BODIES (45 on screen vs 27 / 20 on stages 1 / 2) and
+  in stage-section draw load (78 bullets in 0.14 ms), but stage 1's midboss bloom
+  still holds the campaign's bullet record (124) — a formation rush is an enemy
+  peak by nature; (5) the clock landed inside the envelope for once — 1:45–2:03
+  pinned, boss at 1:00–1:02 = 42–51 % (Q24's band is 30–50 %), so no hp was
+  touched; (6) boghog's novice test passes 49/49 in the isolated sections and
+  FAILS twice per run in the swarm rush — logged as Q29, Jacob's call, not
+  patched. Cute-occult creatures, a stage-3 cue, the referee control run and the
+  Booth debrief are the next passes (§7's cooldown applies).
 
 ### Stage 4 — THE BLOOD GATE (the strict stage)
 - **Place ramp:** the gate's approach road → the corridor (wall pods bolted

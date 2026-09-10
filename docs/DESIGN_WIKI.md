@@ -875,6 +875,55 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     intended pressure (MSX: difficulty is content; the safe spot under it
     must stay legible) or the frustration (boghog: hard, never unfair)?
     The governor is shared with stage 1 and is not touched here; Jacob's.
+29. **Is the density peak allowed to fail the novice test?** (r82, §14.8.)
+    Boghog's test [T1]: after routes burn in, waiting ~1 s after a formation
+    spawns before moving must still be survivable. Measured on seven seeds:
+    **49 of 49 isolated file windows (S1–S3) survive; the SWARM RUSH kills
+    exactly 2 of the 6 windows inside it, on every seed** — never one file's
+    doing, always three or four overlapping. So the *file* passes and the
+    *section* does not. Two honest readings: (a) it is the campaign's
+    set-piece climax and the plan calls it the density peak — a second of
+    standing still there SHOULD cost you [MSX: difficulty is the content];
+    (b) [WS05] tension-release says a peak needs air, and one beat of gap
+    between the rush's third and fourth files would give it back without
+    touching hp. The lever is the file cadence (90 f today) in
+    `s3.js buildTimeline` S5, not any stat. Jacob's.
+30. **Does the leader READ?** (r82, §14.2.) The whole niche assumes you can
+    pick one crested body out of a seven-ship V inside its 150 f window. In
+    code it is a bigger silhouette (r 12 vs 10), a swept delta and a bright
+    crest that turns wine-red when the window expires (`skins/base.js:236`),
+    and the file's motion announces the miss. The referee bot is no witness —
+    it homes on `type >= 4` and beelines to leaders (§14.2). A human playtest
+    is the only test: in the drill (S1, one file, nothing else on screen), can
+    you find and kill the leader without thinking about it? If not, the fix is
+    art (a bolder crest, a wingman gap) before it is anything else.
+31. **Does anyone ever spend the just-in-time cancel?** (r82, §14.2 / §14.4.)
+    S3 puts two carriers near the shrine so that one kept alive is the button
+    that turns the Moths' 8-s curtain into gold; the speed kill buys reach
+    (r 130 vs 70) at the same garnish rate. No bot in the suite ever uses it —
+    bots kill on sight — so the conflict of goals [WS06] is untested. If a
+    human also never saves one, the theme is decoration: the remedy is to make
+    the curtain *more* worth cancelling (a longer accent) rather than to price
+    the cancel higher, because pricing it higher is scoring math and that is
+    Jacob's call and Pillar 2's line.
+32. **The Twin Moths and the r18 seal.** (r82, §14.4.) A Moth is elite class,
+    so `mayFire`'s proximity seal applies: hugging one MUTES it while its
+    mirror covers the spot you must stand in. Built on purpose — you can
+    silence one at a time, never both, and that is the pair's whole geometry.
+    But types 4 and 5 are seal-exempt *because they are bosses* (r19), and the
+    Moths occupy the midboss slot. Keep the seal (a pair that can be half-muted
+    is a positional puzzle) or exempt them (a midboss is never quiet)? No
+    corpus line settles it; r19's own reasoning cuts toward exempting them.
+    Jacob's.
+33. **Is 30 f enough egg?** (r82, §14.5.) The Queen's dialect is a pink round
+    that bursts into a 6-round ring; its only telegraph is six motes closing in
+    over the last 30 f (0.5 s — four times the S7 reaction floor), and until
+    then it looks like any other bullet. That is the point ("the pattern you
+    dodge is not the one that was fired") and it is also the risk: at P3, eggs
+    ride a medley and a player may read a hatch as an unfair spawn. Options if
+    it reads badly: a longer fuse tell (45 f), or an egg that is visibly an egg
+    from birth (a slow pulse for its whole life) — the second costs a look, not
+    a colour, so it stays inside S2's three families either way.
 
 ## 9. Practice notes (for humans)
 
@@ -1288,15 +1337,28 @@ is placement, not authoring time. Not scheduled.
 its infrastructure pass (§7 step 1) shipped at r78 — see §12. The mode order above
 is unchanged; the campaign grows *Arcade*, it is not a mode.
 
-## 12. Campaign (infrastructure r78 — LIVE at r80 with `STAGES = [s1, s2]`)
+## 12. Campaign (infrastructure r78 — LIVE at r80; `STAGES = [s1, s2, s3]` since r82)
 
 *Jacob, 2026-09-09: "i kinda wanna go down the stage 2-5 route. even though stage 1
 is not perfect. im getting really tired of playtesting it." — his override of the
 plan's "settle stage 1 first" gate (§7 step 0). r78 was §7 step 1 only: the game
 could hold N stages while stage 1 stayed byte-identical.*
 
-**r80 status — everything below is LIVE.** `stages/index.js` is `STAGES = [s1, s2]`
-(s2 = THE BONE RAIL, §13). What that switched on, with no further code: a stage-1
+**r82 status — `stages/index.js` is `STAGES = [s1, s2, s3]`** (s2 = THE BONE RAIL,
+§13; s3 = THE CANDLE SEA, §14). Registering a third stage needed **no further
+code** beyond the array: a stage-2 clear now ends in `'stageclear'` → receipt →
+briefing `STAGE 3 — THE CANDLE SEA` → `nextStage`, the PRACTICE row grew its
+`STAGE 3 — THE CANDLE SEA` entry plus seven `ST3` sections (25 rows now),
+`?level=2` and `speedhell.level` select it, and the board stamps `ST3` — all of
+it from the generic loops r78 put in `main.js`. Measured this pass: stage 1 and
+stage 2 are **byte-identical** (`node test/sim.mjs` equal to the r81 control in
+every run, robust seed, check and the determinism string; `stage2-probe` equal in
+every number on 7 seeds × 4 bots, with the one cosmetic change r80 predicted —
+a clearing stage 2 now reads `'stageclear'`, since it is no longer the last
+stage). `tools/probes/campaign-probe.mjs` was generalised the same way: its
+final-clear assert used to read "stage 2 is last" and now walks every seam.
+
+**r80 — what registering a second stage first switched on**, with no further code: a stage-1
 clear now ends in `'stageclear'` → receipt (`STAGE 1 CLEAR`, the stage line) →
 briefing card `STAGE 2 — THE BONE RAIL` → `nextStage` (lives, bombs, score, the rng
 stream carried; the extend counter carried) → the stage cue restarts; the PRACTICE
@@ -1762,6 +1824,297 @@ What moved, and what did not:
   the bot pinned at x 289; read the pinned rows for P2 under swarm.
 - **Not moved:** hp, values, windows, scoring, the seal radius, the rope node,
   the clapper, stage 1 (identity lines in the changelog).
+
+## 14. Stage 3 — THE CANDLE SEA (r82, core pass)
+
+*Built 2026-09-10 from plan §3 ("stage 3 — the set-piece climax"); this is the
+core + a base-skin drawing + a probe. Cute-occult creatures for every new thing
+are a later pass; in cute-occult / synthwave the three new types and the boss
+fall back to the base painter (renderer `drawEnemy`, r80 — verified this pass by
+a headless render, `?skin=cute-occult` on `tools/s3peek.html`). Music reuses the
+stage and boss tracks. Module: `src/core/stages/s3.js`; the shared machinery it
+stands on: `stage.js` (`ENEMY_DEFS` 11–13 appended at `stage.js:54–56`, the r18
+seal, the camp governor, the r6 boss beats), `stages/kit.js:100` (`vFile`),
+`patterns.js:150` (`eggFan`), and the two consequences a stage module cannot own,
+in `game.js killEnemy` (`game.js:376` the leader tells its file, `game.js:382`
+the carrier's cancel, `game.js:388` the Moth pair holds the gate) plus the egg's
+hatch tick in the bullet loop (`game.js:641`). Probe:
+`tools/probes/stage3-probe.mjs`. Peeks: `img/r82-s3-sections.png`,
+`img/r82-s3-boss.png`, `img/r82-s3-moths.png`.*
+
+### 14.1 Place ramp (L1) and the sections
+
+Open sky over a sea of votives → the moth shrine → the candle field → the shrine
+plaza (the Moths' arena) → the deep field → **the cocoon** (the boss's approach
+landmark, L2) → the arena. Base skin: `S3_LANDGEO` + `landmark3` in
+`skins/base.js:108/114`, with the stage's own `S3_BG / S3_SLAB / S3_STAR /
+S3_LAND` — this is the **brightest background in the game** and the washed band
+is still the hard constraint: every swatch is warm wax and **no channel exceeds
+`0x2e`**, the same ceiling stages 1 and 2 obey (S2-MUST-1; bible §3 "a landmark
+may be large, never bright"). Candles are dim motes. The other skins show their
+stage-1 landmark for the section index (said so, plan §6). The expert reaches
+the boss gate at **1:00–1:02** on seven seeds (Psikyo#1: 42–80 s).
+
+| # | stageT | Section | What (reps ≤ 2, escalating) |
+|---|---|---|---|
+| S1 | 120 | FORMATION DRILL | rep 1: ONE V file from the left with nothing else on screen — the leader is the only decision (`s3.js:331`); rep 2 (the twist): the **mirrored double-V**, two files one beat apart (100 f) from opposite sides, so the route is still obvious [WS05 "one by one with slight delays"] — two leaders, two windows |
+| S2 | 800 | CARRIER PAIR | two carriers, ONE AT A TIME (`s3.js:342`), each with a file over it so the pods are never the only target; the second is the denser rep |
+| S3 | 1500 | THE VIGIL | the just-in-time-cancel run-up (`s3.js:352`): two carriers arrive LATE and near the shrine, so a player who speed-kills on sight walks into the Moths' curtain with nothing to cancel it, and a player who saves one walks in with a pod-spitting mid alive |
+| S4 | 2200 | TWIN MOTHS | gate; §14.4 — and the stage's one curtain |
+| S5 | 2260 | SWARM RUSH | the density peak (`s3.js:376`): six files on a tightening clock from alternating sides, the last three with **every second** follower shooting instead of every third (the escalation twist), a carrier as the metronome, risers up one lane edge at a time, divers to close |
+| S6 | 2880 | RELEASE | cancel wall 30/bullet + 14 × 150 over the cocoon, ending empty (L2, BRDA#9); WARNING at 3020 (70 f, gate) |
+| S7 | 3090 | THE MOTH QUEEN | gate; §14.5 |
+
+Flow (wiki Q21, Jacob's standing point; [BH101 §Level design]): one strong thing
+at a time — the two carriers of S2 never overlap, no file shares a frame with a
+carrier's arrival, and the **Twin Moths are the campaign's ONE sanctioned
+exception** (below). Files enter from one side at a time, sequenced by ≥ 90 f;
+every entry sits at x 56 / W−56, never the screen edge. Longest single stretch
+of dead air: **0.7 s** (stage 2's is also 0.7 s); 2.3 s total across the stage.
+
+### 14.2 The niche — formations, and what a leader is for
+
+Stage 1 taught speed-killing, stage 2 taught sealing. Stage 3 teaches
+**priority**: seven bodies arrive together and one of them decides what the
+other six do.
+
+- **A FILE** (`kit.js:100 vFile`) is one **leader** (type 11) at the head of a V
+  and n **followers** (type 0, `holdT` 3, or 4 for the every-third one that
+  shoots — every SECOND in the rush's last three files). They spawn on the same
+  frame and fly ONE straight diagonal, no steering, no rng: a formation arrives
+  as a formation. The followers sit BACK along the travel vector and OUT along
+  its perpendicular, so the leader is the first body on the file's path —
+  reaching it means getting *ahead* of the file, which is the sweeping,
+  goal-driven movement flow is made of [WS05 "high-priority enemies as goals"].
+  A file's group id lives in `sweepOff`; a follower's state lives in `bloomed`
+  (0 in formation / 1 scattered / 2 streaming).
+- **The leader** (type 11; hp 24, 500 / 1,000, window 150 f, r 12 — the TURRET
+  row verbatim, zero new tiers). Kill it inside the window and the file
+  **scatters**: it breaks up and leaves (`s3.js:55`). What is paid is *safety*,
+  not points — the natural meta paying in survival [WS06 / Pillar 2]. Let the
+  window expire and the leader itself **turns** onto your column and takes the
+  file with it (`s3.js:88`), and a turned file dives and forces you to stream
+  [WS05 "popcorn forces streaming"]. The miss is announced by the file's own
+  motion and by the leader's crest going wine-red, so a death here teaches
+  (S5 MUST). Pink fire: turret class is outside `NEEDLE_TIER`, so a file never
+  speaks the special tier's cyan (§6.3).
+  **Why 24 hp and not popcorn's 2:** at 2 hp any stray shot decapitates every
+  file for free and the decision cannot be failed. 24 is the lowest existing
+  tier that keeps it a decision [WS04 "lowest hp that still fulfils the role"].
+  **No group payout, no leader bonus, no new scoring math** — every popcorn in
+  the file still pays only its own binary speed-kill (plan §5 option C stays
+  unchosen; CLAUDE.md standing condition).
+- **The carrier** (type 12; hp 44, 800 / 1,600, window 210 f, r 14 — the MID row
+  verbatim). Parks and releases a **pod of two popcorn every 110 f**, tightening
+  to 70 f and adding a spray if left alive past 380 f (S4 dynamic lifecycle),
+  then **exits** at 620 f — finite, so nothing here respawns for points (S6 no
+  milking). Its own gun is one cyan aimed fan: it is in the tier, so a needle in
+  this stage still means "a real gun has you". Sealed by proximity (r18 canon):
+  flying to the carrier is how you silence it.
+  **Its death is the stage's just-in-time cancel** (`game.js:382`): a local
+  cancel wall at the elite's garnish rate — **30/bullet either way** — where the
+  SPEED kill buys **reach**, not a better rate (r 130 in-window vs r 70 late).
+  Binary and visible (the wall's size); no new scoring math, garnish stays
+  garnish (S6 hierarchy). What it is *for* is S3 + S4: the curtain is 8 s long
+  and a carrier you kept alive is the button that turns it into gold. That is a
+  conflict of goals, which is what a scoring system is made of [WS06; BH101
+  §Scoring] — and it costs nothing in formula.
+
+Fire gating is the r18 canon only — no new gate. Bullet families on screen stay
+at three (pink rounds, cyan needles, the player's violet).
+
+**The referee bot cannot be read straight here.** `test/bot.mjs` homes on
+`type >= 4` as a "big target", so leaders (11), carriers (12) and Moths (13) all
+pull it in — it flies far higher than a human would and speed-kills 8–10 of 10
+leaders per run. A human will not. Read the bot's leader rate as a ceiling, not
+a forecast (the same caveat r80 recorded for tanks and the hull).
+
+### 14.3 Windows and the route
+
+Every wave has its fuse: a shooter follower fires one prong at age 70 (≈ 1.2 s
+after the file spawns — this is what makes the novice test pass, below), the
+leader at age 70 and then every 90 f, a carrier on arrival at age 46 and every
+95 f parked, the Moths on their alternating beats. Expert speed-kill rates
+(pinned, seven seeds): zako 60–75 / 92–116, **leader 8–10 / 8–10**, carrier
+4 / 4–5, Moth 1 / 2, boss parts 1–4 / 5. Loot: the S6 release 14 × 150; there is
+no destructible terrain on this stage (that is stage 2's). Stage-3 budget for
+the lives-pinned expert: **156–194 k** vs stage 1's 150–190 k and stage 2's
+140–183 k (plan §5: 1.0–1.3× through targets, never a multiplier).
+
+### 14.4 The midboss — THE TWIN MOTHS (`s3.js:153 moth`, type 13 ×2)
+
+**Rubric S5's one sanctioned exception** (Jacob, 2026-09-10, as the plan's
+default: "a designed midboss PAIR, entering staggered by ≥ 1 beat (Psikyo M7),
+once per campaign — stage 3's Twin Moths"). *The rubric edit itself is pending
+Jacob's commit in the main tree; `docs/CRITIC_RUBRIC.md` is untouched here.*
+
+- **Two elite-tier bodies, 220 hp each** — not the midboss tier split in half:
+  400 / 2 = 200 would be a NEW number and the plan forbids new tiers, while 220
+  is the elite row verbatim. 440 total is 10 % over the Hearse, and the pair
+  dies to the expert in **11.1–11.8 s**, comfortably inside the 35 s
+  `MIDBOSS_TIMEOUT` that applies to the pair (aggressive-human 17–20 s;
+  passive-human times BOTH out at 37 s).
+- **Staggered arrival**, no second timeline event needed (the gate freezes the
+  timeline): both spawn on the gate frame and the right Moth holds 95 f above
+  the top edge before it descends. One beat apart, so the sequence still
+  suggests the route [WS05 / BH101's verbatim "spawning them one by one with
+  slight delays creates an obvious route"].
+- **They mirror.** Both read one shared clock (`g.frame`) and sit at W/2 ± the
+  same offset, so their halves are exact reflections; their aimed fans are
+  offset by half a beat (48 f of a 96 f cycle) so the player never reads two
+  aimed patterns on the same frame (S3 MUST "no more than 2 focal points"), and
+  each one's laned arc keeps its gap biased toward the CENTRE, so the lane
+  *between* the pair is real — and it is the point-blank lane.
+- **Sealing is the pair's point.** A Moth is an ordinary elite as far as
+  `mayFire` is concerned (r18 canon; types 4 and 5 are the only exemptions), so
+  hugging one **mutes it** — and its mirror is exactly what covers the spot you
+  must stand in to do that. You can silence one at a time, never both.
+- **Killing one ENRAGES the other** (behaviour, never hp): it announces the flip
+  with a ring the frame it happens (r14 grammar), stops mirroring, hunts your
+  column, and fires **both slots** — the pair's whole sentence out of one body —
+  plus a bounded spray and, past 900 f, a leave-alive ring tax.
+- **The curtain accent.** The left Moth throws it once on arrival: three slow
+  laned sheets 26 f apart from the shrine's height, 0.80–0.94 px/f, **~8 s to
+  cross the field**, two lanes open per sheet and the lanes MOVE between sheets.
+  This is the HOMAGE guardrail's whole allowance — *true curtains only as
+  5–10 s accents at midboss and boss finale* — spent once, and it obeys "density
+  low, lethality positional": it is dense but slow, so what kills is where you
+  are standing, not how fast you can react. It is also the only place in the
+  campaign a player is *invited* to spend a saved carrier.
+- **Escort:** a mirrored crosser pair from ONE side every 170 f, alternating
+  (Jacob's Q21 addendum), thrown by the left Moth only while both live so the
+  pair never doubles it.
+- **The pair holds the gate** (`game.js:388`): each death pays the elite's local
+  relief (30/bullet, r 90); the LAST death is the midboss release moment — the
+  r9 speed-gated wall (100 in-window / 30 late) and the 8 × 800 shower, verbatim
+  from the type-4 rule — and only then does the gate open. "No breather after it
+  dies" [T2]: the rush's first file is at stageT 2260.
+
+### 14.5 The boss — THE MOTH QUEEN (`s3.js:237 updateQueen`, three forms)
+
+Ritual as stage 1's and stage 2's, by construction: the S6 scoreless sweep +
+cancel, WARNING 70 f over an emptied field, `bossEntrance` (90 f armored
+descent, parts on the last beat), `bossBurn` at each handoff, `advanceBossPhase`
+(cancel wall, item shower with the late-kill fade, 60 f armor, `BOSS_PHASE_HP`
+390 / 402 / 405 — the r71 3×), `bossTimeout` (35 s, flee telegraph), the camp
+governor, the escalation clock `k` (§5.2b). Parts are type 6 through
+`enemyUpdate` (`updateQueenPart`, `s3.js:291`): ≥ 1 per form, each hosting an
+emitter, dying with its form.
+
+**Dialect (L6, WS03 #5 "projectiles that spawn emitters"): EGGS THAT HATCH.**
+`eggFan` (`patterns.js:150`) gives a pink round a **fuse**; the egg drifts as an
+ordinary round, and over its last 30 f six motes appear around it *at exactly
+the angles the burst will fire* and close in (the telegraph — the renderer's
+`drawRoundBullet`, half a second of warning, well over the S7 120 ms floor);
+at zero it dies and leaves a fixed 6-round ring where it sat (`game.js:641`,
+deterministic — no rng, so the referee's stream is untouched). Same pink caste,
+same radius, same r20 display contract: **the dialect is the bullet's life
+cycle**, not a new colour or shape. Nothing in any stage section fires an egg
+(S3b-6). The pattern you dodge is not the one that was fired.
+
+- **P1 — THE COCOON** (hp 390). Hangs almost still (±30 px at ≤ 0.9 px/f, or the
+  governor's safe spot when latched) at y 92 and **lobs eggs OUTWARD** — two
+  fans at π/2 ∓ 0.62, fuse 110 f, so they hatch in the mid-field on the flanks.
+  Its own gun is one modest aimed fan every 84 f; the aimed pressure lives in
+  the two **silk anchor** parts (hp 24, ±36) firing 3-needle fans — kill both and
+  the cocoon is eggs only (L7 "the structure changes as you win").
+  **Point-blank invitation:** the column *under* the cocoon is where no egg goes.
+  rep ≥ 3 fires eggs down the middle — the timeout-rider tax closes the
+  invitation.
+- **P2 — THE MOTH** (hp 402). The imago: **hard strafing**, rail to rail at
+  4.0 px/f (faster than the ship's 3.7) on boss 1's far-side-of-the-player rule,
+  dwell 150, y 108. `ledFan` every 44 f (aimed AND led — neither standing still
+  nor drifting answers it; led fire is boss-only, S3b-6). Every 60 f it **lays a
+  single slow egg wherever it is** (fuse 150 f) — the dialect distorted by a
+  moving emitter: its path becomes a delayed minefield. A **wing-beat** on each
+  landing throws two static fans OUTWARD, so the column under it is clear — the
+  safe spot, re-earned every step (L7). Part: one **wing node** at +38 (hp 56),
+  the form's only spray, asymmetric on purpose as on both earlier stages.
+- **P3 — THE EMBER CORE** (hp 405). Bare core on the banded sweep (ω 0.005) with
+  the ±22 px bob; the desperation medley recombines only what came before — the
+  bare-core ring beat (14 + 2·min(rep, 4) at 1.45·k), P1's egg fans, P2's led
+  fans; rep ≥ 3 adds rings. Parts: two **relays** at ±38 (hp 24) firing aimed
+  needle pairs.
+
+Camp governor: the same code, one property lookup away. Parts bite back is Q17,
+unresolved: parts here behave as stage 1's.
+
+### 14.6 Numbers as built
+
+| Thing | hp | value | window | r | fires | contact |
+|---|---|---|---|---|---|---|
+| Formation leader (11) | 24 | 500 | 150 f | 12 | pink 3-prong at age 70, then / 90 f; wider once turned | yes |
+| Follower (0, holdT 3/4) | 2 | 200 | 75 f | 10 | the shooter third: one pink prong at age 70 | yes |
+| Carrier (12) | 44 | 800 | 210 f | 14 | cyan 3-fan / 95 f; pods / 110 f (70 f hot) | yes |
+| A Twin Moth (13) | 220 | 3,000 | 380 f | 20 | §14.4 | yes |
+| The Moth Queen (5) | 390 / 402 / 405 | 12,000 / phase | 600 f | 30 | §14.5 | yes |
+| Queen parts (6) | 24 (P2 node 56) | 1,000 | 300 f | 7 | per form | yes |
+
+Zero new hp tiers (plan §4 rule 3): 11 = the turret row, 12 = the mid row,
+13 = the elite row, all copied verbatim from `ENEMY_DEFS`. Castes:
+`NEEDLE_TIER` + 12, 13 (the leader stays pink — turret class). Bullet families
+on screen ≤ 3. **Performance (`tools/s3peek.html`, headless Chrome, 60 draws
+averaged, budget 16.6 ms): the swarm rush's densest frame = 78 bullets in
+0.14 ms; the run's densest frame = 86 bullets in 0.15 ms.** Max bullets seen by
+any bot on any seed: 194 (passive-human, at the Queen); max enemies on screen:
+45 (the swarm rush, expert) against a 64 cap.
+
+### 14.7 The probe (`tools/probes/stage3-probe.mjs`, seed C0FFEE + the six robust seeds)
+
+The referee's four bots on stage 3 alone (`startRun(g, 0, 2)`), plus the expert
+with lives pinned, plus ONE full campaign run (levels 0 → 1 → 2 on the continued
+rng stream). Remember the r79 baseline: at HEAD the same expert **game-overs on
+stage 1's boss**, so "the bot dies at the Queen" is the bot's ceiling at 3× hp.
+
+| bot (C0FFEE) | outcome | clock | to boss | forms | score | kills / speed | deaths by section | max bullets | rush b/e | timeouts | Moths |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| expert | game over in P2 | 1:25 | 1:01 | 2 (P1 9 s) | 119,330 | 111 / 78 | S4 1 · S5 1 · S7 2 | 83 | 78 / 45 | 0 | 11.2 s |
+| aggressive-human | game over in S5 | 1:03 | — | 0 | 61,050 | 110 / 67 | S4 2 · S5 2 | 72 | 72 / 41 | 0 | 20.1 s |
+| passive-human | clear (3 lives) | 3:19 | 1:27 | 3 (37/36/36 s) | 54,340 | 139 / 66 | — | 170 | 70 / 39 | 5 (both Moths + every form) | 37.2 s |
+| blind | game over in S4 | 0:36 | — | 0 | 33,150 | 74 / 50 | S1 1 · S2 1 · S3 1 · S4 1 | 65 | — | 0 | — |
+
+Across the seven seeds: expert to-boss 1:00–1:02, forms reached 1–3, score
+112–139 k mortal, deaths 4 (one or two in S4, one in S5, the rest at the Queen),
+max bullets 66–130, dead air 2.3–3.1 s total (longest single stretch 0.7 s);
+aggressive-human reaches the boss on 5 of 7 seeds and never past form 1;
+passive-human clears every seed with 0–3 lives and five timeouts (both Moths and
+all three forms); blind dies at 0:35–0:36 in S1–S4 on every seed. The formation
+ledger, expert: 13 files, **6–9 scattered · 3–5 turned**; passive-human: **2–3
+scattered · 10–11 turned** — the niche's two outcomes separate cleanly by skill,
+which is the S4 dynamic-lifecycle demand answered by a *formation* instead of an
+hp bar.
+
+**The clock (expert with LIVES PINNED — probe-only, so every form is
+measured):** clear on 7/7 seeds, **1:45–2:03** (target 2:00; envelope
+1:30–2:15), boss reached at **1:00–1:02** (Psikyo#1: 42–80 s), boss =
+**42–51 %** of the clock (band 30–50 % — six of seven seeds inside it; the
+seventh is feedf00d at 51 %). This is the closest any stage has come to the
+plan's envelope: stage 2 sits at 1:53–2:14 with the boss at 48–55 % (Q24), and
+**the fix is not hp** — see Q24. Score 156–194 k, deaths S4 1–2 / S5 1 / S7 3–7.
+
+**The full campaign** (`startRun(g)` → seam → seam, expert, C0FFEE): the honest
+r79 expert still game-overs on stage 1's boss (`gameover f6438 79,790`) — nobody
+reaches stage 3 at r79 without the extend. With lives floored at 1 through
+stages 1–2 (probe-only): stage 1 `stageclear 2:21 / 174,230` → stage 2
+`stageclear 2:09 / +133,980` → stage 3 `gameover 0:42 / +35,240`, run total
+5:13 / 343,450 / 16 deaths. With the ship invulnerable from the first seam
+(`campaign-probe`, flow only): all three stages clear, **7:05 total, 439,740**,
+zero timeouts, and **the 400 k extend is earned in stage 3** — the first time
+plan §5 A1's number has been reached by anything.
+
+### 14.8 Open questions (this stage)
+
+Q29 (the rush vs the novice test), Q30 (does the leader READ), Q31 (does anyone
+ever use the just-in-time cancel), Q32 (the pair and the r18 seal), Q33 (the
+egg's telegraph) in §8. Q24 (the boss's share of the clock at 3×) and Q17
+(parts bite back) apply here unchanged.
+
+**Boghog's novice test** [T1], measured (`stage3-probe`-style script, seven
+seeds): freeze the expert — fire only, no movement — for 60 f from every file's
+spawn frame. **49 of 49 isolated file windows (S1–S3) survive on every seed.**
+The only freeze deaths are in the SWARM RUSH: exactly 2 per run on all seven
+seeds, always with three or four files overlapping. So the *file* passes the
+test and the *density peak* does not — which is Q29, and Jacob's call.
 
 ## Changelog of decisions recorded here
 
@@ -2991,3 +3344,105 @@ What moved, and what did not:
   (Jacob's): Q27, Q28, the governor question, Q24. BUILD r81.
   `test/sim.mjs`, `test/bot.mjs`, `CRITIC_RUBRIC.md`, `evidence/`,
   `DESIGN_PILLARS.md`, `stages/s1.js` untouched.
+
+- 2026-09-10 — **r82 STAGE 3 — THE CANDLE SEA (core pass; §14).** Built from
+  plan §3 on Jacob's runbook (`docs/plans/next-session-stages-3-5.md`, plan §7's order).
+  `STAGES = [s1, s2, s3]`; `ENEMY_DEFS` gains 11 leader / 12 carrier / 13 Moth,
+  each an existing tier row copied verbatim (turret / mid / elite) — zero new
+  tiers, zero hp fixes. New niche: **formations with a leader** (speed-kill it →
+  the file scatters; miss the window → it turns and streams). New midboss: the
+  **Twin Moths**, a staggered mirrored elite PAIR that enrages when half of it
+  dies. New boss: **THE MOTH QUEEN**, three forms, dialect = **eggs that hatch
+  emitters**. One curtain accent (~8 s) at the Moths' arrival, cancellable by a
+  carrier kept alive. Numbers in §14.6/§14.7.
+  **Corpus clearance — what each lens says, including where it pushes back:**
+  · **Boghog craft/workshop.** *For:* [T1] "think in niches, not counts" — one
+  niche, three behaviours, no new stat; [T1] "levels are never finished, you
+  just run out of time" — one pass, then stop; [WS05] themed sections with
+  repetition-and-twist (the drill's V → mirrored double-V; the rush's every-third
+  → every-second shooter), "popcorn forces streaming" (a missed file IS the
+  streaming lesson), the just-in-time-cancel theme, landmarks as memory
+  shortcuts (S5 SHOULD: every spawn anchored to the place ramp); [WS04] "lowest
+  hp that still fulfils the role" (the leader at 24, argued in §14.2) and the
+  dynamic lifecycle (a carrier left alive doubles its metronome and hoses);
+  [WS03 #5] projectiles that spawn emitters — the boss dialect, previously ◻
+  in our audit of the technique catalogue, now built. *Pushback:* [WS05] "never
+  two strong enemies at once" — the Twin Moths break it deliberately; that is
+  the S5 amendment below and nothing else on the stage overlaps two strong
+  things. [WS05] "even ship intro animations add up" — no new zero-input beat
+  was added; the briefing card is the r78 one. [T1]'s **novice test** is
+  measured and FAILS in the swarm rush (2 of 6 file windows, every seed) while
+  passing 49/49 in the isolated sections — logged as Q29, unfixed, because the
+  remedy is section cadence and that is Jacob's call.
+  · **[BH101 §Level design]** supplies the verbatim rule the whole stage is
+  built on — "spawning two or more higher HP enemies at the exact same time
+  creates confusion… spawning them one-by-one with slight delays creates an
+  obvious route" — so the Moths stagger by 95 f, the carriers arrive one at a
+  time, and files are sequenced by ≥ 90 f; "no lanes at the edges" (entries at
+  x 56 / W−56); the Toaplan pattern as the core layer with popcorn clustered
+  around it (a file IS that layer). **[BH101 §Bullet patterns]**: "fixed
+  emitters = clean, moving emitters = distortion" — P2 lays eggs while
+  strafing; "chunk bullets into lines and groups" — the egg's burst is a
+  6-round ring, never a stray. *Pushback:* **[BH101 §Enemies]** "approaching for
+  a kill must never be disproportionately dangerous" — reaching a leader means
+  getting ahead of its file, which is exposure; the mitigation is that the file
+  itself does not fire for 70 frames (§14.3) and the novice measurement above.
+  **[BH101 §Scoring]** "incentives must be tangible… players gauge performance
+  without reading numbers": the leader's payoff is the file visibly breaking
+  up, and the carrier's is the size of its cancel wall — both are pictures, not
+  numbers.
+  · **Mark MSX doctrine** (`~/.claude/skills/mark-msx/references/philosophy.md`).
+  *For:* the natural meta is untouched — speed-killing is still the only rule,
+  and here it buys *safety* (a scattered file) rather than a new currency;
+  expert bias holds (the better you play, the more files scatter and the
+  cleaner the rush gets); difficulty is the content (the rush is the campaign's
+  peak and is meant to hurt). *Pushback:* MSX's standing objection to opaque
+  scoring — which is exactly why there is **no group payout and no leader
+  bonus** (plan §5 option C stays unchosen) and why the carrier's cancel buys
+  RADIUS at an unchanged 30/bullet rather than a better rate. Also his
+  anti-dilution line: a stage that exists to be long is a defect — this one is
+  1:45–2:03 with 0.7 s as its longest dead-air stretch.
+  · **Pillars.** 1 (density over duration): the peak is 45 enemies / 78 bullets
+  in 0.14 ms of draw; dead air 2.3 s total. 2 (natural meta): binary, visible,
+  no math added. 3 (difficulty is the content): built hard first — the scale-back
+  that happened was pattern cadence (the release moved 50 f later so the section
+  reads as release), never hp. 4: stock is the only wall, and the honest expert
+  still cannot reach stage 3 at r79 — that is Pillar 4, and the extend answers
+  it (§14.7: 400 k is earned in stage 3 for the first time). 5: the bomb and the
+  cancel wall are unchanged. 6 (readable chaos): three families, the brightest
+  field in the game still inside the washed band (≤ `0x2e` per channel), the
+  egg's telegraph in-family. 7: 0.15 ms worst measured frame against 16.6.
+  · **HOMAGE.** L1 the place IS the wave (a landmark per section, the cocoon as
+  the boss's approach); L2 breathers paid in loot; L3 the ritual unchanged; L6
+  castes + a boss-only dialect (eggs appear in no section); L7 destructible
+  parts and a point-blank invitation per form. **The curtain guardrail is the
+  binding one** — "no slow-curtain primary language; true curtains only as
+  5–10 s accents at midboss and boss finale" — and this stage spends exactly
+  one, ~8 s, at the midboss, laned and slow so lethality stays positional. No
+  CAVE endurance: the sections are 10–40 s and the forms resolve in 9–30 s for
+  the expert.
+  · **Rubric.** S2 ≤ 3 families and the washed band held; S3 all three attack
+  types plus ≥ 2 lanes through the Moths' mirrored walls; S3b every MUST
+  (WARNING over an emptied field, forms not phases, ≥ 1 part per form,
+  point-blank invitation per form, medley finale, boss-only dialect); S4 role
+  coverage + dynamic lifecycle (the carrier) + intro armor + outro; S5 themed
+  sections, repetition-with-twist, tension-release, landmarks — and the ONE
+  exception below; S6 unchanged (no new scoring math, garnish stays garnish, no
+  milking: the carrier's pod budget is finite and it exits); S7 the expert
+  clears pinned on 7/7 and the blind bot dies by 0:36; S8 measured above.
+  **S5 amendment (Jacob, 2026-09-10, the plan's default):** rubric S5 gains one
+  sanctioned exception — "a designed midboss PAIR, entering staggered by ≥ 1
+  beat (Psikyo M7), once per campaign — stage 3's Twin Moths". *The rubric edit
+  is pending Jacob's own commit in the main tree; `docs/CRITIC_RUBRIC.md` is
+  untouched by this pass.*
+  **Measured:** expert pinned clears 7/7 at 1:45–2:03, boss at 1:00–1:02
+  (42–51 % of the clock), score 156–194 k; swarm rush 78 bullets / 45 enemies
+  drawn in 0.14 ms; the Moth pair dies in 11.1–11.8 s inside a 35 s timeout;
+  the full campaign clears in 7:05 / 439,740 with the 400 k extend earned.
+  **Stages 1 and 2 byte-identical** (control diff in §12). `test/shell.mjs`
+  PASS. Peeks `img/r82-s3-sections.png`, `img/r82-s3-boss.png`,
+  `img/r82-s3-moths.png` (`tools/s3peek.html`). New open questions Q29–Q33.
+  Not decided here (Jacob's): Q29–Q33, Q24 (the boss's share of the clock),
+  Q17, and the S5 rubric commit. BUILD r82. `test/sim.mjs`, `test/bot.mjs`,
+  `CRITIC_RUBRIC.md`, `evidence/`, `DESIGN_PILLARS.md`, `stages/s1.js`,
+  `stages/s2.js` untouched.
