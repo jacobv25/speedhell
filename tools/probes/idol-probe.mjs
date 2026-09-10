@@ -76,7 +76,8 @@ function play(g, bot, { pinLives = false, melt = 0 } = {}) {
 }
 const row = (seed, name, g, r) => console.log(
   `${seed.toString(16).padStart(8)} ${name.padEnd(17)} ${g.state.padEnd(10)} boss ${s1(r.endAt - (r.warnAt || r.bossAt)).padStart(5)}s (target ≤ 65)`
-  + ` forms ${r.forms}/4 [${r.formLen.map((f, i) => s1(f) + 's' + (r.formLeft[i] > 0 ? `/TO ${r.formLeft[i] | 0}hp left` : '')).join(' · ') || '--'}]`
+  // a form that ran the full BOSS_PHASE_TIMEOUT was NOT killed: print how much hp was still standing
+  + ` forms ${r.forms}/4 [${r.formLen.map((f, i) => s1(f) + 's' + (f >= BOSS_PHASE_TIMEOUT ? ` TIMEOUT ${r.formLeft[i] | 0}hp left` : '')).join(' · ') || '--'}]`
   + ` score ${String(g.score).padStart(6)} kills ${String(g.kills).padStart(2)} sk ${String(g.speedKills).padStart(2)}`
   + ` deaths ${JSON.stringify(r.dForm)} lives ${g.player.lives} maxBul ${String(r.maxB).padStart(3)} to [${g.stats.timeoutLog}]`);
 

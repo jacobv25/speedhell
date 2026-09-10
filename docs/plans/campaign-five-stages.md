@@ -277,6 +277,28 @@ template (L4).
   earlier dialect recombined, nothing new — S3b-5). Boss ≤ 65 s (50 % of
   2:15) — four forms at 3× hp do not fit; either the finale runs its own
   multiplier or forms 1–2 are short (≤ 10 s) and only 3–4 are full length.
+- **Stage 5's final boss — SKELETON built r83 (2026-09-10; wiki §16).** Plan §7
+  step 4 only: THE IDOL's four forms, the medley hooks and placeholder patterns
+  that quote stages 1/2/3. `STAGES` is still `[s1, s2, s3]` — the module is not
+  registered (probe `tools/probes/idol-probe.mjs`, or `index.html?boss=idol`).
+  Deviations and findings: (1) the hp budget shipped as this bullet's second
+  horn — forms 1-2 short on the ELITE tier (220 each), forms 3-4 at the boss
+  tiers (402/405) — because the first horn (a finale-own multiplier) means four
+  NEW hp numbers, which the no-new-tiers rule forbids without Jacob; (2) forms
+  1-2 measure 5-7 s, under HOMAGE's 15-25 s floor but in line with Psikyo's own
+  10/10/14/12 s finale — the guardrail amendment §4 rule 1 reserves is now
+  actually needed (wiki Q37); (3) **form 3, the mirror, times out on the expert
+  on 7 of 7 seeds** with 23-230 hp left, because moving at the ship's exact
+  speed cuts its damage rate to 11 hp/s against 34-38 on forms 1-2 — measured,
+  reported, not patched with hp (wiki Q34 offers three budgets, one of which
+  uses no new numbers); (4) four forms × the existing 35 s timeout is a 140 s
+  worst case against this bullet's ≤ 65 s (wiki Q38); (5) form 4's stage-4 quote
+  is an INERT `quoteS4` hook — S3b-5's "and only those" forbids a live emitter
+  for a dialect that does not exist, and whether the quote spends stage 4's
+  "used once, here" is wiki Q39, to settle BEFORE the Gate is designed; (6) the
+  four-form boss pays 48 k where every other pays 36 k (same rule, one more
+  form; wiki Q40). Sections, gauntlet, receipt, loop-2 seal and a stage-5 cue
+  are the later pass (§7 step 6).
 - **Loop 2 seal** (changelog 2026-08-29 named the idea; it is a judgment call,
   not a corpus rule — Psikyo's loop 2 is unconditional): clearing S5 with the
   condition
