@@ -8,7 +8,7 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
 
 ## State
 
-- **`main` == `design/needle-tier` at r80** (r80 = STAGE 2 THE BONE RAIL core merged, base-skin art; r79 = extend A1 + one-bomb refill; r78 = campaign infrastructure — Jacob chose the stages 2–5 route on 2026-09-09, "getting really tired of playtesting"; r77 = heavy shot shipped), pushed to GitHub
+- **`main` == `design/needle-tier` at r81** (r81 = stage-2 Lab knobs `s2tanks` swarm / `bellWalker` calm + the sealed tell; r80 = STAGE 2 THE BONE RAIL core merged, base-skin art; r79 = extend A1 + one-bomb refill; r78 = campaign infrastructure — Jacob chose the stages 2–5 route on 2026-09-09, "getting really tired of playtesting"; r77 = heavy shot shipped), pushed to GitHub
   (`jacobv25/speedhell`). Fast-forward main after every commit on
   design/needle-tier (a clean `play-main` worktree exists for that).
 - **Two Claude sessions share this working tree.** As of this rewrite the
@@ -16,7 +16,7 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
   `docs/plans/boghog-ws-questions.md`, `docs/BOGHOG_WORKSHOP.md` (+ edits to
   `CLAUDE.md`, `README.md`). Don't commit or revert another session's files;
   `git add` by name. Check `BUILD` + the wiki changelog before taking a round
-  number (next free on main: **r81** — r74 is `feat/stem-layers`).
+  number (next free on main: **r82** — r74 is `feat/stem-layers`).
 - **Referee:** last certificate r65 (expert bot fixed to close on big
   targets). Since then r71 (boss hp 3×), r72 (boss phase timeout 35 s) and
   r73's experiment changed outcomes; at 3× the bot clears 1–2 of 7 seeds and
@@ -91,7 +91,12 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
    dies in the Bell's P2 (its ceiling at 3× hp, as on stage 1); lives-pinned
    clock 1:53–2:14 (target 1:40; Q24). **Next passes:** cute-occult art for
    stage 2 (tank, wall, hull+deck, anchor+chain, Hearse, Bell forms, landmarks);
-   Booth playtest of the teaching; Jacob: Q24 (Bell vs the clock), Q25
+   Booth playtest of the teaching. **r81 (Jacob's first play):** Lab rows
+   `s2tanks` (swarm = 2× tanks from the flanks, hp 12, faster prong) and
+   `bellWalker` (calm = walk 3.4, dwell 240, stomp every 2nd landing) + a sealed
+   tell (barrel retracts + dim); probe: P2 'running around' tracks the CAMP
+   GOVERNOR's latch, not walk speed (Q28); bot never seals (Q27 = human test).
+   Jacob: Q24 (Bell vs the clock), Q25
    (deck-turret/hull windows), Q26 (two contact rules), the referee's
    `'stageclear'` outcome edit in sim.mjs + a stage-2 control run
    (Jacob-authorized); then stage 3 per plan §7 with cooldown.
