@@ -161,6 +161,10 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
   reload; each dev port has its own localStorage (SFX slider).
 - **Two sessions, one tree:** always `git add` by filename.
 
+## Stages 3–5 session (2026-09-10, Fable orchestrating Opus agents per `docs/plans/next-session-stages-3-5.md`)
+
+- **r82 STAGE 3 THE CANDLE SEA merged** (wiki §14; `STAGES = [s1, s2, s3]`; types 11 leader / 12 carrier / 13 moth; midboss Twin Moths = the sanctioned S5 pair; boss the Moth Queen, egg dialect). Expert lives-pinned 1:45–2:03, boss at 1:00–1:02 (42–51 %). Swarm rush = 78 bullets / 45 bodies / 0.14 ms draw (S8). Q29–Q33 open. Decision defaults used: S5 pair exception (rubric edit is sitting UNCOMMITTED in the main tree — Jacob commits it), loop 2 unconditional.
+
 ## State warnings (closeout 2026-09-10, r63–r81 session)
 
 - **Uncommitted, not this session's:** `docs/concepts/README.md` (modified,
