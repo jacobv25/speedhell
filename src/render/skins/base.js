@@ -245,6 +245,82 @@ function landmark4(ctx, sec, x, y, w, h, land, slab, K) {
   }
   void W;
 }
+// r85 STAGE 5 — THE GREAT ALTAR place ramp (L1, plan §3): the processional road →
+// THE ALTAR STAIR → the altar terrace → THE ALTAR itself (where the three
+// returning guards are fought) → THE SIGIL DISC, the boss's approach landmark
+// (L2) → the arena. Ash and cold votive stone: the one field in the game with a
+// violet cast, so the finish does not read as any earlier place, and the washed
+// band is the hard constraint as ever (S2-MUST-1; bible §3 "a landmark may be
+// large, never bright") — NO channel exceeds 0x2e. Eight entries, one per
+// SECTIONS index, and the ladder is the bible's in order (§3 "landmark > slabs >
+// stars > field").
+const S5_BG = '#09080d';
+const S5_STAR = ['#181624', '#1a1826', '#1c1a28', '#1e1c2a', '#201e2c', '#1e1c2a', '#1c1a28', '#1a1826'];
+const S5_SLAB = ['#221f2c', '#24212e', '#26232e', '#28252e', '#2a272e', '#28252e', '#26232e', '#24212e'];
+const S5_LAND = ['#2a282e', '#2c2a2e', '#2c2b2e', '#2e2c2e', '#2e2c2e', '#2e2c2e', '#2e2c2e', '#2a282e'];
+const S5_LANDGEO = [ // [x, w, h] per SECTIONS index: the road · THE STAIR (S1) ·
+  // THE ALTAR (S2 — the approach ends by arriving at it) · the altar again for
+  // the three gauntlet sections · THE SIGIL DISC (S6, the boss's approach
+  // landmark, L2) · the arena.
+  // NOTE, campaign-wide and not new here: a landmark enters at its section's
+  // boundary and scrolls down with section progress, and a GATED section freezes
+  // stageT — so a midboss section's own landmark never scrolls in, on any stage
+  // (stage 4's portcullis frame behaves identically). That is why the altar is
+  // hung on S2, where it is actually seen, and the gauntlet rows only repeat it.
+  [40, 240, 70], [30, 260, 150], [60, 200, 116],
+  [60, 200, 116], [60, 200, 116], [60, 200, 116], [56, 208, 176], [90, 140, 36],
+];
+function landmark5(ctx, sec, x, y, w, h, land, slab, K) {
+  const { W, disc } = K;
+  const road = (y0, hh) => { // the processional road, with votive posts down both kerbs
+    ctx.fillStyle = slab; ctx.fillRect(72, y0, W - 144, hh);
+    ctx.fillStyle = land; ctx.fillRect(70, y0, 5, hh); ctx.fillRect(W - 75, y0, 5, hh);
+    for (let yy = y0 + 8; yy < y0 + hh - 6; yy += 24) { ctx.fillRect(62, yy, 7, 9); ctx.fillRect(W - 69, yy, 7, 9); }
+  };
+  switch (sec) {
+    case 0: road(y, h); break;
+    case 1: { // THE ALTAR STAIR — a flight of steps narrowing upward, balustrades either side
+      const n = 9;
+      for (let i = 0; i < n; i++) {
+        const t = i / (n - 1), sw = w - t * (w - 96), sx = x + (w - sw) / 2, sy = y + h - (i + 1) * (h / n);
+        ctx.fillStyle = i & 1 ? slab : land; ctx.fillRect(Math.round(sx), Math.round(sy), Math.round(sw), Math.ceil(h / n) + 1);
+        ctx.fillStyle = land; ctx.fillRect(Math.round(sx) - 6, Math.round(sy), 6, Math.ceil(h / n) + 1); ctx.fillRect(Math.round(sx + sw), Math.round(sy), 6, Math.ceil(h / n) + 1);
+      }
+      break;
+    }
+    case 2: case 3: case 4: case 5: { // THE ALTAR — a slab table on a stepped base, two candle posts, the offering bowl
+      ctx.fillStyle = slab; ctx.fillRect(x + 10, y + 40, w - 20, h - 40);            // the stepped base
+      ctx.fillStyle = land; ctx.fillRect(x + 22, y + 52, w - 44, 4); ctx.fillRect(x + 34, y + 68, w - 68, 4);
+      ctx.fillStyle = land; ctx.fillRect(x, y + 24, w, 16);                          // the table slab
+      ctx.fillStyle = slab; ctx.fillRect(x + 8, y + 28, w - 16, 5);
+      ctx.fillStyle = land; ctx.fillRect(x + 16, y, 9, 26); ctx.fillRect(x + w - 25, y, 9, 26); // the candle posts
+      ctx.fillStyle = land; disc(ctx, x + w / 2, y + 18, 9);                          // the bowl
+      ctx.fillStyle = slab; disc(ctx, x + w / 2, y + 18, 5);
+      break;
+    }
+    case 6: { // THE SIGIL DISC — the boss's approach landmark: a great ring, radial
+      // spokes, a ring of glyph ticks, and the socket the Idol stands in
+      const cx = x + w / 2, cy = y + h / 2, R = Math.min(w, h) / 2 - 4;
+      ctx.fillStyle = land; disc(ctx, cx, cy, R);
+      ctx.fillStyle = slab; disc(ctx, cx, cy, R - 7);
+      ctx.fillStyle = land;
+      for (let i = 0; i < 12; i++) { // the spokes
+        const a = (i / 12) * Math.PI * 2;
+        for (let r = R - 30; r < R - 8; r += 4) ctx.fillRect(Math.round(cx + Math.cos(a) * r) - 1, Math.round(cy + Math.sin(a) * r) - 1, 3, 3);
+      }
+      ctx.fillStyle = land; disc(ctx, cx, cy, 26);
+      ctx.fillStyle = slab; disc(ctx, cx, cy, 19);
+      ctx.fillStyle = land; disc(ctx, cx, cy, 8);
+      for (let i = 0; i < 8; i++) { // the glyph ticks, on the rim
+        const a = 0.4 + (i / 8) * Math.PI * 2;
+        ctx.fillRect(Math.round(cx + Math.cos(a) * (R - 3)) - 2, Math.round(cy + Math.sin(a) * (R - 3)) - 2, 5, 5);
+      }
+      break;
+    }
+    default: ctx.fillStyle = land; ctx.fillRect(x, y, w, h); ctx.fillStyle = slab; ctx.fillRect(x + 10, y + 8, w - 20, h - 16);
+  }
+  void W;
+}
 // r6 S3b-SHOULD: arena restain per boss phase — deep blue → red-shifted →
 // white-hot dawn (homage BRDA#6), all values inside the washed band.
 const BOSS_BG = ['#0a0e1a', '#130a0e', '#141317', '#160b12'];
@@ -261,21 +337,23 @@ function drawBackground(ctx, g, bgScroll, sec, bossPhase, K, secT = 0) {
   const { W, H } = K;
   const s3 = g.level === 2; // r82: THE CANDLE SEA runs its own warm field palette
   const s4 = g.level === 3; // r84: THE BLOOD GATE runs its own iron-and-dried-red one
-  const i3 = Math.min(sec, S3_SLAB.length - 1), i4 = Math.min(sec, S4_SLAB.length - 1);
-  const bgC = bossPhase >= 0 ? BOSS_BG[bossPhase] : s4 ? S4_BG : s3 ? S3_BG : FIELD_BG;
-  const slabC = bossPhase >= 0 ? BOSS_SLAB[bossPhase] : s4 ? S4_SLAB[i4] : s3 ? S3_SLAB[i3] : SEC_SLAB[sec];
-  const starC = bossPhase >= 0 ? BOSS_STAR[bossPhase] : s4 ? S4_STAR[i4] : s3 ? S3_STAR[i3] : SEC_STAR[sec];
-  const landC = bossPhase >= 0 ? BOSS_LAND[bossPhase] : s4 ? S4_LAND[i4] : s3 ? S3_LAND[i3] : SEC_LAND[sec];
+  const s5 = g.level === 4; // r85: THE GREAT ALTAR runs its own cold-violet ash one
+  const i3 = Math.min(sec, S3_SLAB.length - 1), i4 = Math.min(sec, S4_SLAB.length - 1), i5 = Math.min(sec, S5_SLAB.length - 1);
+  const bgC = bossPhase >= 0 ? BOSS_BG[bossPhase] : s5 ? S5_BG : s4 ? S4_BG : s3 ? S3_BG : FIELD_BG;
+  const slabC = bossPhase >= 0 ? BOSS_SLAB[bossPhase] : s5 ? S5_SLAB[i5] : s4 ? S4_SLAB[i4] : s3 ? S3_SLAB[i3] : SEC_SLAB[sec];
+  const starC = bossPhase >= 0 ? BOSS_STAR[bossPhase] : s5 ? S5_STAR[i5] : s4 ? S4_STAR[i4] : s3 ? S3_STAR[i3] : SEC_STAR[sec];
+  const landC = bossPhase >= 0 ? BOSS_LAND[bossPhase] : s5 ? S5_LAND[i5] : s4 ? S4_LAND[i4] : s3 ? S3_LAND[i3] : SEC_LAND[sec];
   ctx.fillStyle = bgC;
   ctx.fillRect(-20, -20, W + 40, H + 40);
   { // landmark slab: enters at the section boundary, scrolls with section progress
-    const geo = g.level === 1 ? S2_LANDGEO : g.level === 2 ? S3_LANDGEO : g.level === 3 ? S4_LANDGEO : SEC_LANDGEO; // r80/r82/r84: stages 2, 3 and 4 have their own place ramps
+    const geo = g.level === 1 ? S2_LANDGEO : g.level === 2 ? S3_LANDGEO : g.level === 3 ? S4_LANDGEO : g.level === 4 ? S5_LANDGEO : SEC_LANDGEO; // r80/r82/r84/r85: stages 2-5 each have their own place ramp
     const [lx, lw, lh] = geo[Math.min(sec, geo.length - 1)];
     const ly = Math.round((g.stageT - secT) * 0.55 - lh - 20);
     if (ly < H + 20) {
       if (g.level === 1) landmark2(ctx, sec, lx, ly, lw, lh, landC, slabC, K);
       else if (g.level === 2) landmark3(ctx, sec, lx, ly, lw, lh, landC, slabC, K);
       else if (g.level === 3) landmark4(ctx, sec, lx, ly, lw, lh, landC, slabC, K);
+      else if (g.level === 4) landmark5(ctx, sec, lx, ly, lw, lh, landC, slabC, K);
       else {
         ctx.fillStyle = landC; ctx.fillRect(lx, ly, lw, lh);
         ctx.fillStyle = slabC; ctx.fillRect(lx + 10, ly + 8, lw - 20, lh - 16); // inset gives it structure

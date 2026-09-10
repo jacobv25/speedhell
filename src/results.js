@@ -14,6 +14,7 @@ const $ = (id) => document.getElementById(id);
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.';
 let onShown = null;
 let receiptShown = false, entryOpen = false, tableOpen = false;
+let shownCampaign = false; // r85: which card is up — the stage's receipt or the CAMPAIGN receipt
 let slots = [0, 0, 0], slot = 0, pendingEntry = null;
 
 // r45: pure, testable — a run enters initials ONLY if it is a full run that
@@ -45,21 +46,33 @@ function loadScores() {
 const saveScores = (a) => store.set('speedhell.scores', JSON.stringify(a));
 
 // called every frame from main.js — shows/hides with the game state
-export function syncReceipt(g, label, suppress = false) { // r78: suppress = the briefing card is up (between stages)
+// r85: `campaign` = main.js has held the last stage's receipt long enough and the
+// card should turn to the CAMPAIGN receipt. It is a MODE, so a flip rebuilds the
+// card (the r44 latch only guarded against rebuilding the same one every frame).
+export function syncReceipt(g, label, suppress = false, campaign = false) { // r78: suppress = the briefing card is up (between stages)
   const end = !suppress && (g.state === 'gameover' || g.state === 'clear' || g.state === 'stageclear');
   if (!end) {
-    if (receiptShown) { receiptShown = false; entryOpen = false; pendingEntry = null; $('results').classList.add('hide'); }
+    if (receiptShown) { receiptShown = false; shownCampaign = false; entryOpen = false; pendingEntry = null; $('results').classList.add('hide'); }
     return;
   }
-  if (receiptShown) return;
-  receiptShown = true;
-  buildReceipt(g, label);
+  if (receiptShown && shownCampaign === campaign) return;
+  receiptShown = true; shownCampaign = campaign;
+  buildReceipt(g, label, campaign);
   $('results').classList.remove('hide');
 }
 
-function buildReceipt(g, label) {
+function buildReceipt(g, label, campaign = false) {
   const clear = g.state === 'clear' || g.state === 'stageclear';
   const practice = g.practice > 0 || g.startLevel > 0;
+  // r85 THE CAMPAIGN RECEIPT (plan §3 stage 5; HOMAGE L4 "grade the run with an
+  // itemized receipt"). The last stage's clear shows its own per-stage card first
+  // (`turning` below: same card as every earlier stage, with the score-submission
+  // chrome held back), then this one. Everything on it is a RE-READ of what the
+  // run already paid — core banked one row per stage in g.stageLog and the
+  // totals are its sums — so there is no campaign bonus and no new scoring math
+  // (plan §8; S6's hierarchy: the speed-kill core stays the only mechanic).
+  const isCampaign = campaign && g.state === 'clear' && g.stageLog.length > 1;
+  const turning = !campaign && g.state === 'clear' && g.stageLog.length > 1; // the stage card, with the campaign card still to come
   // r78: with more than one stage the card stamps the stage (STAGE n CLEAR /
   // "STAGE n — NAME" line) and the counters are THIS stage's (g.stageBase is
   // the run's counters at the stage's start; all zero on stage 1, so the
@@ -70,9 +83,12 @@ function buildReceipt(g, label) {
   // keeps the OUTCOME (a death in practice still reads GAME OVER); the
   // subtitle carries the mode + section.
   $('resultsCard').classList.toggle('practice', practice);
-  $('resTitle').textContent = g.state === 'stageclear' ? `STAGE ${g.level + 1} CLEAR` : clear ? 'STAGE CLEAR' : 'GAME OVER';
+  $('resTitle').textContent = isCampaign ? 'CAMPAIGN CLEAR'
+    : g.state === 'stageclear' || (multi && clear) ? `STAGE ${g.level + 1} CLEAR` // r85: the last stage names itself too — its card is one of five, not the end of the run
+      : clear ? 'STAGE CLEAR' : 'GAME OVER';
   $('resSub').classList.toggle('hide', !practice && !multi);
-  $('resSub').textContent = practice ? 'PRACTICE · ' + label + (multi && g.startLevel > 0 && label.indexOf('STAGE') < 0 ? ` · ${stageLine}` : '') : multi ? stageLine : '';
+  $('resSub').textContent = isCampaign ? `${g.stageLog.length} STAGES · ${STAGES[0].name} → ${STAGES[g.stageLog.length - 1].name}`
+    : practice ? 'PRACTICE · ' + label + (multi && g.startLevel > 0 && label.indexOf('STAGE') < 0 ? ` · ${stageLine}` : '') : multi ? stageLine : '';
   $('resTag').classList.toggle('hide', !practice);
   $('resTag').textContent = practice ? 'practice run — not saved to hi-scores' : '';
   const lab = labStamp(); // r50: which experiments this run played under ('' = all defaults)
@@ -81,25 +97,48 @@ function buildReceipt(g, label) {
   $('resScore').textContent = pad9(g.score);
   const st = g.stats, kills = g.kills - b.kills, speedKills = g.speedKills - b.speedKills, deaths = st.deaths.length - b.deaths, bombsUsed = st.bombsUsed - b.bombsUsed;
   const pct = kills ? Math.round((100 * speedKills) / kills) : 0;
+  $('resCampaign').classList.toggle('hide', !isCampaign);
+  $('resStats').classList.toggle('hide', isCampaign);
+  if (isCampaign) {
+    // One row per stage: its clock, its score, and its two badges as MARKS — the
+    // run reads as a shape before a single number is read (S6 MUST "legible
+    // without reading numbers"): a column of ★ is a no-miss campaign, a column
+    // of ◇ is a no-bomb one, and the stage that broke either is the gap.
+    const rows = g.stageLog.map((r) => `<tr><td class="nm">ST${r.level + 1} ${STAGES[r.level].name}</td>`
+      + `<td>${fmtTime(r.frames)}</td><td class="sc">${r.score}</td>`
+      + `<td class="bd">${r.deaths ? '·' : '★'}${r.bombsUsed ? '·' : '◇'}</td></tr>`).join('');
+    const tf = g.stageLog.reduce((a, r) => a + r.frames, 0), ts = g.stageLog.reduce((a, r) => a + r.score, 0);
+    const stock = '▲'.repeat(g.player.lives) + ' ' + '●'.repeat(g.player.bombs);
+    $('resCampaign').innerHTML = `<table>${rows}`
+      + `<tr class="tot"><td class="nm">TOTAL</td><td>${fmtTime(tf)}</td><td class="sc">${ts}</td><td class="bd"></td></tr></table>`
+      + `<div class="stock">STOCK ${stock || '—'}</div>`
+      + `<div class="stock">EXTEND ${g.extended ? '● earned' : '— none'}</div>`;
+  }
   $('resStats').innerHTML =
     `speed kills ${speedKills}/${kills} (${pct}%)<br>` +
     `longest chain ${st.maxChain}<br>` +
     `time ${fmtTime(g.frame - b.frame)}${multi && g.level > 0 ? ` (run ${fmtTime(g.frame)})` : ''} · deaths ${deaths} · bombs used ${bombsUsed}` +
     (clear ? `<br>stock bonus +${g.clearBonus}` : '');
   const badges = [];
-  if (!deaths) badges.push('NO MISS');
-  if (!bombsUsed) badges.push('NO BOMB');
+  if (isCampaign) { // the campaign's own badges are the whole run's, not this stage's
+    if (!g.stats.deaths.length) badges.push('NO MISS');
+    if (!g.stats.bombsUsed) badges.push('NO BOMB');
+    badges.push('1CC');
+  } else {
+    if (!deaths) badges.push('NO MISS');
+    if (!bombsUsed) badges.push('NO BOMB');
+  }
   $('resBadges').textContent = badges.join('  ·  ');
   // qualification: FULL RUNS only, top 10 (pure gate, practice can never pass)
   entryOpen = false; pendingEntry = null;
-  if (qualifies(g.state, g.practice, g.score, loadScores(), g.startLevel)) {
+  if (!turning && qualifies(g.state, g.practice, g.score, loadScores(), g.startLevel)) { // r85: the stage-5 card never asks for initials — the CAMPAIGN card does
     pendingEntry = { score: g.score, speedKills: g.speedKills, kills: g.kills, maxChain: st.maxChain, cleared: clear, date: new Date().toISOString().slice(0, 10), build: BUILD, ...(lab ? { lab } : {}), ...(multi ? { level: g.level } : {}) }; // r78: the board row remembers how far the run got (only stamped with >1 stage)
     const init = (store.get('speedhell.initials', 'AAA') + 'AAA').slice(0, 3);
     slots = [...init].map((c) => Math.max(0, CHARS.indexOf(c)));
     slot = 0; entryOpen = true;
   }
   renderEntry();
-  $('resHint').textContent = g.state === 'stageclear' ? 'next stage…' : entryOpen ? '' : (practice ? 'SHOT retry section · Ⓑ title · START menu' : 'SHOT retry · Ⓑ title · START menu');
+  $('resHint').textContent = g.state === 'stageclear' ? 'next stage…' : turning ? 'campaign receipt…' : entryOpen ? '' : (practice ? 'SHOT retry section · Ⓑ title · START menu' : 'SHOT retry · Ⓑ title · START menu');
 }
 
 function renderEntry() {

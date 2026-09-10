@@ -180,9 +180,10 @@ export function draw(g, ctx, bgScroll) {
   }
 
   // enemies — desaturated silhouettes, distinct per role (S4)
-  if (g.level === 1) drawPendulums(ctx, g); // r80: stage 2's chains, under the sprites
-  if (stageAt(g.level).id === 5) drawIdolCenser(ctx, g); // r83: stage 5's censer, same idea, its own function so stage 2's path is untouched
-  if (g.level === 3) drawGateBars(ctx, g); // r84: stage 4's Gatekeeper arms, under the sprites
+  const s5 = stageAt(g.level).id === 5; // r85: THE GREAT ALTAR borrows two earlier stages' under-sprite drawings for its returning guards
+  if (g.level === 1 || s5) drawPendulums(ctx, g); // r80: stage 2's chains, under the sprites (r85: the returning Hearse's anchor chain too — the boss branch inside is still stage-2-only)
+  if (s5) drawIdolCenser(ctx, g); // r83: stage 5's censer, same idea, its own function so stage 2's path is untouched
+  if (g.level === 3 || s5) drawGateBars(ctx, g); // r84: stage 4's Gatekeeper arms (r85: and the returning Gatekeeper's — gated on the body's role inside)
   for (let i = 0; i < g.enemies.count; i++) drawEnemy(ctx, g, g.enemies.items[i]);
 
   // player
@@ -567,7 +568,12 @@ export function drawEnemy(ctx, g, e) {
   // base skin's painter — cute-occult / synthwave creatures for them are a later
   // pass (plan §6: "other skins may lag; say so"). `lvl` reaches the painter and
   // the cache key, so stage 1's sprites are keyed exactly as before (lvl 0).
-  const lvl = (e.type === 4 || e.type === 5) ? g.level : 0;
+  // r85: a RETURNING midboss (stage 5's gauntlet) is drawn by the module that
+  // OWNS it, not by the stage that is playing — `e.role` carries that owner's
+  // level (game.js), so the Hearse reads as the Hearse (lvl 1) and the Gatekeeper
+  // as the Gatekeeper (lvl 3) on THE GREAT ALTAR, with no painter edits at all.
+  // 0 on every enemy of stages 1-4, so their dispatch is unchanged.
+  const lvl = (e.type === 4 || e.type === 5) ? (e.type === 4 && e.role ? e.role : g.level) : 0;
   const sk = (e.type < skin.span.length && !(lvl > 0)) ? skin : SKINS.base;
   // r81 SEALED TELL (presentation only — wiki §13.9): a ground gun (turret, tank,
   // wall, hull) that WOULD fire this frame but is sealed by proximity shows it:
@@ -600,7 +606,7 @@ function drawPendulums(ctx, g) {
   };
   let hearse = null, boss = null;
   for (let i = 0; i < g.enemies.count; i++) { const e = g.enemies.items[i]; if (e.type === 4) hearse = e; else if (e.type === 5) boss = e; }
-  if (hearse && g.level === 1 && hearse.bloomed === 1) for (let i = 0; i < g.enemies.count; i++) { const e = g.enemies.items[i]; if (e.type === 10) chain(hearse.x, hearse.y + 8, e.x, e.y - 10); }
+  if (hearse && (g.level === 1 || hearse.role === 1) && hearse.bloomed === 1) for (let i = 0; i < g.enemies.count; i++) { const e = g.enemies.items[i]; if (e.type === 10) chain(hearse.x, hearse.y + 8, e.x, e.y - 10); } // r85: `role` 1 = the Hearse RETURNING on stage 5 (game.js); on stage 2 role is 0 and the level test is the one that fires
   if (boss && g.level === 1 && boss.age >= 90) {
     const bobs = boss.phase === 2 ? [[boss.bobX, boss.bobY], [boss.bobX2, boss.bobY2]] : [[boss.bobX, boss.bobY]];
     for (const [bx, by] of bobs) {
@@ -642,7 +648,10 @@ function drawIdolCenser(ctx, g) {
 function drawGateBars(ctx, g) {
   let k = null;
   for (let i = 0; i < g.enemies.count; i++) { const e = g.enemies.items[i]; if (e.type === 4 && !e.dead) { k = e; break; } }
-  if (!k || !k.bloomed) return;
+  // r85: on stage 5 the type-4 slot is shared — the Hearse (role 1) also sets
+  // `bloomed` and writes bobX as its ANCHOR's spot, so drawing arms off it would
+  // hang a gate's bars on a hearse. Only a Gatekeeper gets them.
+  if (!k || !k.bloomed || (g.level !== 3 && k.role !== 3)) return;
   const pal = skin.pal.GROUND, y0 = Math.round(k.y) - 14;
   for (const bx of [k.bobX, k.bobX2]) {
     const x = Math.round(bx);
@@ -708,6 +717,29 @@ function drawHud(ctx, g) {
   for (let i = 0; i < g.player.bombs; i++) disc(ctx, W - 14 - i * 16, 36, 5);
   if (!g.extended && g.state === 'play') { // r79: the extend is ANNOUNCED (plan §5 A1: fixed, visible, binary) — a dim line until earned
     ctx.font = '9px monospace'; ctx.textAlign = 'right'; ctx.fillStyle = UI.dim || UI.warnText; ctx.fillText('EXTEND ' + EXTEND_AT, W - 6, 52); ctx.textAlign = 'left';
+  }
+
+  // r85 BRDA#8, "the countdown meter climbing across them" (HOMAGE's seasoning
+  // list), built as a READ and nothing else: stage 5's gauntlet is three sections,
+  // so `sectionOf(g)` already knows how many of the three returning guards have
+  // fallen. No core state, no counter, no scoring math — if the meter needed any
+  // of those it would not be here (plan §3's own condition). Drawn inside the HUD
+  // backing strip, so it masks nothing (S2-MUST-1).
+  if (g.state === 'play' && stageAt(g.level).id === 5) {
+    const sec = sectionOf(g);
+    if (sec >= 3 && sec <= 5) {
+      const done = sec - 3; // guards already down: S3 → 0, S4 → 1, S5 → 2
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 8px monospace'; ctx.fillStyle = UI.dim;
+      ctx.fillText('ALTAR GUARD', W / 2, 14);
+      for (let i = 0; i < 3; i++) {
+        const x = W / 2 - 16 + i * 16;
+        ctx.fillStyle = i < done ? UI.gold : i === done ? UI.warn : UI.dim;
+        if (i < done) { poly(ctx, [[x, 20], [x + 5, 26], [x, 32], [x - 5, 26]]); } // fallen: a filled gold lozenge (gold = value, as ever)
+        else { ctx.fillRect(x - 5, 25, 10, 2); ctx.fillRect(x - 1, 21, 2, 10); }   // still standing: an open cross
+      }
+      ctx.textAlign = 'left';
+    }
   }
 
   ctx.textAlign = 'center';

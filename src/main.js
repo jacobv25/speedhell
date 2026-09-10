@@ -5,8 +5,7 @@
 // first-class citizen: START = menu, d-pad/stick navigates it, A activates,
 // B backs out; title picker on d-pad; death screen A/shot = retry, B = title.
 import { makeGame, startRun, nextStage, update, W, H, SFX } from './core/game.js';
-import { STAGES } from './core/stages/index.js'; // r78: the campaign table (one entry today)
-import s5 from './core/stages/s5.js'; // r83: NOT in STAGES — appended only under the ?boss=idol dev flag below
+import { STAGES } from './core/stages/index.js'; // r78: the campaign table (r85: all five stages)
 import { draw, resetHud, prefs as renderPrefs } from './render/renderer.js';
 import * as audio from './audio.js';
 import { BUILD } from './version.js';
@@ -36,16 +35,11 @@ let bgScroll = 0;
 // every later stage adds a "STAGE N — NAME" entry (its full run, from its own
 // startRun(g, 0, level)) followed by its sections, tagged STn. A run started
 // past stage 1 is practice (g.startLevel > 0): receipt yes, hi-score board no.
-// r83 DEV FLAG — `index.html?boss=idol` appends the stage-5 module (THE GREAT
-// ALTAR, the four-form finale skeleton) to the campaign table FOR THIS PAGE LOAD
-// ONLY, so the Idol can be played by a human before stage 5 exists. Off by
-// default: without the flag STAGES stays [s1, s2, s3, s4] and this line is the
-// only thing it adds to the shell. r84: stage 4 (THE BLOOD GATE) is registered,
-// so the flag now appends the Idol at index 4 — the PRACTICE row reads
-// "STAGE 5 — THE GREAT ALTAR" (its real number at last) and
-// `?boss=idol&level=4` starts the fight directly.
-// Wiki §16 documents it; the probe is tools/probes/idol-probe.mjs.
-if (new URLSearchParams(location.search).get('boss') === 'idol') STAGES.push(s5);
+// r85: the r83 `?boss=idol` DEV FLAG IS RETIRED. It existed only because stage 5
+// was built boss-first and was not in `STAGES`; the stage is registered now, so
+// the Idol is reached the way every other boss is — PRACTICE `ST5 S7 THE IDOL`,
+// or `?level=4` for the whole stage. Nothing appends to the campaign table any
+// more (the probes still push their own entries at runtime, in Node).
 
 const PRACTICE = [];
 STAGES.forEach((st, L) => {
@@ -111,6 +105,7 @@ initOptions({
 function beginRun(t = currentStart, level = currentLevel) { // every run-start path
   currentStart = t; currentLevel = level;
   audio.unlock(); startRun(g, t, level); resetHud(); audio.playMusic('stage');
+  campaignT = 0; campaignShown = false; // r85: a fresh run has no campaign card yet
   g.tune.partBite = { current: 0, clock: 1, inherit: 2, burst: 3 }[labGet('bossParts')] || 0; // r73 Lab experiment — AFTER startRun (it rebuilds g)
   g.tune.s2tanks = labGet('s2tanks') === 'swarm' ? 1 : 0;       // r81 stage-2 Lab knobs (Q27 / Q28): read once here; the stage's
   g.tune.bellWalker = labGet('bellWalker') === 'calm' ? 1 : 0;  // timeline events + the Bell read g.tune when they fire, never live
@@ -130,6 +125,22 @@ const atEnd = () => g.state === 'gameover' || g.state === 'clear';
 // Dormant with one stage: the final boss still ends in 'clear' as always.
 const STAGE_CLEAR_HOLD = 210, BRIEFING_HOLD = 120;
 let stageClearT = 0;
+// r85 THE CAMPAIGN RECEIPT (plan §3 stage 5). The LAST stage's clear shows two
+// cards, in this order: its own per-stage receipt (`STAGE 5 CLEAR`, exactly the
+// card every earlier stage got) and then the CAMPAIGN receipt — per-stage clocks
+// and scores, the totals, the stock in hand, the extend — which is the card that
+// carries the end-of-run path (initials → the board). Core emits the rows
+// (g.stageLog); results.js draws them; nothing here formats anything.
+// The hold is the same 210 f the stage cards use, and SHOT skips it after 45 f.
+const CAMPAIGN_HOLD = 210;
+let campaignT = 0, campaignShown = false;
+// pending = the run has cleared the last stage of a multi-stage campaign and the
+// campaign card has not been turned to yet
+const campaignPending = () => g.state === 'clear' && g.stageLog.length > 1 && !campaignShown;
+function stepCampaign(skip) {
+  campaignT++;
+  if (campaignT >= CAMPAIGN_HOLD || (skip && campaignT > 45)) { campaignShown = true; campaignT = 0; }
+}
 function stepStageClear(skip) {
   if (!isBriefingOpen()) {
     stageClearT++;
@@ -159,7 +170,10 @@ addEventListener('keydown', (e) => {
     const NAV = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', Enter: 'activate' };
     if (NAV[e.key]) titleNav(NAV[e.key]);
   } else if (atEnd()) {
-    if (!e.repeat && (e.key === 'Enter' || binds().fire.includes(k))) retryRun(); // one press — S7 restart <2s
+    if (!e.repeat && (e.key === 'Enter' || binds().fire.includes(k))) {
+      if (campaignPending()) stepCampaign(true); // r85: the first press turns to the CAMPAIGN receipt; the next one retries
+      else retryRun(); // one press — S7 restart <2s
+    }
   }
 });
 addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
@@ -253,7 +267,8 @@ function frame(now) {
       if (pe.left) titleNav('left'); if (pe.right) titleNav('right');
       if (pe.a || pe.start) titleNav('activate');
     } else if (atEnd()) {
-      if (pe.a) retryRun();
+      if (campaignPending()) stepCampaign(pe.a || binds().fire.some((k) => keys[k])); // r85: hold the stage-5 receipt, then turn to the campaign one (SHOT skips)
+      else if (pe.a) retryRun();
       else if (pe.start) openOptions();
       else if (pe.b || pe.sel) quitToTitle();
     } else if (g.state === 'stageclear') { // r78: between stages — zero-input; SHOT skips the receipt hold
@@ -269,7 +284,7 @@ function frame(now) {
     }
     acc -= STEP_MS;
   }
-  syncReceipt(g, PRACTICE.find((x) => x.t === currentStart && x.level === currentLevel)?.label || 'FULL RUN', isBriefingOpen()); // r44 (r78: the briefing card replaces the receipt between stages)
+  syncReceipt(g, PRACTICE.find((x) => x.t === currentStart && x.level === currentLevel)?.label || 'FULL RUN', isBriefingOpen(), campaignShown); // r44 (r78: the briefing card replaces the receipt between stages; r85: the 4th arg turns the last stage's receipt into the CAMPAIGN receipt)
   draw(g, ctx, bgScroll);
   titleEl.classList.toggle('hide', g.state !== 'title' || optionsOpen() || isHowToOpen()); // r42
   if (g.state === 'title') { // pad readout (the menu itself is DOM)

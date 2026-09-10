@@ -1,7 +1,11 @@
-// THE IDOL probe (r83) — builder-side instrument, NOT a referee check. Stage 5
-// is not registered (`STAGES = [s1, s2, s3]`), so this probe PUSHES the module
-// onto the table at runtime (the array is deliberately mutable — see
-// stages/index.js) and plays the FINALE ALONE from startRun(g, 0, <that index>).
+// THE IDOL probe (r83; re-pointed at r85) — builder-side instrument, NOT a
+// referee check. Stage 5 IS registered since r85 (`STAGES = [s1…s5]`), so the
+// probe no longer pushes anything onto the table: it plays the FINALE ALONE by
+// starting stage 5 at its own BOSS SECTION — `startRun(g, SECTIONS[6].t, 4)`, the
+// S6 RELEASE anchor — which gives the whole boss ritual (release → WARNING →
+// entrance) with none of the stage in front of it. The r83 `?boss=idol` dev flag
+// is retired with the same change (wiki §12). The whole stage is stage5-probe;
+// this file is the FOUR FORMS under a microscope.
 // It never touches test/sim.mjs; the stage-5 control run is a Jacob-authorized
 // referee commit (plan §4 rule 14).
 //
@@ -18,7 +22,7 @@
 //   node tools/probes/idol-probe.mjs [seedsHex,comma,separated]
 import { makeGame, startRun, update } from '../../src/core/game.js';
 import { STAGES } from '../../src/core/stages/index.js';
-import s5, { IDOL_HP } from '../../src/core/stages/s5.js';
+import { IDOL_HP } from '../../src/core/stages/s5.js';
 import { BOSS_PHASE_TIMEOUT } from '../../src/core/stage.js';
 import { makeBot } from '../../test/bot.mjs';
 
@@ -31,6 +35,9 @@ const BOTS = { // the referee's four, verbatim from test/sim.mjs
   blind: { aggressive: false, lookahead: 4, reactDelay: 14 },
 };
 const FORMS = ['THE IDOL', 'THE DEMON', "THE PRIESTESS'S MIRROR", 'THE HOLLOW CORE'];
+// r85: form 3 gained its SAMPLE → TRAVEL → PLANT dwell (s5.js MIRROR_DWELL) —
+// a counter, not a number (T3). IDOL_HP is unchanged, so the hp-budget table
+// below still measures options A / B / C exactly as r83 wrote it.
 
 // HP-BUDGET OVERRIDE (measurement only): `IDOLHP=220,220,220,405 node …` writes
 // the four numbers into the exported table IN PLACE, so Jacob's options A / B / C
@@ -40,9 +47,11 @@ if (process.env.IDOLHP) {
   for (let i = 0; i < 4 && i < v.length; i++) IDOL_HP[i] = v[i];
 }
 
-// register stage 5 at the end of the table for this process only
-if (!STAGES.some((s) => s.id === 5)) STAGES.push(s5);
+// r85: stage 5 is IN the table — find it by id (never by a hard-coded index) and
+// start at its boss section, so the finale is measured with its own ritual and
+// nothing else.
 const LV = STAGES.findIndex((s) => s.id === 5);
+const BOSS_AT = STAGES[LV].SEC_T[6]; // S6 RELEASE → WARNING → S7 THE IDOL
 const mmss = (f) => `${Math.floor(f / 3600)}:${String(Math.floor((f % 3600) / 60)).padStart(2, '0')}`;
 const s1 = (f) => (f / 60).toFixed(1);
 
@@ -81,23 +90,23 @@ const row = (seed, name, g, r) => console.log(
   + ` score ${String(g.score).padStart(6)} kills ${String(g.kills).padStart(2)} sk ${String(g.speedKills).padStart(2)}`
   + ` deaths ${JSON.stringify(r.dForm)} lives ${g.player.lives} maxBul ${String(r.maxB).padStart(3)} to [${g.stats.timeoutLog}]`);
 
-console.log(`idol-probe — stage 5 pushed onto STAGES at index ${LV} (${STAGES[LV].name}); the finale alone, startRun(g, 0, ${LV})`);
+console.log(`idol-probe — stage 5 is STAGES[${LV}] (${STAGES[LV].name}); the finale alone, startRun(g, ${BOSS_AT}, ${LV}) = its S6 release → WARNING → the Idol`);
 console.log(`  IDOL_HP = [${IDOL_HP}] (option A: forms 1-2 on the elite tier, forms 3-4 on the r71 boss tiers) · form timeout ${BOSS_PHASE_TIMEOUT} f = ${s1(BOSS_PHASE_TIMEOUT)} s each, worst case ${s1(BOSS_PHASE_TIMEOUT * 4)} s for four`);
 console.log("\nidol-probe — 1. the referee's four bots on THE IDOL alone, 7 seeds");
 const stat = { formLen: [[], [], [], []], boss: [], reached: [] };
 for (const seed of SEEDS) for (const [name, o] of Object.entries(BOTS)) {
-  const g = startRun(makeGame(seed), 0, LV); const r = play(g, makeBot(o)); row(seed, name, g, r);
+  const g = startRun(makeGame(seed), BOSS_AT, LV); const r = play(g, makeBot(o)); row(seed, name, g, r);
 }
 console.log("\nidol-probe — 2. expert with LIVES PINNED (probe-only: every form measured on every seed)");
 for (const seed of SEEDS) {
-  const g = startRun(makeGame(seed), 0, LV); const r = play(g, makeBot(BOTS.expert), { pinLives: true }); row(seed, 'expert-pinned', g, r);
+  const g = startRun(makeGame(seed), BOSS_AT, LV); const r = play(g, makeBot(BOTS.expert), { pinLives: true }); row(seed, 'expert-pinned', g, r);
   r.formLen.forEach((f, i) => { if (i < 4) stat.formLen[i].push(f); });
   stat.boss.push(r.endAt - (r.warnAt || r.bossAt)); stat.reached.push(r.forms);
 }
 console.log("\nidol-probe — 2b. FORM 4 ISOLATED (probe-only: forms 1-3 held at 1 hp, so the MEDLEY is measured on every seed)");
 const f4 = [];
 for (const seed of SEEDS) {
-  const g = startRun(makeGame(seed), 0, LV); const r = play(g, makeBot(BOTS.expert), { pinLives: true, melt: 3 });
+  const g = startRun(makeGame(seed), BOSS_AT, LV); const r = play(g, makeBot(BOTS.expert), { pinLives: true, melt: 3 });
   row(seed, 'expert-melt-f4', g, r);
   if (r.formLen[3] !== undefined) f4.push(r.formLen[3]);
 }

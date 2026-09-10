@@ -65,6 +65,16 @@
   #scoresCard .labnote { color: #5a6480; font-size: 10px; }
   #resScore { font: bold 22px monospace; color: #e8ecf8; letter-spacing: .1em; margin: 6px 0; }
   #resStats { line-height: 1.7; color: #8a8fa8; }
+  /* r85 campaign receipt (the five-stage card: per-stage clocks + scores, totals,
+     stock, extend). Same type scale as the hi-score table so the run reads as a
+     ledger; the badge column is marks, not numbers (S6). */
+  #resCampaign table { border-collapse: collapse; margin: 6px auto 2px; }
+  #resCampaign td { padding: 1px 8px; font: 11px monospace; color: #8a8fa8; text-align: left; white-space: nowrap; }
+  #resCampaign td.nm { color: #cdd3e8; }
+  #resCampaign td.sc { text-align: right; color: #e8ecf8; }
+  #resCampaign td.bd { color: #ffd24a; letter-spacing: .1em; }
+  #resCampaign tr.tot td { border-top: 1px solid #2a3050; color: #ffd24a; padding-top: 3px; }
+  #resCampaign .stock { font: 11px monospace; color: #ffd24a; letter-spacing: .18em; margin-top: 3px; }
   #resBadges { margin: 8px 0; color: #ffd24a; font-weight: bold; letter-spacing: .2em; min-height: 1em; }
   #entry .elabel { color: #57e389; margin-bottom: 6px; }
   #entry .eslots span { display: inline-block; width: 26px; font: bold 20px monospace; color: #e8ecf8;
@@ -132,6 +142,7 @@
     <div id="resScore">000000000</div>
     <div id="resStats"></div>
     <div id="resBadges"></div>
+    <div id="resCampaign" class="hide"></div>
     <div id="resTag" class="rtag hide"></div>
     <div id="resLab" class="rlab hide"></div>
     <div id="entry" class="hide">
