@@ -179,6 +179,7 @@ export function draw(g, ctx, bgScroll) {
   }
 
   // enemies — desaturated silhouettes, distinct per role (S4)
+  if (g.level === 1) drawPendulums(ctx, g); // r80: stage 2's chains, under the sprites
   for (let i = 0; i < g.enemies.count; i++) drawEnemy(ctx, g, g.enemies.items[i]);
 
   // player
@@ -525,14 +526,47 @@ export function drawEnemy(ctx, g, e) {
   switch (e.type) {
     case 0: step = stepOf(heading(e)); if (e.phase === 3 && e.vy < -0.5) extra = 1; break; // riser climbing → exhaust plume
     case 1: case 3: step = stepOf(heading(e)); break;
-    case 2: extra = stepOf(Math.atan2(g.player.y - e.y, g.player.x - e.x)) + ((e.vulnAt >= 0 && g.frame - e.vulnAt > 240) ? STEPS : 0); break; // barrel step + angry
+    case 2: case 7: extra = stepOf(Math.atan2(g.player.y - e.y, g.player.x - e.x)) + ((e.vulnAt >= 0 && g.frame - e.vulnAt > 240) ? STEPS : 0); break; // barrel step + angry (r80: the tank aims like a turret)
     case 5: extra = (e.vulnAt < 0 && e.phase > 0) ? ((g.frame & 2) ? 2 : 1) : 0; break; // burn-in frames
   }
   if (e.type === 1) dy = Math.round(Math.sin(e.age * 0.09) * 0.8); // parked bob, whole pixels
-  const key = ((((((e.type * 4 + phase) * 2 + side) * STEPS + step) * 2 + prop) * 2 + hit) * 2 + flick) * 64 + extra;
-  const s = CACHE.get(key) || sprite(key, skin.span[e.type], hit ? WHITE : skin.rimOf(e.type, phase),
-    (c) => skin.paintEnemy(c, e.type, phase, side ? 1 : -1, step, prop, hit, flick, extra, KIT));
+  // r80: a type the skin does not paint (stage 2's ground layer, types ≥ 7) and the
+  // stage-owned bosses of a later stage (types 4/5 on g.level > 0) FALL BACK to the
+  // base skin's painter — cute-occult / synthwave creatures for them are a later
+  // pass (plan §6: "other skins may lag; say so"). `lvl` reaches the painter and
+  // the cache key, so stage 1's sprites are keyed exactly as before (lvl 0).
+  const lvl = (e.type === 4 || e.type === 5) ? g.level : 0;
+  const sk = (e.type < skin.span.length && !(lvl > 0)) ? skin : SKINS.base;
+  const key = (((((((e.type * 4 + phase) * 2 + side) * STEPS + step) * 2 + prop) * 2 + hit) * 2 + flick) * 64 + extra) * 4 + lvl;
+  const s = CACHE.get(key) || sprite(key, sk.span[e.type], hit ? WHITE : sk.rimOf(e.type, phase),
+    (c) => sk.paintEnemy(c, e.type, phase, side ? 1 : -1, step, prop, hit, flick, extra, KIT, lvl));
   ctx.drawImage(s.img, Math.round(e.x) - s.o, Math.round(e.y) - s.o + dy);
+}
+
+// r80 STAGE 2 pendulums: the Hearse's anchor chain (type 10 → its type-4 owner)
+// and the Bell's clapper(s) (bobX/bobY on the type-5 entity; the clapper is an
+// EMITTER, not an entity — drawn here as a small bob at the chain's end). Chains
+// are dotted links in the base GROUND family, drawn under the sprites so the
+// anchor / boss cover their ends. Keys off entity fields only — no rng.
+function drawPendulums(ctx, g) {
+  const { GROUND, HEAVY, BOSS } = SKINS.base.pal;
+  const chain = (x0, y0, x1, y1) => {
+    const n = Math.max(2, Math.round(Math.hypot(x1 - x0, y1 - y0) / 6));
+    ctx.fillStyle = GROUND.hi;
+    for (let i = 0; i <= n; i++) { const t = i / n; ctx.fillRect(Math.round(x0 + (x1 - x0) * t) - 1, Math.round(y0 + (y1 - y0) * t) - 1, 2, 2); }
+  };
+  let hearse = null, boss = null;
+  for (let i = 0; i < g.enemies.count; i++) { const e = g.enemies.items[i]; if (e.type === 4) hearse = e; else if (e.type === 5) boss = e; }
+  if (hearse && g.level === 1 && hearse.bloomed === 1) for (let i = 0; i < g.enemies.count; i++) { const e = g.enemies.items[i]; if (e.type === 10) chain(hearse.x, hearse.y + 8, e.x, e.y - 10); }
+  if (boss && g.level === 1 && boss.age >= 90) {
+    const bobs = boss.phase === 2 ? [[boss.bobX, boss.bobY], [boss.bobX2, boss.bobY2]] : [[boss.bobX, boss.bobY]];
+    for (const [bx, by] of bobs) {
+      chain(boss.x, boss.y + 8, bx, by);
+      ctx.fillStyle = HEAVY.out; disc(ctx, Math.round(bx), Math.round(by), 7);
+      ctx.fillStyle = BOSS.strut; disc(ctx, Math.round(bx), Math.round(by), 5);
+      ctx.fillStyle = BOSS.cores[boss.phase] || WHITE; disc(ctx, Math.round(bx), Math.round(by), 2);
+    }
+  }
 }
 
 // --- player -------------------------------------------------------------------

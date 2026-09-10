@@ -50,6 +50,50 @@ const SEC_LANDGEO = [ // landmark [x, w, h] — distinct silhouette per section
   [120, 80, 50], [30, 110, 46], [210, 70, 90], [60, 150, 40], [110, 100, 100],
   [200, 90, 56], [20, 130, 60], [90, 140, 36], [70, 180, 70],
 ];
+// r80 STAGE 2 — THE BONE RAIL place ramp (L1, plan §3): one landmark per section,
+// base-skin geometry in the FIELD band (bible §3: a landmark may be large, never
+// bright). [x, w, h] per SECTIONS index: intro rail · catacomb mouth · ossuary
+// canal · rail yard · the hull's dock (the barge itself is an enemy) · dock
+// (the Hearse's stretch) · bell-tower approach · (boss: the arena restains).
+const S2_LANDGEO = [
+  [40, 240, 60], [70, 180, 90], [20, 280, 70], [30, 260, 80], [110, 100, 60],
+  [110, 100, 60], [125, 70, 150], [90, 140, 36],
+];
+function landmark2(ctx, sec, x, y, w, h, land, slab, K) {
+  const { W } = K;
+  ctx.fillStyle = land;
+  switch (sec) {
+    case 0: // the rail: two long rails with sleepers
+      ctx.fillRect(x + 20, y, 3, h); ctx.fillRect(x + w - 23, y, 3, h);
+      ctx.fillStyle = slab; for (let yy = y + 4; yy < y + h; yy += 12) ctx.fillRect(x + 14, yy, w - 28, 3);
+      break;
+    case 1: // catacomb mouth: an arch of stacked blocks
+      ctx.fillRect(x, y + 20, w, h - 20);
+      ctx.fillStyle = slab; ctx.fillRect(x + 30, y + 34, w - 60, h - 34);
+      ctx.fillStyle = land; for (let i = 0; i < 7; i++) ctx.fillRect(x + 10 + i * 24, y + 8 - (i === 3 ? 8 : Math.abs(i - 3) * 2), 20, 14);
+      break;
+    case 2: // ossuary canal: two banks of niches, a dark channel between
+      ctx.fillRect(x, y, 70, h); ctx.fillRect(x + w - 70, y, 70, h);
+      ctx.fillStyle = slab; for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) { ctx.fillRect(x + 8 + c * 20, y + 8 + r * 20, 12, 12); ctx.fillRect(x + w - 62 + c * 20, y + 8 + r * 20, 12, 12); }
+      break;
+    case 3: // rail yard: four converging rails
+      for (let i = 0; i < 4; i++) { const rx = x + 20 + i * 70; ctx.fillRect(rx, y, 3, h); ctx.fillRect(rx + 14, y, 3, h); }
+      ctx.fillStyle = slab; for (let yy = y; yy < y + h; yy += 10) ctx.fillRect(x, yy, w, 2);
+      break;
+    case 4: case 5: // the dock: two pylons with a crossbeam (the barge parks here)
+      ctx.fillRect(x, y, 14, h); ctx.fillRect(x + w - 14, y, 14, h); ctx.fillRect(x, y + 6, w, 6);
+      ctx.fillStyle = slab; ctx.fillRect(x + 20, y + 18, w - 40, h - 24);
+      break;
+    case 6: { // bell-tower approach: a tall tower, belfry arch, a bell
+      ctx.fillRect(x, y + 20, w, h - 20); ctx.fillRect(x - 8, y + 12, w + 16, 10);
+      ctx.fillStyle = slab; ctx.fillRect(x + 20, y + 40, w - 40, 44); ctx.fillRect(x + 14, y + 100, w - 28, h - 104);
+      ctx.fillStyle = land; ctx.fillRect(x + w / 2 - 9, y + 50, 18, 20); ctx.fillRect(x + w / 2 - 12, y + 68, 24, 5);
+      break;
+    }
+    default: ctx.fillRect(x, y, w, h); ctx.fillStyle = slab; ctx.fillRect(x + 10, y + 8, w - 20, h - 16);
+  }
+  void W;
+}
 // r6 S3b-SHOULD: arena restain per boss phase — deep blue → red-shifted →
 // white-hot dawn (homage BRDA#6), all values inside the washed band.
 const BOSS_BG = ['#0a0e1a', '#130a0e', '#141317'];
@@ -68,11 +112,15 @@ function drawBackground(ctx, g, bgScroll, sec, bossPhase, K, secT = 0) {
   ctx.fillStyle = bgC;
   ctx.fillRect(-20, -20, W + 40, H + 40);
   { // landmark slab: enters at the section boundary, scrolls with section progress
-    const [lx, lw, lh] = SEC_LANDGEO[sec];
+    const geo = g.level === 1 ? S2_LANDGEO : SEC_LANDGEO; // r80: stage 2 has its own place ramp
+    const [lx, lw, lh] = geo[Math.min(sec, geo.length - 1)];
     const ly = Math.round((g.stageT - secT) * 0.55 - lh - 20);
     if (ly < H + 20) {
-      ctx.fillStyle = landC; ctx.fillRect(lx, ly, lw, lh);
-      ctx.fillStyle = slabC; ctx.fillRect(lx + 10, ly + 8, lw - 20, lh - 16); // inset gives it structure
+      if (g.level === 1) landmark2(ctx, sec, lx, ly, lw, lh, landC, slabC, K);
+      else {
+        ctx.fillStyle = landC; ctx.fillRect(lx, ly, lw, lh);
+        ctx.fillStyle = slabC; ctx.fillRect(lx + 10, ly + 8, lw - 20, lh - 16); // inset gives it structure
+      }
     }
   }
   ctx.fillStyle = starC;
@@ -91,18 +139,60 @@ function drawBackground(ctx, g, bgScroll, sec, bossPhase, K, secT = 0) {
 function rimOf(type, phase) {
   if (type === 0) return phase === 1 ? HEAVY.out : phase === 3 ? GROUND.out : AIR.out;
   if (type === 1) return AIR.out;
-  if (type === 2) return GROUND.out;
+  if (type === 2 || type === 7 || type === 8 || type === 9) return GROUND.out; // r80: the ground layer is the GROUND family
   return HEAVY.out;
 }
 
 // r20 enemy identity pass: identity from SHAPE, SIZE, MOTION and LAYER — never
 // saturated colour. AIR = aircraft silhouettes, GROUND = squat plate + aiming
 // barrel. Sprites drawn nose-DOWN (+y); rotate by step for the flying types.
-function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra, K) {
+// r80: `lvl` (11th arg) = g.level for the stage-owned types (4 midboss, 5 boss,
+// 6 part) — stage 2's Hearse and Bell are drawn here in base geometry; the
+// other skins fall back to this painter for them (renderer drawEnemy).
+function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra, K, lvl = 0) {
   const { poly, disc, STEP } = K;
   const F = (c) => { ctx.fillStyle = hit ? UI.white : c; };
   const S = (c) => F(flick ? BOSS.armor : c); // surface fill: armor shimmer applies
+  if (lvl === 1 && (type === 4 || type === 5)) { paintStage2Boss(ctx, type, phase, side, prop, hit, flick, extra, K, F, S); return; }
   switch (type) {
+    case 7: { // r80 RAIL TANK — tracked box, khaki dome, barrel aims at the ship; rust when angry
+      const angry = extra >= K.STEPS, barrel = (extra % K.STEPS) * STEP;
+      if (!hit) { ctx.save(); ctx.translate(2, 3); S(GROUND.out); ctx.fillRect(-12, -10, 24, 20); ctx.restore(); }
+      S(GROUND.shade); ctx.fillRect(-13, -10, 6, 20); ctx.fillRect(7, -10, 6, 20);       // tracks
+      S(GROUND.hi); for (let y = -9; y < 10; y += 4) { ctx.fillRect(-13, y, 6, 1); ctx.fillRect(7, y, 6, 1); }
+      S(GROUND.plate); ctx.fillRect(-8, -8, 16, 16);                                     // hull
+      S(GROUND.shade); disc(ctx, 0, -1, 6);
+      S(angry ? HEAVY.stripe : GROUND.base); disc(ctx, -1, -2, 4);
+      ctx.save(); ctx.rotate(barrel); S(GROUND.shade); ctx.fillRect(0, -2, 14, 4); S(GROUND.hi); ctx.fillRect(3, -2, 10, 1); ctx.restore();
+      break;
+    }
+    case 8: { // r80 BONE WALL segment — three courses of bone bricks, a skull set in the middle
+      S(GROUND.plate); ctx.fillRect(-15, -12, 30, 24);
+      S(GROUND.base);
+      for (let r = 0; r < 3; r++) { const y = -11 + r * 8, o = (r & 1) * 7; for (let c = -1; c < 2; c++) ctx.fillRect(-13 + o + c * 14, y, 12, 6); }
+      S(GROUND.hi); for (let r = 0; r < 3; r++) ctx.fillRect(-13, -11 + r * 8, 26, 1);
+      S(GROUND.shade); ctx.fillRect(-4, -3, 3, 3); ctx.fillRect(1, -3, 3, 3); ctx.fillRect(-1, 1, 2, 2); // the skull's sockets
+      break;
+    }
+    case 9: { // r80 THE HULL — an ossuary barge: a wide deck (decorative — the hittable core is the reliquary at the centre, r 20)
+      S(GROUND.plate); poly(ctx, [[-76, -22], [76, -22], [82, 0], [76, 28], [-76, 28], [-82, 0]]);   // the deck
+      S(GROUND.shade); for (let x = -70; x <= 70; x += 14) ctx.fillRect(x, -20, 2, 46);              // ribs
+      S(GROUND.shade); ctx.fillRect(-76, -22, 152, 2); ctx.fillRect(-76, 26, 152, 2);
+      S(GROUND.hi); ctx.fillRect(-76, -22, 152, 1);
+      S(HEAVY.shade); disc(ctx, 0, 0, 20);                                                          // the core: a reliquary drum
+      S(HEAVY.base); disc(ctx, -1, -1, 16);
+      if (phase === 1) { S(HEAVY.stripe); disc(ctx, 0, 0, 9); S(HEAVY.core); disc(ctx, 0, 0, 5); }  // opened: the gun's window
+      else { S(HEAVY.shade); ctx.fillRect(-14, -2, 28, 4); ctx.fillRect(-2, -14, 4, 28); }           // armored: barred shut
+      S(HEAVY.hi); ctx.fillRect(-10, -14, 8, 2);
+      break;
+    }
+    case 10: { // r80 THE ANCHOR — shank, stock, flukes; the chain is the renderer's
+      S(HEAVY.shade); ctx.fillRect(-2, -10, 4, 18);
+      S(HEAVY.base); poly(ctx, [[0, 11], [11, 3], [9, -1], [0, 7], [-9, -1], [-11, 3]]);
+      S(HEAVY.hi); ctx.fillRect(-6, -10, 12, 2);
+      S(HEAVY.stripe); disc(ctx, 0, -12, 2);
+      break;
+    }
     case 0: { // popcorn family — each behaviour variant is its own craft
       ctx.rotate(step * STEP);
       if (phase === 2) {            // CROSSER: dart interceptor
@@ -203,6 +293,48 @@ function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra, K) {
   }
 }
 
+// r80 STAGE 2's midboss + boss in base geometry (cute-occult creatures are a
+// later pass). THE HEARSE (type 4): a coffin carriage on wheels with two lantern
+// posts; phase B (1) exposes the pale core. THE BELL (type 5): P0 a belfry with
+// the bell hung in its arch · P1 the bell on two strut legs (the walker) · P2 the
+// bare clapper. Burn-in and phase core hues exactly as boss 1's painter.
+function paintStage2Boss(ctx, type, phase, side, prop, hit, flick, extra, K, F, S) {
+  const { poly, disc } = K;
+  if (type === 4) {
+    S(GROUND.shade); disc(ctx, -22, 12, 6); disc(ctx, 22, 12, 6);                 // wheels
+    S(GROUND.hi); disc(ctx, -23, 11, 2); disc(ctx, 21, 11, 2);
+    S(HEAVY.shade); poly(ctx, [[-32, -8], [32, -8], [30, 10], [-30, 10]]);          // carriage
+    S(HEAVY.base); poly(ctx, [[-26, -6], [26, -6], [24, 6], [-24, 6]]);             // the coffin lid
+    S(HEAVY.stripe); ctx.fillRect(-26, -1, 52, 2);
+    S(HEAVY.hi); ctx.fillRect(-26, -6, 52, 1);
+    S(HEAVY.shade); ctx.fillRect(-22, -16, 3, 9); ctx.fillRect(19, -16, 3, 9);      // lantern posts
+    S(prop ? GROUND.exhaust : GROUND.hi); ctx.fillRect(-23, -18, 5, 4); ctx.fillRect(18, -18, 5, 4); // lanterns
+    S(phase === 1 ? HEAVY.core : HEAVY.shade); poly(ctx, [[0, 4], [6, 0], [0, -4], [-6, 0]]); // the core, bared in phase B
+    return;
+  }
+  const burning = extra > 0;
+  const body = burning ? (extra === 2 ? BOSS.burnA : BOSS.burnB) : (flick ? BOSS.armor : BOSS.hull);
+  const core = burning ? BOSS.ember : (BOSS.cores[phase] || UI.white);
+  if (phase === 0) {       // BELL TOWER
+    F(burning ? body : BOSS.armor); ctx.fillRect(-28, -34, 56, 62);                  // tower
+    for (let i = -2; i <= 2; i++) ctx.fillRect(i * 11 - 4, -40, 8, 8);              // battlements
+    F(FIELD_BG); ctx.fillRect(-18, -22, 36, 40); ctx.fillRect(-12, -30, 24, 10);    // the arch
+    F(body); poly(ctx, [[-14, 8], [14, 8], [11, -8], [4, -16], [-4, -16], [-11, -8]]); // the bell
+    F(core); ctx.fillRect(-14, 6, 28, 4);                                            // the bell's mouth band
+    F(BOSS.strut); ctx.fillRect(-1, -28, 2, 12);                                     // the rope
+  } else if (phase === 1) { // BELL WALKER
+    F(body); poly(ctx, [[-30, 6], [30, 6], [24, -20], [10, -32], [-10, -32], [-24, -20]]);
+    F(core); ctx.fillRect(-30, 4, 60, 6);
+    F(burning ? BOSS.ember : BOSS.strut); poly(ctx, [[-22, 8], [-14, 8], [-26, 34], [-34, 34]]); poly(ctx, [[14, 8], [22, 8], [34, 34], [26, 34]]); // strut legs
+    F(BOSS.hot); ctx.fillRect(-3, -26, 6, 6);
+  } else {                  // THE CLAPPER — bare core
+    F(body); poly(ctx, [[0, -26], [14, -4], [10, 18], [-10, 18], [-14, -4]]);
+    F(burning ? BOSS.ember : BOSS.strut); ctx.fillRect(-26, -3, 9, 6); ctx.fillRect(17, -3, 9, 6);
+    F(core); poly(ctx, [[0, -14], [8, 0], [0, 12], [-8, 0]]);
+    F(BOSS.hot); ctx.fillRect(-2, -3, 4, 6);
+  }
+}
+
 // The ship: big around a tiny core (boghog WS01), 28px span. The renderer adds
 // the dark rim + hull-light top edge and draws the hit dot over it.
 function paintShip(c, K) {
@@ -223,6 +355,6 @@ function paintItem(c, r, K) {
 export default {
   id: 'base', name: 'classic (r58)',
   pal: { AIR, GROUND, HEAVY, SHIP, ITEM, UI, BOSS },
-  span: [32, 48, 40, 66, 72, 100, 32],
+  span: [32, 48, 40, 66, 72, 100, 32, 40, 40, 176, 34], // r80: + tank, wall, hull (the deck is 164 wide), anchor
   rimOf, drawBackground, paintEnemy, paintShip, paintItem, post: null,
 };
