@@ -323,7 +323,38 @@ template (L4).
   four-form boss pays 48 k where every other pays 36 k (same rule, one more
   form; wiki Q40). Sections, gauntlet, receipt, loop-2 seal and a stage-5 cue
   are the later pass (§7 step 6).
-- **Loop 2 seal** (changelog 2026-08-29 named the idea; it is a judgment call,
+- **Stage 5 — built r85 (2026-09-10, core pass; wiki §16). THE CAMPAIGN IS
+  COMPLETE:** `STAGES = [s1…s5]`, `?level=4`, 41 PRACTICE rows, the `?boss=idol`
+  flag retired, and the run now ends on a CAMPAIGN RECEIPT. As specified, with
+  these deviations and findings: (1) the returning midbosses are REUSED, not
+  re-authored — s5.js calls s2/s3/s4's own `enemyUpdate` hooks and the renderer
+  picks their painters off a new `e.role` field, so those modules were not edited
+  at all; (2) "one form each" is honoured per BODY, and the Gatekeeper's Psikyo M8
+  transformation stays available because it is the PLAYER's trade, not a scripted
+  second form; the Hearse at 220 crosses its own phase-B threshold in about a
+  second, so what returns is its desperation form; the Moth comes ALONE and
+  enrages at once, which compresses the pair's sentence into one guard and
+  suppresses its 8 s curtain (so rubric S5's pair exception is not spent twice);
+  (3) **the numbers land** — approach 24.8–25.0 s (≤ 25), gauntlet 15.6–23.2 s
+  (Hearse 3.9–11.6 · Moth 3.9–6.8 · Gatekeeper 2.8–7.2 against ≤ 8 s each), boss
+  reached at 42.4–49.7 s (42–80), clock 1:38–2:05 (≤ 2:15), and no hp was touched
+  to get any of it; (4) **the boss is 50–61 % of the clock against the 30–50 %
+  band** (wiki Q48) — Q24 with a fourth form on it, reported with every lever and
+  hp refused; (5) THE MIRROR got a SAMPLE → TRAVEL → PLANT dwell as PATTERN design
+  (T3), not an hp change: form 3 went from timing out on 7 of 7 seeds to 3 of 7
+  and form 4 is now reached on 5 of 7 — a Q34-adjacent change flagged for Jacob to
+  keep or revert, and option C was measured and does NOT fix the timeout (it is a
+  bot ceiling); (6) form 4's medley was re-timed into a call-and-response, which
+  answers Q36; (7) BRDA#8's countdown meter IS built, because it needed no scoring
+  math — three HUD marks read off the section table; (8) at 2.7 deaths/min the
+  finale is the campaign's gentlest stage (wiki Q50), which is what "every quote
+  at one rep" buys. **The loop-2 seal is dropped: loop 2 is unconditional (below),
+  and the hook is documented in the module.** Cute-occult creatures, a stage-5
+  cue, the referee control runs and the Booth debrief are the next passes (§7's
+  cooldown applies).
+- **Loop 2 seal — DROPPED (decided r85).** Loop 2 is UNCONDITIONAL, as Psikyo's
+  is; there is no seal and nothing to earn. The original proposal is kept below
+  for the record. (changelog 2026-08-29 named the idea; it is a judgment call,
   not a corpus rule — Psikyo's loop 2 is unconditional): clearing S5 with the
   condition
   (proposal: no-miss on any two stages, or all five midbosses killed
@@ -437,19 +468,26 @@ bomb, or stock life 1 k → 5 k) is the recommendation for a campaign; MSX
    carry-over, receipt-per-stage, stage select, referee plumbing. Stage 1
    must stay byte-identical to its certificate. BUILD bump, wiki §12
    "Campaign" section created.
-2. **Stage 2** — the ground layer is the biggest infrastructure (tanks,
+2. **Stage 2 — DONE (r80/r81).** The ground layer is the biggest infrastructure (tanks,
    destructible walls, hull-mounted turrets, sealing as a taught tool). Built
    hard first, scaled back [T1]. Playtest in the Booth; recert; cooldown.
-3. **Stage 3** — formations and carriers; the elite-pair midboss; the
+3. **Stage 3 — DONE (r82).** Formations and carriers; the elite-pair midboss; the
    density ceiling is measured here and fixes S8's stress scene for good.
-4. **Stage 5's final boss skeleton** *before* stage 4 — the medley needs
+4. **Stage 5's final boss skeleton — DONE (r83).** *Before* stage 4 — the medley needs
    every dialect's shape agreed, so the S4 dialect (box trap) is designed
    knowing it will be quoted.
-5. **Stage 4** — wall pods, risers-as-theme, the Warden, the Gatekeeper.
+5. **Stage 4 — DONE (r84).** Wall pods, risers-as-theme, the Warden, the Gatekeeper.
 6. **Stage 5** — the approach, the midboss gauntlet, the four-form finale,
    the loop-2 seal, the campaign receipt.
+   **DONE at r85** (2026-09-10; wiki §16) — approach, gauntlet, four-form finale
+   and campaign receipt all built; the loop-2 SEAL is dropped (loop 2 is
+   unconditional) and left as a documented hook. Still owed by this step's own
+   closing rule: the Booth session debrief, the referee recert, and the cooldown
+   before step 7 opens.
 7. **Loop 2** — revenge dots over five stages (L8), then the §11 order
-   resumes: Challenge, Caravan, Novice.
+   resumes: Challenge, Caravan, Novice. **NEXT, and unblocked**: all five stages
+   exist and the seam where the branch belongs is documented (`s5.js`, the
+   LOOP 2 hook). Gate: the pass-cooldown, the stage-5 playtest and the recerts.
 
 Each stage pass ends with: wiki section + changelog with corpus clearance,
 BUILD bump, Booth session debrief, referee recert, and a cooldown before the

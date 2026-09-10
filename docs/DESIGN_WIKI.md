@@ -1034,6 +1034,49 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     corridor's densest frame is 36 bullets) and the deaths there cluster, so the
     numbers say lanes — the question is whether it FEELS like lanes. Jacob's.
 
+46. **The mirror's fixed point makes a boss-section practice start its worst
+    case.** (r85, §16.3/§16.9.) Form 3 travels to `W − player.x`, so the centre
+    line is its fixed point: stand on `W/2` and it stands on you. A run started at
+    the boss section puts the ship at exactly `W/2` on frame one, and measured
+    that way the form times out on **7 of 7** seeds even at option C's 220 hp;
+    measured from the top of the stage — where the gauntlet leaves the ship
+    anywhere but the centre — it times out on **3 of 7**. Is that the trap
+    working (a human who notices "don't fight the mirror from the middle" has
+    learned the form, S5 MUST) or is PRACTICE handing the player the one start
+    the form punishes? A one-line non-hp mitigation exists (bias the first sample
+    off-centre) and was deliberately NOT taken. Jacob's.
+47. **Three 35 s midboss timeouts, back to back.** (r85, §16.3.) Each returning
+    guard carries the shared `MIDBOSS_TIMEOUT`, so the gauntlet's worst case is
+    105 s inside a stage capped at 2:15 — and the passive bot demonstrates it
+    (44.7–76.9 s). The expert runs it in 15.6–23.2 s, so this is the same shape as
+    Q38 (four × 35 s on the boss): the timeout is sized for ONE fight per stage
+    and stage 5 holds three. A shorter timeout for a gauntlet guard is the obvious
+    answer and is not a builder's call.
+48. **The finale's boss is 50–61 % of its clock.** (r85, §16.9.) Plan §4 rule 1
+    wants 30–50 %. Stage 4's three-form boss already read 40–52 % (Q24); a fourth
+    form pushes it further. The levers are all Jacob's and none of them is hp:
+    amend the guardrail (Q24/Q37), take Q34's option C (measured — it moves the
+    share by about one point, so it is not the answer), or lengthen the pre-boss
+    run, which plan §3 caps at ≤ 25 s of stair and the approach is already AT
+    25.0 s. Note what would NOT be legitimate: fixing a clock with hp.
+49. **A gated section's landmark never scrolls in — on any stage.** (r85, §16.1.)
+    A landmark enters at its section's boundary and scrolls with section progress
+    (`ly = (stageT − secT)·0.55 − h − 20`), and a midboss gate FREEZES `stageT`, so
+    a midboss section's own landmark sits just above the field for the whole
+    fight. True since r80 and true on stage 4's portcullis frame; stage 5 worked
+    around it by hanging the altar on the section before the gauntlet. Fixing it
+    properly (let a gated section's landmark keep scrolling, or park it at a
+    chosen offset) would move pixels on stages 2–4, so it is a Jacob-authorized
+    renderer pass, not a stage builder's.
+50. **The finale is the campaign's GENTLEST stage by deaths per minute.** (r85,
+    §16.9.) Pinned expert: 2.7 deaths/min against stage 4's 5.9 and stage 3's ~4,
+    and its deaths are almost all at the boss. That is what "every quote at
+    exactly one rep" buys, and it is also the highest-scoring stage (196–232 k)
+    with the longest boss — but rubric S7 MUST wants difficulty to escalate
+    monotonically across the game, and by this measure it does not. The lever is
+    the approach's rep count (plan §3 says ≤ 1 rep each, so raising it is an
+    amendment), never hp.
+
 ## 9. Practice notes (for humans)
 
 - `sandbox.html`: presets spawn any enemy or the boss at P1/P2/P3 (P1 via preset
@@ -1446,7 +1489,45 @@ is placement, not authoring time. Not scheduled.
 its infrastructure pass (§7 step 1) shipped at r78 — see §12. The mode order above
 is unchanged; the campaign grows *Arcade*, it is not a mode.
 
-## 12. Campaign (infrastructure r78 — LIVE at r80; `STAGES = [s1, s2, s3, s4]` since r84)
+## 12. Campaign (infrastructure r78 — LIVE at r80; **COMPLETE at r85: `STAGES = [s1, s2, s3, s4, s5]`**)
+
+**r85 status — THE CAMPAIGN IS LIVE AT FIVE STAGES.** `STAGES = [s1, s2, s3, s4,
+s5]` (s5 = THE GREAT ALTAR, §16), which is the Pillars' amended identity line —
+"V1 = a **five-stage campaign**" — met in code. Registering the fifth stage needed
+**no further code** beyond the array: a stage-4 clear ends in `'stageclear'` →
+receipt → briefing `STAGE 5 — THE GREAT ALTAR` → `nextStage`, **`?level=4` plays
+it**, `speedhell.level` remembers it, the board stamps `ST5`, and the PRACTICE row
+is **41 rows** (counted, not estimated: 8 + 8 + 8 + 9 + 8 — one `STAGE N — NAME`
+entry per stage past the first plus each stage's sections). Stage 5's own clear is
+the run's `'clear'`, and it now leads to the **CAMPAIGN RECEIPT** (§16.7): the
+stage's card first, then a five-row campaign card, then the existing end-of-run
+path. **The `?boss=idol` dev flag is RETIRED** — it existed only because stage 5
+was built boss-first and was not in the table; the Idol is reached like every
+other boss now (PRACTICE `ST5 S7 THE IDOL`, or `?level=4`), and `main.js` no
+longer imports the module at all.
+
+**The three shared changes stage 5 needed** (everything else lives in its own
+module): `e.role` on the enemy (`game.js:158`) — which stage module owns a
+RETURNING midboss, so the shared type-4 slot can hold stage 2's Hearse and stage
+4's Gatekeeper in the same run and both the update hook and the painter know
+which is which; `g.stageLog` (`game.js:126`, appended at `game.js:777`, carried by
+`nextStage`) — one row per cleared stage, which is the campaign receipt's data and
+adds no counter and no scoring math (its rows sum exactly to the run's own totals,
+and `campaign-probe` asserts it); and a fourth optional argument on `syncReceipt`
+so the last stage's card can turn into the campaign card.
+
+**Measured this pass: stages 1–4 are byte-identical.** `node test/sim.mjs` equals
+the r84 control in every run, robust seed, check and the determinism string, with
+only the known run-to-run S8 wall-clock line moving; `stage2-probe` equal LINE FOR
+LINE; `stage3-probe` and `stage4-probe` equal in every NUMBER — stage 4's expert
+rows differ only in the outcome WORD (`clear` → `stageclear`, since stage 4 is no
+longer last, exactly as r80 predicted for each new stage) and both probes' campaign
+walks now run one stage further; `campaign-probe` all asserts passing with its
+stage-1 identity section byte-identical. Two probe edits were needed and are
+recorded here because they are referee-adjacent: `campaign-probe`'s roster assert
+now reads all five names in order, and `bossKilled` came OUT of its final-clear
+assert — a four-form finale can be RIDDEN OUT, and whether the last form was
+killed or timed out is a scoring fact, not a plumbing one (it is printed instead).
 
 **r84 status — `STAGES = [s1, s2, s3, s4]`** (s4 = THE BLOOD GATE, §15).
 Registering a fourth stage needed **no further code** beyond the array and one
@@ -2598,39 +2679,137 @@ the lock alive), Q43 (does the Gate read arena-wide), Q44 (the Gatekeeper's
 deaths do not cluster), Q45 (the corridor's horizontal bands) in §8. Q24 (the
 boss's share of the clock at 3×) and Q17 (parts bite back) apply here unchanged.
 
-## 16. Stage 5 — THE GREAT ALTAR (r83, final-boss SKELETON)
+## 16. Stage 5 — THE GREAT ALTAR (r85, core pass)
 
-*(§15 — Stage 4, THE BLOOD GATE — will be inserted BEFORE this section when that
-stage is built. This section is out of numeric order with the campaign on
-purpose: plan §7 step 4 builds stage 5's boss FIRST, because the finale is a
-medley and stage 4's dialect has to be designed knowing it will be quoted.)*
+*Built 2026-09-10 from plan §3 ("Stage 5 — THE GREAT ALTAR — the finish") on top
+of the r83 final-boss skeleton; this is the core + a base-skin drawing + a probe.
+This is the pass that **completes the campaign**: `STAGES = [s1, s2, s3, s4, s5]`,
+so the Pillars' "V1 = a five-stage campaign" is met and the r83 `?boss=idol` dev
+flag is retired (§12). Cute-occult creatures for the finale are a later pass; in
+cute-occult / synthwave the Idol, the three returning guards and the place ramp
+fall back (renderer `drawEnemy` / each skin's own background — verified this pass
+by headless render, `?skin=cute-occult` and `?skin=synthwave` on
+`tools/s5peek.html`). Music reuses the stage and boss tracks. Module:
+`src/core/stages/s5.js`; the shared machinery it stands on: `stage.js`
+(**no new `ENEMY_DEFS` rows at all** — the newest id is still 16, where stage 4
+left it — plus mayFire's r18 gates, the camp governor and the r6 boss beats),
+`stages/kit.js` (no new helpers either: the approach is spelled in `vFile`,
+`tankFile`, `crossers`, `zakoGroup`, `risersOneSide`, all written by stages 2-4),
+`patterns.js` (no new emitters), and the two shared additions this pass needed:
+`e.role` (`game.js:158`) and `g.stageLog` (`game.js:126`, appended at
+`game.js:777`). **The three returning midbosses are REUSED, not copied**:
+`s5.js:352 guard` hands a type-4 body straight to `s2.enemyUpdate[4]` or
+`s4.enemyUpdate[4]`, and the lone Moth to `s3.enemyUpdate[13]` — s2/s3/s4 are not
+edited at all. Probe: `tools/probes/stage5-probe.mjs` (the stage) +
+`tools/probes/idol-probe.mjs` (the four forms under a microscope). Peeks:
+`img/r85-s5-sections.png`, `r85-s5-gauntlet.png`, `r85-s5-boss.png`,
+`r85-campaign-receipt.png`, `r85-stage5-receipt.png`.*
 
-*Built 2026-09-10 from plan §3 "Stage 5 — THE GREAT ALTAR". This is the FINAL
-BOSS ONLY: there is no place ramp, no altar stair, no compressed "best of"
-approach, no returning-midboss gauntlet (Hearse → Twin Moths → Gatekeeper — the
-Gatekeeper is stage 4's midboss and does not exist), no campaign receipt and no
-loop-2 seal. `STAGES` is still `[s1, s2, s3]`: the module is **not registered**.
-Module: `src/core/stages/s5.js`. Probe: `tools/probes/idol-probe.mjs`. Peek:
-`img/r83-s5-idol.png`. Music reuses the boss track. In every skin the Idol falls
-back to the base painter (`base.js:543 paintStage5Boss`), as stages 2 and 3's
-bosses do.*
+### 16.1 Place ramp (L1) and the sections
 
-**How to reach it.** Probe: `node tools/probes/idol-probe.mjs` (it pushes the
-module onto `STAGES` at runtime — the array is mutable on purpose). Browser:
-`index.html?boss=idol` appends it for that page load only (`main.js`, one
-`if`, off by default), so it lands at index 3 and the PRACTICE row reads
-**`STAGE 4 — THE GREAT ALTAR`** — its real slot number *until stage 4 is
-inserted before it*. `index.html?boss=idol&level=3` starts the fight directly.
-Without the flag nothing in the shell changes. Peek page: `tools/s5peek.html`.
+The processional road → **THE ALTAR STAIR** → **THE ALTAR** (where the three
+returning guards are fought) → **THE SIGIL DISC**, the boss's approach landmark
+(L2) → the arena. Base skin: `S5_LANDGEO` + `landmark5` in
+`skins/base.js:261/273`, with the stage's own `S5_BG / S5_STAR / S5_SLAB /
+S5_LAND` (`base.js:257`) — a cold-violet ash, the one field in the game with a
+violet cast, so the finish reads as nowhere the player has been; no channel
+exceeds `0x2e` (S2-MUST-1) and the ladder is the bible's in order (§3: landmark >
+slabs > stars > field). The other skins show their own field for the section
+index (said so, plan §6). The expert reaches the boss gate at **42.4–49.7 s** on
+seven seeds (Psikyo#1: 42–80 s).
 
-### 16.1 The four forms
+| # | stageT | Section | What (each quote ≤ 1 rep, sequenced) |
+|---|---|---|---|
+| S1 | 120 | THE ALTAR STAIR | the two quotes that ask for ROUTING (`s5.js:387`): stage 3's **formation file** (one leader, one window) from the left lane, crossers over it from the right, then stage 4's **WARDEN** — the approach's only elite — alone in its beat with traffic only, exactly as THE BLOOD GATE introduced it [WS05 "repetition legitimizes", T1] |
+| S2 | 780 | THE ALTAR | the two quotes that ask for SEALING and PRIORITY (`s5.js:396`): stage 2's **tank column** (a staircase from the right; no `flank`, so stage 5 is independent of the r81 stage-2 Lab knobs) and stage 3's **carrier**, alone in its beat, then risers up one lane edge, divers, and a last crosser wave so the first gate opens on a clean field |
+| S3 | 1570 | THE HEARSE | gauntlet 1; §16.3 |
+| S4 | 1630 | THE MOTH | gauntlet 2; §16.3 |
+| S5 | 1690 | THE GATEKEEPER | gauntlet 3; §16.3 |
+| S6 | 1750 | RELEASE | cancel wall 30/bullet + 14 × 150 over the sigil disc, ending empty (L2, BRDA#9); WARNING at 1880 (70 f, gate) |
+| S7 | 1950 | THE IDOL | gate; §16.4 |
 
-The ritual is stages 1–3's by construction (§5.1): WARNING 70 f over an emptied
-field → `bossEntrance` (90 f armored descent, parts on the last beat) →
-`bossBurn` at each handoff → `advanceIdolPhase` (cancel wall, item shower with
-the late-kill fade, 60 f armor) → `bossTimeout` (35 s per form) → the camp
-governor → the escalation clock `k` (§5.2b, restarting at zero on every form —
-with four forms that reset happens three times).
+**Four releases, and three of them are kills.** Each guard's death fires
+`game.js killEnemy`'s inherited release — the speed-gated cancel wall (100/bullet
+in-window, 30 late) and the 8 × 800 shower for the type-4 pair, the same thing
+through the type-13 branch for the Moth — so **the field goes to gold three times
+in twenty-odd seconds**, which is S5 MUST's "a release after each peak" with the
+peaks packed. S6 is the fourth, over the landmark, ending empty.
+
+**Flow** (WS05 / Jacob's standing Q21 point / [BH101 §Level design]): the
+approach holds **one STRONG body at a time** — the Warden arrives alone at 420
+and the carrier alone at 1020, 600 stageT apart, and no gauntlet guard ever
+shares the field with either (even a Warden nobody killed spends its late-kill
+rush walking into the bottom band and despawns ~270 stageT before the first
+gate). Popcorn comes from one side at a time, alternating; risers climb ONE lane
+edge; every entry sits at a lane (x 56 / 60 / W−56 / W−60), never the screen
+edge; no vertical stacks. Longest dead air, pinned expert: **0.7–2.8 s** (stages
+2 and 3 total 1.7–3.1 s; stage 4 0.0–1.3 s) — the gauntlet's two 60-tick gaps and
+the release account for it.
+
+**A campaign-wide note this stage forced into the open:** a landmark enters at
+its section's boundary and scrolls down with section progress, and **a gated
+section freezes `stageT`** — so a midboss section's own landmark never scrolls
+in, on any stage (stage 4's portcullis frame behaves identically). That is why
+the altar is hung on S2, where it is seen, and the three gauntlet rows only
+repeat it. Logged as **Q49**.
+
+### 16.2 The niche — there isn't one, and that is the design
+
+Stage 1 taught speed-killing, stage 2 sealing, stage 3 priority, stage 4 where
+you are standing. **Stage 5 teaches nothing new and asks for all four at once.**
+Plan §3: "No new niche. Everything returns, remixed (ZR: repetition legitimizes;
+loop-1 material as fake-outs)." As built that is literal:
+
+- **zero new enemy types** — `ENEMY_DEFS` is not touched; the newest id is 16;
+- **zero new hp tiers** — the two type-4 guards are re-stamped to the ELITE row's
+  220 (`GUARD_HP`, `s5.js:102`), which is the Twin Moths' own number, and a Moth
+  already carries it;
+- **zero new emitters and zero new bullet shapes** — `patterns.js` gains nothing;
+- **zero new kit helpers** — the approach is written in stages 2-4's grammar;
+- **zero new scoring** — no campaign bonus, no gauntlet payout, no meter math
+  (§16.7).
+
+The one thing stage 5 adds to the shared code is a way to say *whose* body this
+is: `e.role` (`game.js:158`), the level of the module that owns a returning
+midboss. It is reset on every spawn, so a pooled slot can never carry a stale
+owner, and it is 0 on every enemy of stages 1-4.
+
+### 16.3 The returning-midboss gauntlet
+
+**THE HEARSE → A TWIN MOTH → THE GATEKEEPER**, three gates 60 stageT apart, one
+form each on the elite tier. Precedent: BRDA#3's miniboss chains and ZeroRanger's
+boss-rush stage; [T2]'s "no breather after the midboss" applies to each KILL, not
+to the chain, and here the next gate opens ~0.3 s after the last one closes (the
+caravan pull sees an empty field). Every guard keeps the shared 35 s
+`MIDBOSS_TIMEOUT`.
+
+| guard | what returns | how it is different at 220 hp | file |
+|---|---|---|---|
+| 1 **THE HEARSE** (type 4, `role` 1) | stage 2's rail crawler, its chained ANCHOR hung on the visible pendulum, its escort, its timeout — `s2.enemyUpdate[4]` verbatim | 220 is under the type-4 row's 45 % phase-B threshold within about a second, so **what returns is the Hearse's DESPERATION form** (rings, the bounded spray, the swinging anchor) with the anchor drop as its tell. One form, and it is the form the player saw last | `s5.js:420` |
+| 2 **A TWIN MOTH, ALONE** (type 13) | stage 3's midboss — but **one body of the pair** | it finds no twin and **ENRAGES on its fifth parked frame**: stage 3's own bereaved state, which fires BOTH slots out of one body. That is the pair's whole sentence compressed into one guard, and it means rubric S5's single sanctioned pair exception is **not spent twice**. Its 8 s arrival CURTAIN cannot fire (the curtain is gated on "not yet enraged"), so HOMAGE's "true curtains only at midboss and boss finale, 5-10 s" guardrail stays spent where it already was | `s5.js:432` |
+| 3 **THE GATEKEEPER** (type 4, `role` 3) | stage 4's gate: the bars, the stepping arms, its LOCK (spawned by its own code) | the Psikyo M8 transformation is still on the table — **the "one form" is the form the STAGE gives it, and the second one stays the PLAYER's trade** (break the lock: the area denial ends, the pressure goes up). At 220 hp the trade has to be taken inside ~6 s, which is the finale's compression doing the work rather than a new number | `s5.js:448` |
+
+**Measured** (expert, lives pinned, 7 seeds; the clock starts at the body's first
+frame ON SCREEN, so each figure carries ~1.5 s of descent):
+
+| guard | seconds | ≤ 8 s? |
+|---|---|---|
+| THE HEARSE | **3.9–11.6** | 5 of 7 seeds inside; the outlier is the ANCHOR eating shots — killing it is the counter, and 3.9 s is what the counter buys |
+| A TWIN MOTH | **3.9–6.8** | yes, every seed |
+| THE GATEKEEPER | **2.8–7.2** | yes, every seed |
+| the whole gauntlet | **15.6–23.2 s** | plan §3's "~24 s" |
+
+The passive bot rides all three to 44.7–76.9 s, which is the 35 s timeout × 3
+worst case being demonstrated rather than argued — **Q47**.
+
+### 16.4 The boss — THE IDOL (`s5.js:188 updateIdol`, four forms)
+
+The ritual is stages 1-4's by construction (§5.1): the S6 release + cancel,
+WARNING 70 f over an emptied field, `bossEntrance` (90 f armored descent, parts
+on the last beat), `bossBurn` at each handoff, `advanceIdolPhase` (cancel wall,
+item shower with the late-kill fade, 60 f armor, `IDOL_HP`), `bossTimeout` (35 s
+per form), the camp governor, the escalation clock `k` (§5.2b, restarting at zero
+on every form — with four forms that reset happens three times).
 
 **The boss-only dialect is the MEDLEY ITSELF** (S3b-6). No stage section, and no
 earlier boss, speaks four stages' dialects out of one body. Every individual
@@ -2638,10 +2817,56 @@ pattern in the fight is a quotation; form 4 invents nothing (S3b-5).
 
 | # | form | hp | movement | quotes | part(s) | the beats | file |
 |---|---|---|---|---|---|---|---|
-| 1 | **THE IDOL** | 220 (elite tier) | static — ±18 px at ≤ 0.5 px/f, y 90 (or the governor's safe spot when latched). The only boss in the game that lets you pick your ground | **STAGE 1**: the accelerating `lanceVolley` + the laned `arcWall` | two **votive braziers** ±36 (24), 3-needle aimed fans — kill both and the idol is lances and walls only (L7) | lance t 24 (5 + rep, cap 1.5×·k) · aimed fan / 46 f · arc wall t 76, **lane 6 of 13 = straight down** · rep ≥ 3 a wall that does *not* open under it | `s5.js:132` |
-| 2 | **THE DEMON** | 220 (elite tier) | aimed — hunts your column at 1.5 px/f, y 104. Slower than the ship (3.7), so it is escapable but standing still is the one answer that fails | **STAGE 3** (`eggFan`, fuse 110 f) + **STAGE 2** (`staticFan` along a censer's radial at the swing's ends only, chain 78, ±0.95 rad, period 200 f) | one **horn** node +38 (**56**), bounded spray — asymmetric on purpose, as every stage's aimed form | eggs t%74=10 lobbed outward · arcs t%32=0 when \|θ\| > 0.45 · `ledFan` t%50=16 · rep ≥ 3 eggs down the middle | `s5.js:157` |
-| 3 | **THE PRIESTESS'S MIRROR** | 402 (boss tier) | **player-shaped**: moves at **3.7 px/f — the ship's exact speed** — to `W − player.x`, the mirror of your column, y 112 | **Ship B "PRIESTESS"** (parked branch `design/ship-b`, NOT merged — hand-written here): a three-way spread, fired down | two **option pods** ±34 (24), cyan needle pairs — the ship's own wing guns turned on you | spread t%22=0 (3 / 0.50 / 2.7·k) · **FOCUS** t%16=0 (3 / 0.10 / 3.4·k) when the mirror is barely moving, i.e. when *you* are · an off-beat wide spread t%90=45 · rep ≥ 3 a ring — the bomb turned on you | `s5.js:182` |
-| 4 | **THE HOLLOW CORE** | 405 (boss tier) | bare core on the house `bandedSweep` (ω 0.005) + the ±22 px breathing bob | **everything**: the bare-core ring (every boss's), form 1's lance, form 2's censer arcs and eggs, form 3's spread — and the inert `quoteS4` slot | two **relays** ±38 (24), needle pairs | ring t 20 (14 + 2·min(rep,4)) · lance t 70 · arcs t%34=8 · eggs t%62=30 · spread t 130 · **`quoteS4` t 155** · rep ≥ 3 extra rings | `s5.js:206` |
+| 1 | **THE IDOL** | 220 (elite tier) | static — ±18 px at ≤ 0.5 px/f, y 90 (or the governor's safe spot when latched). The only boss in the game that lets you pick your ground | **STAGE 1**: the accelerating `lanceVolley` + the laned `arcWall` | two **votive braziers** ±36 (24), 3-needle aimed fans — kill both and the idol is lances and walls only (L7) | lance t 24 (5 + rep, cap 1.5×·k) · arc wall t 76, **lane 6 of 13 = straight down** · aimed fan / 46 f · a flank lance t 150 · rep ≥ 3 a wall that does *not* open under it | `s5.js:199` |
+| 2 | **THE DEMON** | 220 (elite tier) | aimed — hunts your column at 1.5 px/f, y 104. Slower than the ship (3.7), so it is escapable but standing still is the one answer that fails | **STAGE 3** (`eggFan`, fuse 110 f) + **STAGE 2** (`staticFan` along a censer's radial at the swing's ends only, chain 78, ±0.95 rad, period 200 f) | one **horn** node +38 (**56**), bounded spray — asymmetric on purpose, as every stage's aimed form | eggs t%74=10 lobbed outward · arcs t%32=0 when \|θ\| > 0.45 · `ledFan` t%50=16 · rep ≥ 3 eggs down the middle | `s5.js:223` |
+| 3 | **THE PRIESTESS'S MIRROR** | 402 (boss tier) | **player-shaped**, and now on a BEAT: it samples `W − player.x`, travels there at **3.7 px/f — the ship's exact speed** — and then **PLANTS for `MIRROR_DWELL` = 45 f** before it samples again (`s5.js:135`), y 112 | **Ship B "PRIESTESS"** (parked branch `design/ship-b`, NOT merged — hand-written here): a three-way spread, fired down | two **option pods** ±34 (24), cyan needle pairs — the ship's own wing guns turned on you | spread t%22=0 (3 / 0.50 / 2.7·k) · **FOCUS** t%16=0 (3 / 0.10 / 3.4·k) when *you* are barely moving (read off the governor's own player-x ema) · an off-beat wide spread t%90=45 · rep ≥ 3 a ring — the bomb turned on you | `s5.js:247` |
+| 4 | **THE HOLLOW CORE** | 405 (boss tier) | bare core on the house `bandedSweep` (ω 0.005) + the ±22 px breathing bob | **everything**: the bare-core ring, form 1's lance, form 2's censer arcs and eggs, form 3's spread, and stage 4's box trap through `quoteS4` (`s5.js:172`) | two **relays** ±38 (24), needle pairs | **the call-and-response cycle**, below | `s5.js:278` |
+
+**THE MIRROR'S DWELL — the r85 change, and it is a counter, not a number** (T3
+"balance = counters, not numbers"; WS03 "a good attack offers a range of
+responses"). r83 measured the mirror at 11 hp/s against forms 1-2's 34-38 and the
+expert timed it out on **7 of 7** seeds with up to 230 hp standing, and the
+diagnosis was never hp: *a body travelling at exactly the ship's speed toward the
+mirror of the ship's column is never stationary in the firing lane, and the camp
+governor bans the one spot that solves it* (the centre line is the mirror's fixed
+point). A form with no counter is a checkmate by arithmetic. So the mirror now
+**samples → travels → plants**: the plant is the window, and the counter is to
+chase it and kill it where it sets — the same grammar as stage 4's Gatekeeper
+arms, and it makes the story beat legible (the Priestess copies you a beat late).
+
+Measured on the same timeline, expert lives pinned, 7 seeds — **this is a
+Q34-adjacent change and Jacob can keep or revert it**; `IDOL_HP` was NOT touched:
+
+| | r83 movement (re-target every frame) | r85 (`MIRROR_DWELL` 45) |
+|---|---|---|
+| form 3 seconds | 26.7–36.0 | **16.2–36.0** |
+| form 3 timed out | **6 of 7 seeds** | **3 of 7** |
+| form 4 reached (honestly) | 1 of 7 | **5 of 7** |
+| form 4 seconds | 14.9 | 15.1–22.9 |
+| the whole boss | 51–59 % of the clock | 50–61 % |
+
+The dwell was swept (30 / 45 / 60 / 90 f, and 32 / 48 / 64 / 80 / 110 for the
+earlier "sample on a fixed clock" shape): 45 is the only setting that both halves
+the timeouts and gets the medley reached on most seeds.
+
+**Q36's answer — form 4's cycle is a CALL AND RESPONSE.** r83 hung the medley's
+quotes on co-prime moduli (`t%34` arcs against `t%62` eggs) and they collided
+every few cycles, 4 frames apart at the worst crossing: two positional patterns
+arriving as one unreadable event. The 240 f cycle is now split, and it is a
+re-timing only — not one hp, speed or count moved:
+
+| t | who speaks | source |
+|---|---|---|
+| 20 | the bare-core ring | every boss's last form |
+| 8 · 42 · 76 · 110 (while \|θ\| > 0.45) | **the censer half** — the swinging bob's arcs | STAGE 2 |
+| 132 | the lance | STAGE 1 |
+| 158 | the eggs, lobbed outward | STAGE 3 |
+| 190 | the mirror's three-way spread | form 3 |
+| 216 | **the box trap**, one 46 × 34 pen on your column | STAGE 4 (§16.6) |
+| 62 · 174 (rep ≥ 3) | one tax ring per half | the timeout-rider tax |
+
+Every quote in the second half is ≥ 22 f from its neighbours, and no instant asks
+the player to read the censer AND two core patterns at once (S3 MUST).
 
 **The point-blank invitation** (S3b-SHOULD) is form 1's: the arc wall's lane is
 `gapIndex` 6 of 13 — straight down, i.e. *under the idol* (boss 1's P1 rule,
@@ -2650,21 +2875,46 @@ fastest thing in the game. At rep ≥ 3 the timeout-rider tax throws a wall that
 does not open there, so riding the form out closes its own invitation.
 
 **Castes / families.** Zero new emitters, zero new bullet shapes, zero new
-colours: pink rounds (arcs, eggs, rings, the three-way spread) + cyan needles
-(lances, aimed and led fans) + the player's — **2 enemy families per form**,
-inside S2's ≤ 3. `NEEDLE_TIER` is untouched (the boss (5) and parts (6) were
-already in it). **Zero new hp tiers** (plan §4 rule 3) and **zero new enemy
-types** — `ENEMY_DEFS` is not touched at all, the newest id is still 13.
+colours: pink rounds (arcs, eggs, rings, the three-way spread, the pen) + cyan
+needles (lances, aimed and led fans) + the player's — **2 enemy families per
+form**, inside S2's ≤ 3.
 
-**Movement of the medley (S3 MUST, ≤ 2 focal points).** The five quoted layers
-of form 4 sit on distinct beats of one 240 f cycle so they arrive in sequence,
-not together — but `t%34` (arcs) and `t%62` (eggs) do collide periodically.
-First pass; open as **Q36**.
+### 16.5 The hp budget — still Jacob's decision (Q34), with r85's numbers
 
-### 16.2 The medley hooks, and `quoteS4`
+Plan §3 states the problem and the two horns: *"Boss ≤ 65 s (50 % of 2:15) — four
+forms at 3× hp do not fit; either the finale runs its own multiplier or forms 1-2
+are short (≤ 10 s) and only 3-4 are full length."* The whole knob is one named
+table, `IDOL_HP` (`s5.js:117`), and **r85 does not touch it** — what r85 changed
+about form 3 is how it MOVES (§16.4). Option A is what ships; B and C are
+measured with the probe's `IDOLHP=` override, not by editing the module.
 
-Each quotation is a single named call, so filling or re-pointing one is a
-one-line edit — that is the whole reason the skeleton exists before stage 4:
+| | option A — **shipped** | option B — the finale's own multiplier | option C — the mirror on the elite tier |
+|---|---|---|---|
+| `IDOL_HP` | **220 / 220 / 402 / 405** | ~277 / 285 / 287 / 287 (m ≈ 0.71 of the r71 tiers, re-sized at r85) | 220 / 220 / **220** / 405 |
+| new hp numbers | **none** — elite row + the r71 boss tiers | **four**, all new (needs Jacob's override of "zero new tiers") | **none** |
+| form 3 (full stage, dwell 45) | 16.2–36.0 s, timed out 3 of 7 | not re-measured at r85 | 20.6–36.0 s, timed out **3 of 7** |
+| form 4 reached | 5 of 7 | — | 3 of 7 |
+| whole boss | 50–61 % of the clock | — | 51–60 % |
+
+**Option C does not fix the timeout, and that is the finding.** Cutting the
+mirror's hp from 402 to 220 leaves the SAME three seeds timing out, because on
+those seeds the expert bot deals almost no damage at all to a speed-matched body
+— 0 hp/s does not care what the hp is. So the mirror's timeout is a **bot
+ceiling**, exactly as r83 read it, and the pattern lever (the dwell) is the one
+that moved it. Measured hp/s for the expert on the full stage: form 1 **25**,
+form 2 **27**, form 4 **23**, form 3 **13**.
+
+Against HOMAGE's *"boss phases 15–25 s"* guardrail (`HOMAGE_STUDY.md:118`): forms
+1 and 2 are **under the 15 s floor** (6.8–10.7 s) and form 3 can be over the
+ceiling; only form 4 sits inside. Psikyo's own four-form finale — the thing being
+homaged — runs **10 / 10 / 14 / 12 s for ~65 s total**
+(`homage/study-s1945ii.md:121–126`), so the *film* supports short opening forms
+and the *guardrail* does not. Amending it is Jacob's (plan §4 rule 1 names that
+override path). Still **Q37**. Timeouts are still 4 × 35 s worst case (**Q38**),
+and the four-form payout is still 48,000 against every other boss's 36,000
+(**Q40**) — one more form, the same rule, no scoring math changed.
+
+### 16.6 The `quoteS4` medley hook
 
 | hook | lives in | quotes | status |
 |---|---|---|---|
@@ -2673,163 +2923,145 @@ one-line edit — that is the whole reason the skeleton exists before stage 4:
 | `eggFan` | forms 2 + 4 | stage 3's hatching eggs (THE MOTH QUEEN, §14.5) | live |
 | `staticFan(…, 3, …, PI/2)` | forms 3 + 4 | Ship B's three-way spread | live |
 | `ring` | form 4 | the bare-core beat every boss ends on (§5.2, R6.5) | live |
-| **`quoteS4(g, e, k, rep)`** | form 4, `t === 155` | **stage 4's BOX TRAP** (WS03 #7: six emitters pen the player, then the pen moves) | **FILLED AT r84 — `s5.js:117`** |
+| **`quoteS4(g, e, k, rep)`** | form 4, `t === 216` | **stage 4's BOX TRAP** (THE GATE, §15.5) | live since r84; the beat re-timed at r85 |
 
-**Filled at r84** (§15.5). `quoteS4` now fires ONE pen: `boxTrap` at 46 × 34
-against THE GATE's own 60 × 48, once per form-4 cycle against the Gate's every
-150 f, cast on the ship's COLUMN at the Idol's own reach (`e.y + 96`) rather than
-built around the ship — *a medley quotes, it does not re-run the set piece*. Pink
-rounds, so form 4's family count is unchanged (pink + cyan + the player's violet,
-≤ 3 on screen). The four contract steps r83 wrote out are all met and are
-restated at the call site.
+ONE pen: `boxTrap` at 46 × 34 against THE GATE's own 60 × 48, once per form-4
+cycle against the Gate's every 150 f, cast on the ship's COLUMN at the Idol's own
+reach (`e.y + 96`) rather than built around the ship — *a medley quotes, it does
+not re-run the set piece*. Pink rounds, no rng, never clamped (the Gate's own
+reason: a clamped pen puts a wall on a ship at an edge, which is a spawn-on-player
+death). **Q39** — whether a quote spends stage 4's "used once, here" — was settled
+as the plan frames it (the Gate's fight IS the use; a quote is not a use) and is
+still Jacob's to overturn.
 
-**Q39, as the plan already frames it** (§7 item 4): the Gate's fight IS the one
-use, and the finale RECOMBINES earlier dialects as quotes (S3b-5) — a quote is
-not a use. r84 built to that reading. It is still Jacob's to overturn.
+### 16.7 The campaign receipt, and the loop-2 hook
 
-**What it did to the Idol's numbers.** Passes 1 and 2 of `idol-probe` are
-**unchanged to the digit** — the expert never reaches form 4 (it times out on the
-mirror, Q34), so the new bullets are never spawned in those runs. Only pass 2b
-(forms 1–3 melted to 1 hp so the medley is reached) moved: form 4 alone measures
-**16.7–26.9 s** against r83's 22.1–23.1 s and its max bullets rise from 83–102 to
-**91–121**. Total boss time is unchanged at 49–52 s against the ≤ 65 s target,
-and the HOMAGE 15–25 s guardrail verdict on form 4 is still "yes". The r83
-warning stands for the referee: any future run that DOES reach form 4 differs
-from r83, so the stage-5 control run is a Jacob-authorized recert.
+**The receipt** (plan §3; HOMAGE L4; rule 10's per-stage card, one level up). The
+last stage's clear shows **two** cards: stage 5's own per-stage receipt
+(`STAGE 5 CLEAR`, identical to every earlier stage's, with the score-submission
+chrome held back) for 210 f — SHOT skips it after 45 f — and then the **CAMPAIGN
+receipt**, which carries the existing end-of-run path (initials → the board →
+the title). Core emits, the shell draws:
 
-### 16.3 The hp budget — Jacob's decision, with the numbers
+- **core** (`game.js:126` / `:777`): `g.stageLog`, one row per cleared stage,
+  appended by the clear tally and carried across every seam by `nextStage`. Each
+  row is a DELTA against `g.stageBase` — the same subtraction the per-stage
+  receipt already does — so **no new counter and no new scoring math exists**;
+  `campaign-probe` asserts that the rows' clocks and scores sum EXACTLY to the
+  run's own totals.
+- **shell** (`results.js:67`): a row per stage — name, clock, score, and the two
+  badges as MARKS (★ no-miss, ◇ no-bomb) so the campaign reads as a shape before
+  a number is read (S6 MUST "legible without reading numbers") — a TOTAL row, the
+  stock as icons (▲ per life, ● per bomb), the extend, and the whole-run badges
+  (NO MISS · NO BOMB · 1CC). The stock bonus is unchanged and still pays **per
+  stage**, exactly as Jacob decided at r79; there is no campaign-level bonus.
+- Peek: `img/r85-campaign-receipt.png` (and `r85-stage5-receipt.png` for the card
+  that precedes it), rendered by `tools/receiptpeek.html` — the real receipt code
+  on a real finished run.
 
-Plan §3 states the problem and the two horns: *"Boss ≤ 65 s (50 % of 2:15) —
-four forms at 3× hp do not fit; either the finale runs its own multiplier or
-forms 1–2 are short (≤ 10 s) and only 3–4 are full length."* The whole knob is
-one named table, `IDOL_HP` (`s5.js:75`). **Option A is what r83 ships**; B and C
-were measured with the probe's `IDOLHP=` override, not by editing the module.
+**BRDA#8's countdown meter** is built, as the plan's own condition allows — *"if
+it cannot be done without new scoring math, do not build it"* — and it needed
+none: three marks in the HUD strip, filling gold as each guard falls, read
+straight off `sectionOf(g)` (`renderer.js:722`). No core state, no counter, no
+math. It is a READ.
 
-Measured on the expert bot, lives pinned, seed C0FFEE + the six robust seeds:
+**Loop 2** (`s5.js:490`, a documented hook, NOT built). Decided this pass: **loop
+2 is UNCONDITIONAL, as Psikyo's is** — no seal, no clear-condition, nothing to
+earn (the 2026-08-29 "loop-2 seal" idea in plan §3 was a judgment call, and this
+is the call). Today the Idol's last form going down sets `bossDown`, the tally
+reads `g.level` as the last stage and ends the run in `'clear'`, and the shell
+runs the two cards and then the end-of-run path. Loop 2 (plan §7 step 7) is one
+branch at that seam — restart at level 0 with the stock intact, a loop counter on
+`g`, and revenge dots (HOMAGE L8) — and it belongs in `game.js`'s tally next to
+the `'clear'` line, not in this module.
 
-| | option A — **shipped** | option B — the finale's own multiplier | option C — the mirror on the elite tier |
-|---|---|---|---|
-| `IDOL_HP` | **220 / 220 / 402 / 405** | 258 / 266 / 268 / 268 (m ≈ 0.66 of the r71 tiers) | 220 / 220 / **220** / 405 |
-| new hp numbers | **none** — elite row + the r71 boss tiers | **four**, all new (needs Jacob's override of "zero new tiers") | **none** |
-| form 1 | 6.5 s | 7.2 s | 6.5 s |
-| form 2 | 5.2–6.7 s | 7.7–8.6 s | 5.2–6.7 s |
-| form 3 | **36.0 s, TIMED OUT on 7 of 7** (23–230 hp still standing) | 18.5–36.0 s (timed out 2 of 7) | 16.4–36.0 s (timed out 1 of 7) |
-| form 4 | **never reached honestly** (22.1–23.2 s measured in isolation) | 11.8–17.8 s | 17.5–24.9 s |
-| forms reached | **3 of 4 on every seed** | 4 on 5 of 7 | 4 on 6 of 7 |
-| whole boss | 49–52 s | 49–59 s | 47–71 s (over 65 s on 2 of 7) |
+### 16.8 Numbers as built
 
-**The finding that matters is not the hp — it is the dps.** Measured hp/s for
-the expert: form 1 **34**, form 2 **38**, form 4 **18**, form 3 **11**. Form 3
-is a third as damageable as form 1 *because of how it moves*: a boss travelling
-at exactly the ship's speed away from the mirror of your column is never
-stationary in your firing lane, and the camp governor then bans the one spot
-that solves it (the centre line is the mirror's fixed point — stand on `W/2` and
-it must stand on you; hold there and the governor latches and slides it off).
-So **402 hp is not 402 hp on this form**, and time — not hp — is the unit the
-budget has to be written in. That is why option C, which uses **no new numbers
-at all**, lands form 3 inside HOMAGE's 15–25 s guardrail where option B's
-"balanced" four-way split does not fully.
+| Thing | hp | value | window | r | fires | contact |
+|---|---|---|---|---|---|---|
+| The Warden (14) | 220 | 3,000 | 380 f | 20 | §15.3, unchanged | yes |
+| Formation leader (11) / followers (0) | 24 / 2 | 500 / 200 | 150 f / 75 f | 12 / 10 | §14.2, unchanged | yes |
+| Rail tank (7) | 24 | 500 | 150 f | 12 | §13.2, unchanged | **no** (GROUND) |
+| Carrier (12) | 44 | 800 | 210 f | 14 | §14.2, unchanged | yes |
+| THE HEARSE (4, `role` 1) | **220** | 8,000 | 700 f | 26 | §13.4 | yes |
+| its anchor (10) | 24 | 1,000 | 300 f | 10 | nothing (a physical hazard) | yes |
+| A TWIN MOTH (13) | 220 | 3,000 | 380 f | 20 | §14.4, enraged from frame 5 | yes |
+| THE GATEKEEPER (4, `role` 3) | **220** | 8,000 | 700 f | 26 | §15.4 | yes |
+| its lock (16) | 24 | 1,000 | 300 f | 10 | **nothing** | yes |
+| THE IDOL (5) | 220 / 220 / 402 / 405 | 12,000 / form | 600 f | 30 | §16.4 | yes |
+| Idol parts (6) | 24 (form 2 node 56) | 1,000 | 300 f | 7 | per form | yes |
 
-Against HOMAGE's *"boss phases 15–25 s"* guardrail (`HOMAGE_STUDY.md:118`), on
-option A: forms 1 and 2 are **under the 15 s floor** (5–7 s) and form 3 is over
-the ceiling; only form 4 (22–23 s isolated) sits inside. Psikyo's own four-form
-finale — the thing being homaged — runs **10 / 10 / 14 / 12 s for ~65 s total**
-(`homage/study-s1945ii.md:121–126`), so the *film* supports short opening forms
-and the *guardrail* does not. Amending it is Jacob's (plan §4 rule 1 already
-names that override path). Open as **Q37**.
+Zero new rows in `ENEMY_DEFS` and zero new hp tiers (plan §4 rule 3): the only
+numbers this stage writes are `GUARD_HP` 220 (the elite row) and `IDOL_HP`
+(unchanged from r83). Castes: `NEEDLE_TIER` untouched. Bullet families on screen
+≤ 3. **Performance (`tools/s5peek.html`, headless Chrome, 60 draws averaged,
+budget 16.6 ms): the run's densest frame = 86 bullets in 0.14 ms; the boss's
+densest form = 29 bullets in 0.13 ms.** Max bullets seen by any bot on any seed:
+190 (passive-human); max enemies on screen: 17. The finale is nowhere near the S8
+gate — stage 1's midboss bloom still holds the bullet record.
 
-**Timeouts.** Each form carries the existing `BOSS_PHASE_TIMEOUT` (35 s, r72) —
-no new number. Four forms is therefore a **140 s worst case** against a ≤ 65 s
-target and a ≤ 2:15 whole-stage cap, and the passive bot demonstrates it (91–110 s,
-three or four timeouts). A shorter timeout for the short forms is the obvious
-answer and is **Q38**, not a builder's call.
+### 16.9 The probe (`tools/probes/stage5-probe.mjs`, seed C0FFEE + the six robust seeds)
 
-**Payout.** `scoreBossPhase` pays `ENEMY_DEFS[5].value` per form, so a four-form
-boss pays **48,000** where every other boss pays 36,000. That is the same rule
-applied one more time — no scoring math changed — but it is a finale premium
-nobody has decided on: **Q40**.
+| bot (C0FFEE) | outcome | clock | approach | gauntlet | to boss | forms | score | deaths | max bul |
+|---|---|---|---|---|---|---|---|---|---|
+| expert | game over at the Idol | 1:31 | 25.0 s | 22.6 s (11.1 / 4.7 / 4.9) | 0:49 (44 %) | 4 of 4 (8.1 / 8.7 / 16.2) | 197,700 | S7 4 | 86 |
+| aggressive-human | **clear** (0 lives) | 1:46 | 25.0 s | 24.3 s (11.7 / 3.7 / 7.3) | 0:51 (50 %) | 3 of 4 (8.3 / 6.8 / 36.0 TIMEOUT) | 150,040 | S2 1 · S7 2 | 94 |
+| passive-human | **clear** (1 life) | 2:48 | 25.0 s | 44.7 s (16.7 / 13.2 / 12.8) | 1:12 (56 %) | 3 of 4 (36.6 TO · 19.0 · 36.0 TO) | 103,940 | S5 1 · S7 1 | 168 |
+| blind | game over in S3 | 0:42 | 25.0 s | 17.4 s (the Hearse only) | — | 0 | 23,080 | S2 2 · S3 2 | 85 |
 
-### 16.4 Art — the four forms, and the one declared deviation
+**The clock (expert with LIVES PINNED — probe-only, so every form is measured):**
+clear on 7/7 seeds, **1:38–2:05** (envelope 1:30–2:15), approach **24.8–25.0 s**
+(plan §3: ≤ 25), gauntlet **15.6–23.2 s**, boss reached at **42.4–49.7 s**
+(Psikyo#1: 42–80 s), forms reached **3–4 of 4**. Score **196–232 k** against
+stage 4's 163–200 k, stage 3's 156–194 k, stage 2's 140–183 k and stage 1's
+150–190 k (plan §5: 1.0–1.3× through targets, never a multiplier). **No hp was
+touched to get any of this.**
 
-`base.js:543 paintStage5Boss`. Silhouette, movement and dialect all change per
-form (S3b MUST 2): **the idol** (a seated effigy on a plinth, hooded, one lidded
-eye) → **the demon** (horned skull, folded wings, the censer swinging under it —
-the chain and its bob are drawn by `renderer.js:611 drawIdolCenser`, its own
-function so stage 2's chain path is untouched) → **the mirror** (below) → **the
-hollow core** (stripped body, burnt wing roots, ember).
+**Two numbers are out of band, and neither is fixable with hp:**
 
-- **A fourth core hue: there isn't one, on purpose.** The bible (§3 "never a
-  fourth saturated hue", §10 "core colour per phase stays pink / cyan / gold")
-  has no fourth to give, so form 4's core burns in the BOSS row's own `ember`,
-  already sanctioned there for the burn beat. No new hue enters the game and
-  pink/cyan-are-bullets, gold-is-value still holds.
-- **A fourth arena restain** (S3b-SHOULD) in all three skins. Adding it fixed a
-  real bug the peek page caught: `cute-occult` and `synthwave` indexed 3-entry
-  boss-phase arrays by phase, so on form 4 cute-occult read `undefined` and left
-  the previous fill across the whole field, and synthwave's `BTONE[3]` was
-  undefined. Indexes 0–2 are byte-identical, so stages 1–3 draw the same skies.
-- **DECLARED DEVIATION — form 3 draws the player's shape on an enemy.** The
-  bible does not cover it, and three of its rules pull against it: §3
-  exclusivity ("violet only on the player"), §6's ladder (a boss "reads as the
-  biggest thing on screen", 84–110 span, vs the ship's 28), and §1's "big things
-  are slow and strong". The resolution keeps all three: **the shape** is the
-  ship's, **the palette** is the boss's (bone hull, boss armor, the form's core
-  hue — not one violet pixel, so S2-MUST-3 holds and the player still finds
-  their own ship by colour), and it is drawn at **boss scale (~86 px span, three
-  times the ship)**, so the ladder is intact and it reads as an idol *wearing*
-  your shape rather than a second player ship. The only rule it genuinely breaks
-  is "big things are slow" — and that lie is the story beat. Whether it actually
-  READS as the ship is **Q35**, Jacob's eye, not a metric.
+1. **The boss is 50–61 % of the clock** against plan §4 rule 1's 30–50 %. This is
+   Q24 (a *three*-form boss already overran the band on stage 4 at 40–52 %) with
+   a fourth form added. The levers, all Jacob's: the guardrail itself (Q37/Q24),
+   the hp budget (Q34 — and §16.5 shows option C moves it by ~1 point, so it is
+   not the answer), or a longer pre-boss run — which plan §3 caps at ≤ 25 s of
+   stair, and the approach is already AT 25.0 s. Logged as **Q48**.
+2. **Deaths per minute is 2.7** on the pinned instrument — the campaign's
+   GENTLEST, against stage 4's 5.9 and stage 3's ~4 — because every approach
+   quote runs at exactly one rep and the guards are elite-tier. Rubric S7 wants
+   difficulty to escalate monotonically across the game; by this measure the
+   finale does not. It is also, on the same instrument, the **highest-scoring**
+   stage and the longest boss. Logged as **Q50**; the lever is the approach's rep
+   count, not hp.
 
-### 16.5 The probe (`tools/probes/idol-probe.mjs`, seed C0FFEE + the six robust seeds)
+**The death clustering** (the S5 MUST "a game-over teaches" check, measured — the
+probe prints the centroid, the mean distance to it and the modal 40 px cell per
+section): the pinned expert's deaths land **almost entirely at the boss** (S7 4–6
+per run on every seed, modal cell **x 120–160, y 240–280** on 5 of 7 seeds — the
+mirror's plant, in front of the ship), with 0–2 scattered across S2/S3. One
+dominant cell, which is the shape S5 MUST wants; the approach barely kills at
+all, which is Q50 again.
 
-The referee's four bots on the finale alone, the expert with lives pinned, a
-probe-only pass that holds forms 1–3 at 1 hp so the medley is measured on every
-seed, and the hp-budget table. `IDOLHP=a,b,c,d` measures any budget without
-editing `s5.js`. `test/sim.mjs` is untouched; the stage-5 control run is a
-Jacob-authorized referee commit (plan §4 rule 14).
+**The full campaign** (`startRun(g)` → four seams, expert, C0FFEE): the honest
+r79 expert still game-overs on stage 1's boss. With lives floored at 1 through
+stages 1–4 (probe-only): stage 1 `stageclear 2:21 / 174,230` → stage 2 `2:09 /
++133,980` → stage 3 `1:56 / +159,120` (the **400 k extend lands here**) → stage 4
+`2:00 / +184,110` → stage 5 `gameover 0:36 / +46,070`, run total 9:04 / 697,510.
+With the ship invulnerable from the first seam (flow only): **all five stages
+clear, 10:07 total, 832,530** — the campaign's first complete run, and the
+campaign receipt it prints is in §16.7.
 
-| bot (C0FFEE, option A) | outcome | boss clock | forms | seconds per form | score | deaths by form | max bullets | timeouts |
-|---|---|---|---|---|---|---|---|---|
-| expert | clear (1 life) | 50.1 s | 3 of 4 | 6.5 · 5.8 · **36.0 TIMEOUT, 23 hp left** | 72,700 | F3 2 | 98 | boss-p3 |
-| aggressive-human | clear (0 lives) | 43.1 s | **4 of 4** | 9.3 · 4.0 · 16.3 · 11.7 | 115,370 | F3 2 · F4 1 | 88 | — |
-| passive-human | clear (2 lives) | 91.5 s | 3 of 4 | 36.6 TIMEOUT · 17.0 · 36.0 TIMEOUT | 23,910 | F1 1 | 153 | p1, p3 |
-| blind | clear (0 lives) | 56.0 s | 3 of 4 | 9.4 · 8.8 · 36.0 TIMEOUT | 72,210 | F1 1 · F2 1 · F3 1 | 118 | boss-p3 |
+### 16.10 Open questions (this stage)
 
-Across the seven seeds (option A): the expert clears with 1–2 lives on all
-seven, **always by timing form 3 out**, boss 49.5–51.0 s; the aggressive-human
-reaches form 4 on 2 of 7 and is the only bot that kills the mirror inside its
-timeout; the passive-human rides 91–110 s on two or three timeouts; the blind
-bot game-overs on 4 of 7. Max bullets on screen, any bot any seed: **221**
-(passive-human). Worst draw on the peek page: **0.12 ms** for 42 bullets
-(headless Chrome, 60 draws averaged, budget 16.6 ms) — the finale is nowhere
-near the S8 gate, and stage 1's midboss bloom still holds the bullet record.
-
-Note the shape of that expert result before reading it as a verdict: the bot
-takes form 3 from 402 to as little as 23 hp and runs out of clock. That is a
-**bot ceiling against a form built to deny a pursuer** — the aggressive-human,
-which lags by 7 frames and therefore routes differently, kills it in 16.3 s.
-It is not patched with hp; the options are Q34.
-
-### 16.6 What is NOT built (so nobody assumes it is)
-
-The altar stair and the sigil disc (a place ramp, so no `SEC_LANDGEO` row in any
-skin — the skeleton borrows stage 1's), the compressed "best of" approach (one
-formation, one tank column, one Warden, one carrier, ≤ 25 s), the returning-
-midboss gauntlet (Hearse → Twin Moths → **Gatekeeper**, which needs stage 4),
-the BRDA#8 countdown meter across it, the release, the campaign receipt, the
-loop-2 seal, a stage-5 music cue, and cute-occult creatures for the four forms.
-`STAGES` stays `[s1, s2, s3]`.
-
-### 16.7 Open questions (this stage)
-
-Q34 (the mirror's timeout / the hp budget), Q35 (does the mirror READ as the
-ship), Q36 (the medley's focal points), Q37 (short forms vs the 15–25 s
-guardrail), Q38 (four × 35 s), Q39 (`quoteS4` vs "used once, here"), Q40 (the
-four-form payout) in §8. Q16 (boss hp), Q17 (parts bite back) and Q24 (the
-boss's share of the clock) apply here unchanged — Q24 especially: a *three*-form
-boss already overruns the 30–50 % band, so a four-form finale inherits an
-unresolved question upstream of it.
+Q46 (the mirror's fixed point makes a boss-section practice start its worst
+case), Q47 (three 35 s midboss timeouts back to back), Q48 (the finale's boss
+share), Q49 (a gated section's landmark never scrolls in — campaign-wide), Q50
+(the finale is the campaign's gentlest stage by deaths/min) in §8. Q34 (the hp
+budget — and the r85 dwell is the Q34-adjacent change to keep or revert), Q35
+(does the mirror READ as the ship), Q36 (**answered** by the call-and-response
+cycle — worth an eye), Q37 (short forms vs the 15–25 s guardrail), Q38 (four ×
+35 s), Q39 (`quoteS4` vs "used once, here"), Q40 (the four-form payout), Q41 (no
+referee bot can execute the Warden's counter — it returns here), Q24 (the boss's
+share) all apply unchanged.
 
 ## Changelog of decisions recorded here
 
@@ -4335,3 +4567,102 @@ unresolved question upstream of it.
   `DESIGN_PILLARS.md`, `HANDOFF.md`, `stages/s1.js`, `stages/s2.js`,
   `stages/s3.js` untouched; `stages/s5.js` touched only at the `quoteS4` hook and
   its import.
+- 2026-09-10 — **r85 STAGE 5, THE GREAT ALTAR (core pass) — the campaign is
+  COMPLETE at five stages** (§16; plan §3 + §7 step 6). `STAGES = [s1…s5]`,
+  `?level=4` plays it, the PRACTICE row is 41 rows (counted), the `?boss=idol`
+  dev flag is retired, and the last stage's clear now ends on a CAMPAIGN RECEIPT.
+  Built: the approach (S1-S2, **24.8–25.0 s** against plan §3's ≤ 25 — one
+  formation file, one Warden, one tank column, one carrier, each at ≤ 1 rep and
+  sequenced so only one strong body is ever on the field), the
+  **returning-midboss gauntlet** (Hearse → a lone Twin Moth → Gatekeeper, one
+  form each on the ELITE tier 220, three gates 60 stageT apart, each kill firing
+  the inherited release), the release over the sigil disc, and THE IDOL's
+  finished patterns.
+  **Corpus clearance.** *[T2]* "no breather after the midboss" is honoured per
+  KILL — the next gate opens ~0.3 s after the last one closes — and *[T2]*
+  "escalate BEHAVIOUR, not counts" is why the finale adds no type, no tier and no
+  emitter. *[T1]* "boss hp is a pattern-duration knob" and "if hp must be short,
+  get the shape on screen early" keep forms 1-2 at 220 with their quoted dialect
+  at the front of the cycle. *[T3]* "balance = counters, not numbers" is the whole
+  argument for THE MIRROR's new dwell (below). *[WS05]* release-after-each-peak is
+  paid three times inside twenty seconds (each guard's death cancels its own field
+  to gold) and *[WS05]* flow — "never two strong enemies at once, sequence them" —
+  is met by 600 stageT between the Warden and the carrier and a gauntlet that
+  never shares the field with either. *[WS03]* the box trap stays quoted once,
+  sized down. *[BH101 §Level design]* "spawn them one by one with slight delays
+  creates an obvious route" is the approach's whole shape; *[BH101 §Boss design]*
+  "the last fight should say the game back to you" is the medley. *[MSX]* the
+  natural meta is untouched: no campaign bonus, no gauntlet payout, no meter math
+  — the campaign receipt only RE-READS numbers the run already paid, and
+  `campaign-probe` asserts its rows sum to the run's own totals. *[HOMAGE]*
+  BRDA#3's miniboss chains and ZeroRanger's boss-rush stage are the precedent for
+  the gauntlet; Psikyo#6's four-form final is the Idol; S3b-5's "and only those"
+  is why form 4 invents nothing; L4 is the receipt; BRDA#8's countdown meter is
+  built as a pure HUD READ (no core state, no scoring math — plan §3's own
+  condition). *Pillars:* "V1 = a five-stage campaign" is now met in code.
+  **Where the corpora push BACK, and it is written on the stage:** (1) HOMAGE's
+  "boss phases 15–25 s" guardrail is broken at both ends — forms 1-2 run 6.8–10.7 s
+  and form 3 can exceed 25 s — and only Psikyo's own 10/10/14/12 s finale defends
+  it (**Q37**, Jacob's, unchanged since r83); (2) plan §4 rule 1's 30–50 % boss
+  share is **missed at 50–61 %**, which is Q24 with a fourth form on it — logged
+  as **Q48** with every lever named and hp explicitly refused; (3) rubric S7's
+  "difficulty escalates monotonically" is **missed**: at 2.7 deaths/min the finale
+  is the campaign's gentlest stage against stage 4's 5.9 (**Q50** — the lever is
+  the approach's rep count, which plan §3 caps at 1); (4) [WS05]'s paralysis rule
+  is read as r84 read it (simultaneous ARRIVAL of two high-priority bodies), which
+  is what lets a ridden-out Warden's rush overlap a carrier's lifetime.
+  **THE MIRROR'S DWELL — a Q34-adjacent change, flagged for Jacob to keep or
+  revert.** `IDOL_HP` is untouched. r83 measured form 3 timing out on **7 of 7**
+  seeds because a body moving at exactly the ship's speed is never stationary in
+  the firing lane — a checkmate by arithmetic, which [T3] and [WS03] both refuse.
+  The mirror now SAMPLES → TRAVELS → **PLANTS** for 45 f, and the plant is the
+  counter. Measured on the same timeline (expert, lives pinned, 7 seeds): form 3
+  **26.7–36.0 s → 16.2–36.0 s**, timeouts **6 of 7 → 3 of 7**, form 4 reached
+  honestly **1 of 7 → 5 of 7**. Sweeps of 30/45/60/90 f (and of the earlier
+  fixed-clock shape at 32/48/64/80/110) are in §16.4. **Q34's option C was
+  measured and does NOT fix it** — cutting the mirror to 220 leaves the same three
+  seeds timing out, because on those seeds the bot deals ~0 damage regardless of
+  hp. The timeout is a bot ceiling; the pattern lever is what moved it.
+  **Q36 answered:** form 4's medley is now a CALL AND RESPONSE — a censer half
+  (t 0–117) and a quoted half (lance 132 · eggs 158 · spread 190 · the pen 216),
+  every quote ≥ 22 f from its neighbours, replacing r83's co-prime moduli that
+  collided 4 frames apart. Re-timing only; not one hp, speed or count moved.
+  **Reuse, not copies:** the three returning midbosses are run by their OWN
+  stage's `enemyUpdate` hooks (`s5.js:352`), and the renderer picks their painters
+  off the same `e.role` field — so s2.js, s3.js and s4.js were not edited at all,
+  and the Hearse arrives with the silhouette, the anchor, the escort and the
+  timeout the player already learned. The lone Moth ENRAGES on its fifth frame
+  (stage 3's own bereaved state), which compresses the pair's whole sentence into
+  one guard AND suppresses its 8 s arrival curtain, so rubric S5's single
+  sanctioned pair exception is not spent twice.
+  **Measured (`tools/probes/stage5-probe.mjs`, seed C0FFEE + the six robust
+  seeds).** Expert with lives pinned: clear 7/7, **1:38–2:05** (cap 2:15), boss
+  reached at **42.4–49.7 s** (envelope 42–80), gauntlet **15.6–23.2 s** (Hearse
+  3.9–11.6 · Moth 3.9–6.8 · Gatekeeper 2.8–7.2 against ≤ 8 s each — the Hearse's
+  outlier is its ANCHOR eating shots, and killing the anchor is the counter),
+  forms reached **3–4 of 4**, score **196–232 k** (stage 4: 163–200 k), deaths
+  **4–7, 2.7/min**, deaths clustering at the boss (modal cell x 120–160 /
+  y 240–280 on 5 of 7 seeds — the mirror's plant). Densest frame 86 bullets in
+  0.14 ms (budget 16.6). **No hp was touched to get any of it.**
+  **Stages 1–4 byte-identical**: `stage2-probe` line for line; `stage3-probe`
+  equal in every number with only its campaign pass walking one stage further;
+  `stage4-probe` equal in every NUMBER with only the predicted `clear` →
+  `stageclear` word (stage 4 is no longer last) plus its campaign pass;
+  `campaign-probe` all asserts passing with its stage-1 identity section
+  unchanged; `node test/sim.mjs` equal to the r84 control with only the known
+  run-to-run S8 wall-clock line moving. `test/shell.mjs` PASS. Probe edits, both
+  referee-adjacent and recorded in §12: `campaign-probe`'s roster assert now reads
+  all five stages in order and gained the receipt asserts, and `bossKilled` left
+  its final-clear assert (a four-form finale can be ridden out — a scoring fact,
+  not a plumbing one). The invulnerable walk now clears **all five stages, 10:07,
+  832,530** — the campaign's first complete run. Peeks
+  `img/r85-s5-sections.png`, `img/r85-s5-gauntlet.png`, `img/r85-s5-boss.png`,
+  `img/r85-campaign-receipt.png`, `img/r85-stage5-receipt.png`; other skins fall
+  back, verified by headless render. **Decided this pass (and it is a plan
+  decision, not a design one): loop 2 is UNCONDITIONAL, as Psikyo's is — the
+  "loop-2 seal" idea in plan §3 is dropped, and the hook where the branch belongs
+  is documented at `s5.js:490`.** New open questions **Q46–Q50**. Not decided here
+  (Jacob's): Q34 (including whether to keep the mirror's dwell), Q37, Q38, Q40,
+  Q46–Q50, and the per-stage referee recerts. BUILD r85. `test/sim.mjs`,
+  `test/bot.mjs`, `CRITIC_RUBRIC.md`, `evidence/`, `DESIGN_PILLARS.md`,
+  `HANDOFF.md`, `stages/s1.js`–`stages/s4.js` untouched.

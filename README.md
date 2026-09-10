@@ -2,6 +2,9 @@
 
 A Japanese-style vertical bullet-hell shmup in the Psikyo "speed hell" lineage —
 fast bullets, aimed-heavy patterns, speed-kill scoring. Browser, zero dependencies.
+**V1 is a five-stage campaign** (r85): THE CRYPT → THE BONE RAIL → THE CANDLE SEA
+→ THE BLOOD GATE → THE GREAT ALTAR, each ~1'30"–2'15" for an expert, one credit,
+ending on a campaign receipt.
 
 Built with the **gauntlet-loop** method: builders and fresh-context blind critics judge
 every surface against `docs/CRITIC_RUBRIC.md`, whose rules are distilled from the
@@ -17,6 +20,12 @@ Open `index.html` in a browser (no build, no server needed — ES modules requir
 `file://` module support; if blocked, `python3 -m http.server` in this dir).
 
 Arrows/WASD move · Z/space shot · Shift focus · X bomb · R restart · P pause · M mute. Gamepad supported.
+
+GAME START plays the campaign from stage 1. PRACTICE (◀▶ on the title) picks any
+stage or any section of it — `STAGE 5 — THE GREAT ALTAR`, `ST5 S3 THE HEARSE`,
+`ST5 S7 THE IDOL` and so on; `index.html?level=4` starts on stage 5 directly. A
+run started past stage 1 is practice: it gets its receipt, never the hi-score
+board.
 
 ## Sandbox (dev testing)
 
@@ -60,4 +69,6 @@ never edit them** — that's grading your own homework.
 - `tools/music/` — music lab: Demucs stems + beat grid (`analyze.py`) and a browser
   marker app (`lab.html`, served by the Booth server) that writes `docs/music/<track>.cues.json`,
   the song-timeline cue list the boss will read. See `tools/music/README.md`.
+- `tools/probes/` — builder-side measurement probes, one per stage plus the
+  campaign plumbing (`tools/probes/README.md`). Never referee checks.
 - `evidence/` — metrics + screenshots consumed by gauntlet critics.

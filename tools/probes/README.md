@@ -58,6 +58,20 @@ All import the core by ABSOLUTE path (adjust if the repo moves).
   damage rule and the late-kill state directly; and ONE full campaign run
   (levels 0 → 1 → 2 → 3 on the continued rng stream). Builder instrument — the
   stage-4 control run in `test/sim.mjs` is Jacob's.
+- `stage5-probe.mjs [seedsHex]` — r85 STAGE 5 (THE GREAT ALTAR): the referee's
+  four bots on `startRun(g, 0, 4)` over seed C0FFEE + the six robust seeds —
+  outcome, clock, the APPROACH's length against plan §3's ≤ 25 s, the GAUNTLET's
+  length and each returning guard's own seconds against ≤ 8 s (the Hearse, the
+  lone Moth, the Gatekeeper, and whether its lock was broken), time to the boss
+  and the boss's share, forms reached with seconds per form and the hp still
+  standing at a timeout, score, speed-kill rate per type, deaths per section with
+  position clustering, max bullets / enemies, timeouts, dead air; the expert with
+  lives pinned, summarised against the Psikyo clock and printing the per-form
+  hp/s table; and **the FULL FIVE-STAGE CAMPAIGN** on one continuous rng stream,
+  played three ways (honest · lives floored at 1 through the earlier stages ·
+  invulnerable from the first seam) with the CAMPAIGN RECEIPT's own data
+  (`g.stageLog`) printed exactly as the card reads it. Builder instrument — the
+  stage-5 control run in `test/sim.mjs` is Jacob's.
 - `idol-probe.mjs [seedsHex]` — r83 STAGE 5's final boss (THE IDOL, the four-form
   skeleton). Stage 5 is NOT in `STAGES`, so the probe pushes the module onto the
   table at runtime and plays the finale alone from `startRun(g, 0, <that index>)`.
@@ -74,4 +88,10 @@ All import the core by ABSOLUTE path (adjust if the repo moves).
   control run in `test/sim.mjs` is Jacob's. **r84:** stage 4 is registered, so the
   probe now pushes stage 5 to index **4**, and form 4's `quoteS4` fires a real box
   trap — passes 1 and 2 are unchanged to the digit (the expert never reaches form
-  4; it times out on the mirror, Q34), and only pass 2b moved.
+  4; it times out on the mirror, Q34), and only pass 2b moved. **r85:** stage 5
+  is registered, so the probe pushes nothing — it starts the stage at its own S6
+  RELEASE anchor (`startRun(g, 1750, 4)`), which is release → WARNING → the Idol
+  and no stage in front of it. Read it next to `stage5-probe`, not instead of it:
+  measured from the boss section the ship begins on W/2, which is the MIRROR's
+  fixed point, so form 3 is at its worst there (7 of 7 timeouts) while the same
+  form played from the top of the stage times out on 3 of 7 (wiki §16.3, Q46).
