@@ -167,6 +167,8 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
 
 - **r83 THE IDOL skeleton merged** (wiki §16; `s5.js` NOT in `STAGES`; play via `index.html?boss=idol&level=3`). Four forms 220/220/402/405 (option A); expert times out on form 3 THE MIRROR 7/7 (dps denial, not hp — the mirror flees the firing lane, the camp governor bans its fixed point); aggressive-human kills it in 16 s. `quoteS4` hook inert at form-4 t 155 for stage 4's box trap. Q34–Q40 open; hp budget A/B/C table in §16 is Jacob's.
 
+- **r84 STAGE 4 THE BLOOD GATE merged** (wiki §15; `STAGES = [s1, s2, s3, s4]`; `?level=3`; `?boss=idol` now level 4). Wall pods / risers theme / the Warden (`FRONT_ARMOR` damage rule in game.js, range band 120 px) / midboss the Gatekeeper (bars + lock + transform) / boss the Gate (box trap, three pens). Expert lives-pinned 1:52–2:10, boss 1:01–1:08 (40–52 %), 5.9 deaths/min (highest, by design), deaths cluster on 5–6 of 7 seeds. `quoteS4` filled → Idol form 4 16.7–26.9 s. Q41–Q45 open; Q41 = the referee bot can't flank the Warden (1.38× read vs 2.53× hand-driven).
+
 ## State warnings (closeout 2026-09-10, r63–r81 session)
 
 - **Uncommitted, not this session's:** `docs/concepts/README.md` (modified,
