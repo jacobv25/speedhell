@@ -31,6 +31,7 @@ export const PLAYER = {
 export const SFX = {
   SHOT: 1, HIT: 2, KILL: 3, KILL_BIG: 4, SPEED: 5, RUSH: 6, ITEM: 7, CANCEL: 8,
   BOMB: 9, DIE: 10, WARNING: 11, MIDBOSS: 12, BOSS: 13, PHASE: 14, CLEAR: 15, GAMEOVER: 16, EXTEND: 17, // r79: extend (append only; never renumber)
+  DEFLECT: 18, // r84 (stage 4): a shot sparking off the Warden's front plate — a dry clank, so 'that did nothing' is heard as well as seen (S4 feedback)
 };
 const SFX_CAP = 32;
 // r8-fx: particle KINDS (the renderer draws each differently) and colour
@@ -51,7 +52,37 @@ export function sfx(g, id) {
 // Sim (seed C0FFEE, expert): needles 45% → 22% of all fire; first needle now
 // appears with the s3 mids; s1/s2/s5 are all-pink. Set g.needleTier = null
 // to replay the old rule. Referee recert pending (bullet stream changed).
-export const NEEDLE_TIER = { 1: 1, 3: 1, 4: 1, 5: 1, 6: 1, 9: 1, 12: 1, 13: 1 }; // r80: + the stage-2 hull core (elite class); tanks (7) and bone walls (8) stay pink. r82: + the stage-3 carrier (12, mid class) and Moth (13, elite class); the formation leader (11) is turret class and fires pink
+export const NEEDLE_TIER = { 1: 1, 3: 1, 4: 1, 5: 1, 6: 1, 9: 1, 12: 1, 13: 1, 14: 1 }; // r80: + the stage-2 hull core (elite class); tanks (7) and bone walls (8) stay pink. r82: + the stage-3 carrier (12, mid class) and Moth (13, elite class); the formation leader (11) is turret class and fires pink. r84: + the stage-4 Warden (14, elite class); the wall pod (15) is turret class and fires pink, and the gate lock (16) has no gun at all
+
+// r84 STAGE 4 — FRONT ARMOUR (plan §3 stage 4: "a front-armoured elite that takes
+// no damage from below at range; you flank it or point-blank it"). This is a
+// DAMAGE rule on the ENEMY, not a fourth fire gate on the player: r18's three
+// gates (top dead zone / bottom band / proximity seal) are untouched (plan §4
+// rule 8), and nothing here changes hp — it is [T3] "balance = counters, not
+// numbers" and [WS03] "a range of responses with pros and cons" made into an
+// enemy. A player shot is DEFLECTED (spent, no damage) when the ship is at RANGE
+// (more than FRONT_NEAR px below it) AND inside the plate's column (within
+// FRONT_PLATE px of its x). The two answers, both measured in wiki §15.3:
+//   · FLANK  — step ~24 px off its column: one of the ship's two gun columns
+//     clears the plate and bites while the other misses the body → measured
+//     5.7 s to kill against 2.4 s closed (stage4-probe pass 3b), from range, in
+//     safety. There is a 16-19 px slot where BOTH columns land, but the Warden
+//     creeps toward your column at 1.1 px/f, so holding that slot against a
+//     moving target measures WORSE (6.8 s) than simply standing wide.
+//   · CLOSE  — get inside FRONT_NEAR px vertically: the plate does not cover its
+//     belly, both guns bite → full rate, inside its fire (and inside the r18
+//     48 px seal it goes quiet, the canon point-blank reward, paid for in contact
+//     risk).
+// And the late-kill RUSH (stages/s4.js) advances the Warden into that same band,
+// so ignoring it is punished AND the punishment is the opening.
+// FRONT_NEAR is 120 on purpose: `test/bot.mjs` closeY — the referee's OWN model
+// of a player who has committed to a big target — is 110, so "closing in" as the
+// referee already defines it clears the plate, and everything the referee calls
+// range play does not. The bots that never close (passive / blind: bot.mjs only
+// homes to a big target when `aggressive`) therefore meet the rush every time,
+// which is exactly the S4 dynamic-lifecycle split the niche is for.
+export const FRONT_ARMOR = { 14: 1 };
+export const FRONT_NEAR = 120, FRONT_PLATE = 16;
 
 // r79 (Jacob, 2026-09-09: "let's go with the extend rule A1"): ONE extend per loop at a
 // fixed, announced score — visible, binary, no math (Pillar 2). 400,000 ≈ an expert's
@@ -326,9 +357,9 @@ function killEnemy(g, e, idx) {
   g.score += v; g.kills++;
   g.stats.killLog.push({ t: e.type, f: aliveFrames, s: speed ? 1 : 0 });
   if (e.type === 6) for (let i = 0; i < g.enemies.count; i++) { const b = g.enemies.items[i]; if (b.type === 5 && b.phase === e.phase) b.partKills++; } // r73: parts bite back (stage.js updateBoss reads partKills)
-  const big = e.type === 3 || e.type === 4 || e.type === 9 || e.type === 13; // elite/midboss get the shake (S4); r80: + the hull core (elite class); r82: + a Twin Moth (elite class)
+  const big = e.type === 3 || e.type === 4 || e.type === 9 || e.type === 13 || e.type === 14; // elite/midboss get the shake (S4); r80: + the hull core (elite class); r82: + a Twin Moth (elite class); r84: + the Warden (elite class)
   // boss sub-parts (type 6) pop like popcorn — shake stays reserved (S4-SHOULD)
-  const med = e.type === 1 || e.type === 2 || e.type === 7 || e.type === 8 || e.type === 11 || e.type === 12; // turret / mid: heavier than popcorn, no shake; r80: + tank / wall (turret class); r82: + the formation leader (turret class) and the carrier (mid class)
+  const med = e.type === 1 || e.type === 2 || e.type === 7 || e.type === 8 || e.type === 11 || e.type === 12 || e.type === 15; // turret / mid: heavier than popcorn, no shake; r80: + tank / wall (turret class); r82: + the formation leader (turret class) and the carrier (mid class); r84: + the wall pod (turret class) — the gate lock (16) pops like the part it is
   let tier = big ? TIER.BIG : med ? TIER.MED : TIER.POP;
   // r53 EXPERIMENT (wiki §10, research/explosion-and-weapon-feel): the reward
   // the natural meta pays is dressed, not the gun — a speed kill explodes one
@@ -356,7 +387,7 @@ function killEnemy(g, e, idx) {
   //    space-controller, and its full wipe erased the next mid's entry fan
   //    (r10), un-toothing the gauntlet the moment it grew teeth.
   // Garnish-priced like the S7 release wall so it can't out-earn the core (S6).
-  if (e.type === 3 || e.type === 9) bulletCancelWall(g, e.x, e.y, 30, 90); // r80: the hull core relieves its own deck the way an elite does
+  if (e.type === 3 || e.type === 9 || e.type === 14) bulletCancelWall(g, e.x, e.y, 30, 90); // r80: the hull core relieves its own deck the way an elite does. r84: the Warden too — an elite's local relief (r11), garnish-priced; the wall pods it stood among keep firing
   // r80: a bone-wall segment pays 3 loot items — destructible terrain hides
   // loot (Garegga houses, Psikyo gold under buildings; research doc Q1), priced
   // as routing signage (100 each, below the S7 release coin — S6 garnish). Fixed
@@ -575,6 +606,20 @@ export function update(g) {
         const b = g.pBullets.items[j];
         const dxx = b.x - e.x, dyy = b.y - e.y;
         if (dxx * dxx + dyy * dyy < (e.r + 6) * (e.r + 6)) {
+          // r84 the Warden's front plate (see FRONT_ARMOR above): at range, in
+          // its column, the round sparks off and is SPENT — which matters,
+          // because the on-screen shot cap means plinking the plate costs real
+          // dps (Pillar 5 "imperfect tools"). Fx on g.fxRng only.
+          if (FRONT_ARMOR[e.type] && p.y - e.y > FRONT_NEAR && Math.abs(p.x - e.x) < FRONT_PLATE) {
+            g.pBullets.killAt(j);
+            e.flash = 1; // a shorter tick than a real hit's 2 frames: it reads as a graze off armour
+            for (let k = 0; k < 3; k++) {
+              const a = g.fxRng.range(3.5, 5.9), sp = g.fxRng.range(1.6, 3.4); // sparks kick BACK the way the shot came (screen -y)
+              spawnFx(g, FX.SPARK, b.x, b.y, Math.cos(a) * sp, Math.sin(a) * sp, 7 + g.fxRng.range(0, 6), 1, FAM.WHITE);
+            }
+            sfx(g, SFX.DEFLECT);
+            continue;
+          }
           g.pBullets.killAt(j);
           e.hp -= PLAYER.shotDmg;
           // r8-fx S4-MUST hit-flash + hit spark: 3 sparks kicked back down the

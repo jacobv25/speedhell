@@ -40,6 +40,24 @@ All import the core by ABSOLUTE path (adjust if the repo moves).
   (levels 0 → 1 → 2 on the continued rng stream) printing each stage's outcome,
   the seams and the total clock. Builder instrument — the stage-3 control run in
   `test/sim.mjs` is Jacob's.
+- `stage4-probe.mjs [seedsHex]` — r84 STAGE 4 (THE BLOOD GATE): the referee's four
+  bots on `startRun(g, 0, 3)` over seed C0FFEE + the six robust seeds (outcome,
+  clock, time to boss AND the boss's share of it, forms, score, speed-kill rate
+  per type, deaths per section **with position clustering** — the modal 40 px
+  cell and the cloud's spread, which is how S5 MUST's "a game-over teaches" is
+  checked rather than asserted — max bullets / enemies, timeouts, dead air, the
+  Gatekeeper's fight length and whether its LOCK was broken, and the Warden
+  ledger: killed in-window / killed late / escaped, with the length of each
+  late-kill RUSH); the expert with lives pinned, summarised against the Psikyo
+  clock; the S4 MUST **1.6× check** run twice, scoped to the Warden sections and
+  stage-wide; **pass 3b, the counter driven BY HAND** — the referee's bots cannot
+  execute either answer to the Warden (bot.mjs homes to `bigY + closeY` and stage
+  4's wall pods are type 15, so a pod near the bottom pins its target y there;
+  and it always tracks a target's x, so it never flanks), so five canned holds
+  (in-column at range / flank / shoulder / close / point-blank) measure the
+  damage rule and the late-kill state directly; and ONE full campaign run
+  (levels 0 → 1 → 2 → 3 on the continued rng stream). Builder instrument — the
+  stage-4 control run in `test/sim.mjs` is Jacob's.
 - `idol-probe.mjs [seedsHex]` — r83 STAGE 5's final boss (THE IDOL, the four-form
   skeleton). Stage 5 is NOT in `STAGES`, so the probe pushes the module onto the
   table at runtime and plays the finale alone from `startRun(g, 0, <that index>)`.
@@ -53,4 +71,7 @@ All import the core by ABSOLUTE path (adjust if the repo moves).
   `IDOLHP=220,220,220,405 node tools/probes/idol-probe.mjs` measures any hp budget
   without editing `s5.js` (it writes the exported table in place) — that is how
   wiki §16's options A / B / C were measured. Builder instrument — the stage-5
-  control run in `test/sim.mjs` is Jacob's.
+  control run in `test/sim.mjs` is Jacob's. **r84:** stage 4 is registered, so the
+  probe now pushes stage 5 to index **4**, and form 4's `quoteS4` fires a real box
+  trap — passes 1 and 2 are unchanged to the digit (the expert never reaches form
+  4; it times out on the mirror, Q34), and only pass 2b moved.

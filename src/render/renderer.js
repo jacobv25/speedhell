@@ -182,6 +182,7 @@ export function draw(g, ctx, bgScroll) {
   // enemies — desaturated silhouettes, distinct per role (S4)
   if (g.level === 1) drawPendulums(ctx, g); // r80: stage 2's chains, under the sprites
   if (stageAt(g.level).id === 5) drawIdolCenser(ctx, g); // r83: stage 5's censer, same idea, its own function so stage 2's path is untouched
+  if (g.level === 3) drawGateBars(ctx, g); // r84: stage 4's Gatekeeper arms, under the sprites
   for (let i = 0; i < g.enemies.count; i++) drawEnemy(ctx, g, g.enemies.items[i]);
 
   // player
@@ -552,6 +553,13 @@ export function drawEnemy(ctx, g, e) {
     case 11: step = stepOf(heading(e)); extra = e.phase === 1 ? 1 : 0; break;
     case 12: step = stepOf(heading(e)); extra = e.fireT > 380 ? 1 : 0; break;
     case 13: extra = e.bloomed ? 1 : 0; break;
+    // r84 stage 4: one state bit each, read off core fields the painter draws —
+    // the Warden is in its late-kill RUSH, the wall pod has gone angry at 4 s.
+    // Neither rotates: the Warden's plate and the pod's bracket have to keep
+    // pointing the same way for the front-armour rule and the corridor's
+    // geometry to be legible (S4 "distinct silhouettes").
+    case 14: extra = e.bloomed ? 1 : 0; break;
+    case 15: extra = (e.vulnAt >= 0 && g.frame - e.vulnAt > 240) ? 1 : 0; break;
   }
   if (e.type === 1) dy = Math.round(Math.sin(e.age * 0.09) * 0.8); // parked bob, whole pixels
   // r80: a type the skin does not paint (stage 2's ground layer, types ≥ 7) and the
@@ -568,7 +576,7 @@ export function drawEnemy(ctx, g, e) {
   // ~0.65 of its length, capped with 1 px of `out`, its highlight gone) and the sprite dims
   // for 2 frames in 4 (alpha toward the field = a washed value, bible §3; drawn
   // under the bullets as ever, so nothing is masked). Reads core; writes nothing.
-  const tell = ((e.type === 2 || e.type === 7 || e.type === 8 || e.type === 9) && e.vulnAt >= 0 && e.y > 20 && e.y <= H - 60 && sealed(g, e)) ? 1 : 0;
+  const tell = ((e.type === 2 || e.type === 7 || e.type === 8 || e.type === 9 || e.type === 15) && e.vulnAt >= 0 && e.y > 20 && e.y <= H - 60 && sealed(g, e)) ? 1 : 0; // r84: + the wall pod — sealing is the lesson stage 4 restates, so its tell matters most here
   const key = ((((((((e.type * 4 + phase) * 2 + side) * STEPS + step) * 2 + prop) * 2 + hit) * 2 + flick) * 64 + extra) * 8 + lvl) * 2 + tell; // r83: lvl factor 4 → 8 (a four-stage table would have collided at level 4); the cache is runtime-only, so the renumbering changes no pixels
   const s = CACHE.get(key) || sprite(key, sk.span[e.type], hit ? WHITE : sk.rimOf(e.type, phase),
     (c) => sk.paintEnemy(c, e.type, phase, side ? 1 : -1, step, prop, hit, flick, extra, KIT, lvl, tell));
@@ -625,6 +633,27 @@ function drawIdolCenser(ctx, g) {
 // --- player -------------------------------------------------------------------
 // ⚠ ART-CHANGE NOTE (r35/r57): the HOW TO card (src/howto.js) draws its ship
 // through drawShip below, so the card mirrors by construction.
+// r84 STAGE 4's GATEKEEPER ARMS. s4.js writes the two arm positions to bobX /
+// bobX2 every frame (core never draws); this hangs each one off the lintel as a
+// short chain with a heavy bar head, in the GROUND family and inside the washed
+// band, so what the arms ARE is legible before the bars they drop are. Drawn
+// UNDER the sprites and well under the bullet layer (S2-MUST-1). Presentation
+// only: reads core, writes nothing, no rng.
+function drawGateBars(ctx, g) {
+  let k = null;
+  for (let i = 0; i < g.enemies.count; i++) { const e = g.enemies.items[i]; if (e.type === 4 && !e.dead) { k = e; break; } }
+  if (!k || !k.bloomed) return;
+  const pal = skin.pal.GROUND, y0 = Math.round(k.y) - 14;
+  for (const bx of [k.bobX, k.bobX2]) {
+    const x = Math.round(bx);
+    ctx.fillStyle = pal.shade;
+    ctx.fillRect(x - 1, y0, 3, 20);                                     // the chain
+    ctx.fillStyle = pal.plate; ctx.fillRect(x - 7, y0 + 18, 15, 9);      // the bar head
+    ctx.fillStyle = pal.base; ctx.fillRect(x - 5, y0 + 20, 11, 4);
+    ctx.fillStyle = pal.hi; ctx.fillRect(x - 5, y0 + 20, 11, 1);
+  }
+}
+
 // r20 (Booth flags): the ship is drawn BIG around a tiny core — ~28px span on
 // a 3px hit radius (bullets add their own 3px: a bullet kills when its
 // centre is within 6px of the dot). boghog WS01. The core dot is always

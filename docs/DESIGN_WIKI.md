@@ -984,6 +984,55 @@ The bots define what "expert" means here. Jacob is not a 1CC-level player;
     applied one more time — but a 33 % finale premium is a decision nobody has
     made, and Pillar 2 says the meta must be authored visibly. Leave it, or pay
     the finale like every other boss? Jacob's.
+41. **The referee bot cannot execute the Warden's counter — so the S4 1.6× check
+    reads 1.38× and is below bar.** (r84, §15.3.) `test/bot.mjs` homes to
+    `bigY + closeY` where `bigY` is the LOWEST on-screen enemy of type ≥ 4;
+    stage 4's wall pods are type 15, so a pod scrolling past the bottom pins the
+    bot's target y to the bottom band for most of both Warden sections, and the
+    bot always tracks a target's x, so it never flanks. Result: **0 Wardens
+    killed in-window across 7 seeds × 5 bot runs.** Driven by hand the counter
+    works and separates cleanly (in-column 9.8 s / flank 5.7 s / close 2.4 s) and
+    the late-kill state costs **2.53×** the bullets — over the bar. So the design
+    is measurable and the referee's instrument is not. Three ways out, all
+    Jacob's: (a) accept it and write the caveat onto the stage-4 recert, as r80
+    did for tanks and r82 for leaders; (b) a Jacob-authorized `bot.mjs` edit that
+    excludes turret-class ground types from `bigY` (it would also change stage
+    2's numbers, so it is a recert of everything); (c) a sixth referee bot that
+    flanks. Nothing here is a reason to change the enemy.
+42. **Does anyone ever leave the gate lock alive?** (r84, §15.4.) Breaking the
+    Gatekeeper's lock stops the bars and hands you a faster, aimed-heavier
+    midboss — a real trade with pros and cons [WS03]. But the lock sits in the
+    middle of the gate, so anyone firing up the centre breaks it almost by
+    accident: the expert breaks it on 5 of 7 seeds and the *passive* bot is the
+    one that keeps the bars. If the closed fight is only ever seen by players who
+    are missing, the transformation is a cutscene with two bodies, not a choice.
+    Move the lock off-centre? Armour it until the arms have stepped once? Or is
+    "the default is the transformation, the skilled option is refusing it" the
+    right way round? Jacob's.
+43. **Does THE GATE read as arena-wide?** (r84, §15.5.) Plan §3 asks for a boss
+    that IS the gate, "arena-wide". ART_BIBLE §6 caps a boss at 84–110 px and the
+    sprite cache is sized from that one shared table, so widening it for stage 4
+    would resize every boss's canvas — not allowable in a pass that must not move
+    a pixel of stages 1–3. Form 1 therefore reads wide by COMPOSITION: a 96 px
+    portcullis with its pods at ±42, standing in front of the S7 landmark's own
+    gate towers. Eye, not metric: `img/r84-s4-boss.png`, or `?level=3`.
+44. **The Gatekeeper's deaths do not cluster.** (r84, §15.7.) Every other section
+    on stage 4 kills in one readable place — the court at x 280–320 / y 160–200 on
+    5 of 7 seeds, the Gate's pen interior at y 200–240 on 6 of 7. S4's deaths
+    scatter (±83 px), because the bars close from two directions at once and the
+    death follows whichever arm you did not watch. That is either the section
+    working (two focal points, both telegraphed, S3's cap is 2) or S5 MUST's "a
+    game-over teaches" failing on the one section that most needs to teach.
+    Jacob's eye; the probe prints the cells.
+45. **Is the corridor's horizontal fire a lane structure or a wall?** (r84,
+    §15.2.) Wall pods fire straight ACROSS, so the safe places are horizontal
+    BANDS and the answer is up-and-down movement — which [BH101 §Level design]
+    says is exactly what players avoid ("diagonal / up-down dodging on one side
+    is a last resort"). That is deliberate: the stage's job is to move you where
+    you do not want to go. But BH101 also says "never block off huge chunks of
+    the screen", and a pod's fan spans the full width. It measures fine (the
+    corridor's densest frame is 36 bullets) and the deaths there cluster, so the
+    numbers say lanes — the question is whether it FEELS like lanes. Jacob's.
 
 ## 9. Practice notes (for humans)
 
@@ -1397,9 +1446,35 @@ is placement, not authoring time. Not scheduled.
 its infrastructure pass (§7 step 1) shipped at r78 — see §12. The mode order above
 is unchanged; the campaign grows *Arcade*, it is not a mode.
 
-## 12. Campaign (infrastructure r78 — LIVE at r80; `STAGES = [s1, s2, s3]` since r82)
+## 12. Campaign (infrastructure r78 — LIVE at r80; `STAGES = [s1, s2, s3, s4]` since r84)
 
-**r83 status — `STAGES` is UNCHANGED at `[s1, s2, s3]`.** r83 built stage 5's
+**r84 status — `STAGES = [s1, s2, s3, s4]`** (s4 = THE BLOOD GATE, §15).
+Registering a fourth stage needed **no further code** beyond the array and one
+doc-string: a stage-3 clear now ends in `'stageclear'` → receipt → briefing
+`STAGE 4 — THE BLOOD GATE` → `nextStage`, the PRACTICE row grew its
+`STAGE 4 — THE BLOOD GATE` entry plus eight `ST4` sections (34 rows now),
+**`?level=3` plays it**, `speedhell.level` remembers it and the board stamps
+`ST4` — all of it from the generic loops r78 put in `main.js`. The `?boss=idol`
+dev flag still works and now appends the unregistered stage-5 module at index
+**4**, so it reads `STAGE 5 — THE GREAT ALTAR` on the PRACTICE row and
+`?boss=idol&level=4` starts the fight (`main.js`, doc string updated;
+`idol-probe` finds the index by `id`, so it needed no edit). Measured this pass:
+stages 1, 2 and 3 are **byte-identical** — `node test/sim.mjs` equal to the r83
+control in every run, robust seed, check and the determinism string with only the
+known run-to-run S8 wall-clock line moving; `stage2-probe` equal line for line;
+`stage3-probe` equal in every NUMBER, with the one cosmetic change r80 predicted
+(a clearing stage 3 now reads `'stageclear'`, since it is no longer last) plus
+its own campaign pass walking one stage further; `campaign-probe` all asserts
+passing, its stage-1 identity section byte-identical, its final-clear walk now
+ending at level 3. The only edit `campaign-probe` needed was its `MAX_FRAMES`
+constant (30,000 → 40,000): an invulnerable four-stage walk takes ~32 k frames
+and was being cut off mid-stage-4. **The one shared change stage 4 needed** was
+`FRONT_ARMOR` in `game.js` — the Warden's front plate is a damage rule on the
+enemy, and there is no way to express it inside a stage module because the
+player-shot collision lives in the update loop. It is keyed by type, so no
+existing type sees it.
+
+**r83 status — `STAGES` was `[s1, s2, s3]`.** r83 built stage 5's
 final boss ONLY (THE IDOL, four forms — §16), out of order, because plan §7
 step 4 wants the medley's shape agreed before stage 4's dialect is designed.
 The module `stages/s5.js` exists but is **not registered**: it is reached by
@@ -1413,8 +1488,9 @@ in every number, run, robust seed, check and determinism string, with only the
 known run-to-run S8 wall-clock line moving. The one shared change r83 needed was
 two OPTIONAL arguments on `advanceBossPhase` (`hp` table, `last` form index),
 defaulting to the three-form contract — so a four-form boss is a call, not a
-copy (plan §6). Next in the plan: **stage 4, THE BLOOD GATE** (§7 step 5), which
-fills form 4's `quoteS4` hook.
+copy (plan §6). Next in the plan was **stage 4, THE BLOOD GATE** (§7 step 5) — built at r84
+(§15), and it filled form 4's `quoteS4` hook. Next: stage 5's own stage (§7
+step 6) and the per-stage recerts.
 
 *Jacob, 2026-09-09: "i kinda wanna go down the stage 2-5 route. even though stage 1
 is not perfect. im getting really tired of playtesting it." — his override of the
@@ -2193,6 +2269,335 @@ The only freeze deaths are in the SWARM RUSH: exactly 2 per run on all seven
 seeds, always with three or four files overlapping. So the *file* passes the
 test and the *density peak* does not — which is Q29, and Jacob's call.
 
+## 15. Stage 4 — THE BLOOD GATE (r84, core pass)
+
+*Built 2026-09-10 from plan §3 ("stage 4 — the strict stage"); this is the core +
+a base-skin drawing + a probe. Cute-occult creatures for every new thing are a
+later pass; in cute-occult / synthwave the three new types, the midboss and the
+boss fall back to the base painter (renderer `drawEnemy`, r80 — verified this
+pass by a headless render, `?skin=cute-occult` and `?skin=synthwave` on
+`tools/s4peek.html`). Music reuses the stage and boss tracks. Module:
+`src/core/stages/s4.js`; the shared machinery it stands on: `stage.js`
+(`ENEMY_DEFS` 14–16 appended at `stage.js:67–69`, the wall pod's own case at
+`stage.js:448`, an orphan-lock case at `stage.js:469`, the r18 seal, the camp
+governor, the r6 boss beats), `stages/kit.js:122` (`podRun`),
+`patterns.js:177` (`boxTrap`), and the one consequence a stage module cannot own
+— the Warden's front-armour DAMAGE rule, in `game.js` (`FRONT_ARMOR`
+`game.js:84`, applied in the player-shot loop at `game.js:613`). The midboss and
+boss reuse the shared type-4 / type-5 slots through `enemyUpdate` and the boss
+hook exactly as stage 2's Hearse and Bell do, so `killEnemy`'s midboss release
+and the whole boss ritual are inherited, not copied. Probe:
+`tools/probes/stage4-probe.mjs`. Peeks: `img/r84-s4-sections.png`,
+`img/r84-s4-boss.png`, `img/r84-s4-keeper.png`, `img/r84-s4-warden.png`.*
+
+### 15.1 Place ramp (L1) and the sections
+
+The gate's approach road → **the corridor** (wall pods bolted on both flanks) →
+the barbican → **the inner court** → the portcullis frame → the road behind you →
+**THE GATE** itself, the boss's approach landmark (L2) → the arena. Base skin:
+`S4_LANDGEO` + `landmark4` in `skins/base.js:189/196`, with the stage's own
+`S4_BG / S4_STAR / S4_SLAB / S4_LAND`. Sources: Psikyo M7's night base — "metal
+corridor: wall turret pods both sides, tightest lanes of the game"
+(`homage/study-s1945ii.md:117`) — and DDP's walled channels
+(`homage/study-ddp.md:108`), plus BRDA's "corridor WIDTH as the difficulty dial"
+(`homage/study-brda.md:72`). This is the darkest field in the game after stage
+2's: iron and dried blood, every channel ≤ `0x2e` (S2-MUST-1). **The first cut of
+the palette put `S4_STAR` ABOVE `S4_LAND` and the corridor disappeared under its
+own rain — the peek caught it, the swatches were re-cut to the bible's ladder
+(§3: landmark > slabs > stars > field) and the walls read.** The other skins show
+their stage-1 landmark for the section index (said so, plan §6). The expert
+reaches the boss gate at **1:01–1:08** on seven seeds (Psikyo#1: 42–80 s).
+
+| # | stageT | Section | What (reps ≤ 2, escalating) |
+|---|---|---|---|
+| S1 | 120 | CORRIDOR RUN | the flank half of the niche, bare (`s4.js:352`). rep 1: four **wall pods** alternating walls with crossers over them, so the horizontal fire and the horizontal traffic teach the same geometry; rep 2 (the twist): five pods 4 f tighter, plus the stage's **first risers** — the corridor is attacked from behind [T2] |
+| S2 | 900 | THE WARDEN | solo (`s4.js:364`), with nothing else strong on the field: the counter has to be learnable before it is combined [WS05 "repetition legitimizes", T1 chunk-with-escalation]. Traffic only, so it is not fought in a vacuum (the r19 finding) |
+| S3 | 1400 | THE INNER COURT | the strict section (`s4.js:372`): three mids, two turret pairs and two pod pairs, each **arriving alone but living into each other's time** — [WS05] "heavy overlap of high-hp enemies = tense, strict, play by my rules". This is where the stage kills the most (below) |
+| S4 | 2100 | THE GATEKEEPER | gate; §15.4 |
+| S5 | 2160 | BACK ATTACK | the tension peak and the niche's other half at full volume (`s4.js:390`): four riser waves from alternating lane edges, divers over the top, one mid as the metronome. **Nothing from the flanks here** — the pods are S6's twist, and three sources at once is clutter, not pressure |
+| S6 | 2620 | WARDEN 2 + PODS | the twist (`s4.js:403`): the counter you learned in S2, now inside the corridor geometry, so flanking the Warden means standing where the pods shoot. Warden 2 opens at rep 1 (`phase` 1 — the r25 elite-pair fix) |
+| S7 | 3000 | RELEASE | short, as the plan asks: cancel wall 30/bullet + 14 × 150 over the gate landmark, ending empty (L2, BRDA#9); WARNING at 3130 (70 f, gate) |
+| S8 | 3200 | THE GATE | gate; §15.5 |
+
+**Two releases, as plan §3 specifies.** Release 1 is the Gatekeeper's death —
+`game.js killEnemy`'s type-4 rule, verbatim and inherited: the speed-gated
+cancel wall (100/bullet in-window, 30 late) plus the 8 × 800 shower, and only
+then does the gate open. "No breather after it dies" [T2]: the back-attack rush
+starts at stageT 2160, 60 ticks later. Release 2 is S7.
+
+**Flow** (WS05 / Jacob's standing Q21 point / [BH101 §Level design]): never two
+STRONG bodies arriving together — the two Wardens are 1,720 stageT apart, no
+Warden ever shares the screen with the midboss or the boss, popcorn comes from
+one side at a time, risers climb ONE lane edge at a time, and wall pods alternate
+flanks staggered ≥ 58 f, so there is no vertical stack and no two far edges
+firing on the same frame. **What the court deliberately DOES overlap is high-hp
+lifetimes.** The reading this pass takes, and it should be checked: WS05's
+paralysis rule is about the simultaneous *arrival* of two high-priority bodies
+("spawning two or more higher HP enemies at the exact same time creates
+confusion… spawning them one-by-one with slight delays creates an obvious
+route", [BH101 §Level design] verbatim); the court sequences every mid ≥ 90 f
+apart and never puts two elite-tier bodies on the field at once. Longest total
+dead air: **0.0–1.3 s** across a run (stages 2 and 3 total 1.7–3.1 s).
+
+### 15.2 The niche — threats from behind and from the flanks
+
+Stage 1 taught speed-killing, stage 2 taught sealing, stage 3 taught priority.
+Stage 4 teaches **where you are standing** — and it says it three ways.
+
+- **WALL PODS** (type 15; hp 24, 500 / 1,000, window 150 f, r 12 — the TURRET row
+  verbatim; behaviour in `stage.js:448`, placement in `kit.js:122 podRun`). Bolted
+  at x 26 / W−26 and scrolling with the stage at 0.5 px/f, each pod fires a static
+  3-round fan **straight across the corridor** (5 rounds, wider and faster once
+  angry at 4 s). Nothing is aimed: the pattern is the corridor's geometry, which
+  is WS03's area-denial role in its purest form. Because the fire is horizontal,
+  the lanes are horizontal BANDS, and the answer is the movement [BH101] says
+  players avoid — **up and down**. Sealed by proximity (r18 canon; the r81 sealed
+  tell is wired to them, `renderer.js` — this is the stage where that tell earns
+  its keep) and GROUND, so the ship flies over them: going to the wall silences a
+  pod and going there is SAFE, which is WS04's "approaching safely must not be
+  disproportionately dangerous" and stage 2's lesson restated as geometry. Pink
+  fire: turret class is outside `NEEDLE_TIER` (§6.3).
+- **RISERS as a section theme.** [T2] "escalate behaviour across the game, not
+  counts — ships from the bottom later". Stage 1 spends four risers twice; here
+  they arrive in S1's second rep and then carry the whole back-attack rush (four
+  waves, alternating lane edges — Jacob's Q21 addendum). No new type: this is the
+  shared `phase` 3 popcorn (`stage.js`) placed as a theme.
+- **THE WARDEN** (type 14; hp 220, 3,000 / 6,000, window 380 f, r 20 — the ELITE
+  row verbatim, zero new tiers; `s4.js:80`). §15.3.
+
+Fire gating is the r18 canon only — no new gate; the Warden's plate is a damage
+rule, not a gate. Bullet families on screen stay at three (pink rounds, cyan
+needles, the player's violet).
+
+### 15.3 The Warden's damage rule, and what it measures
+
+`game.js FRONT_ARMOR` (`game.js:84`, applied at `game.js:613`): a player shot is
+**deflected — spent, no damage, a spark and a dry tick** — when the ship is more
+than `FRONT_NEAR` = 120 px below the Warden AND within `FRONT_PLATE` = 16 px of
+its column. Nothing about hp changes; this is [T3] "balance = counters, not
+numbers" and [WS03] "a good attack offers a range of responses with pros and
+cons" turned into an enemy. The Warden **creeps toward your column at 1.1 px/f**
+against the ship's 3.7, so keeping a flank is a live chase you can win.
+
+**Why 120 and not 100.** `test/bot.mjs`'s `closeY` is 110 — the referee's own
+model of a player who has committed to a big target. Setting the plate's range
+band at 120 means "closing in", as the referee already defines it, clears the
+plate and everything the referee calls range play does not.
+
+**Measured** (`stage4-probe` pass 3b, a hand-driven ship holding one spot,
+invulnerable, three seeds — this is a DAMAGE measurement, not a dodging one):
+
+| the ship holds | time to kill from vulnerability | in the 380 f window? | mean bullets over the Warden's first 700 f |
+|---|---|---|---|
+| its column, at range | **9.8 s** | no — and it only dies at all because the RUSH gives up the plate | 27.4 |
+| flank +24 px, at range | **5.7 s** | **yes** | 12.7 |
+| "shoulder" +17 px, at range | 6.8 s | no | 14.2 |
+| close (dy 96), on-column | **2.4 s** | **yes** | 10.8 |
+| point-blank (dy 40) | 2.3 s | yes | 10.3 |
+
+So the ladder is real and it is entirely positional: **in its column at range you
+cannot kill it; flanking costs you more than double the time; closing is the
+snappy kill** — and inside 48 px the r18 seal mutes it, the canon point-blank
+reward, paid for in contact risk (r 20 + hit r 3). The 16–19 px slot where BOTH
+gun columns clear the plate is real arithmetic but not a real tactic: the Warden
+creeps, and holding that slot measures *worse* (6.8 s) than simply standing wide.
+
+**LATE-KILL STATE** [WS04's third choice: "rush the player, possibly more
+dangerous"]. When the 380 f window expires the Warden announces the flip with a
+ring (r14 grammar), then **advances at 0.6 px/f and fires wide** (7-needle fans
+at spread 1.1, rings, a hose) until the bottom band mutes it and it despawns
+(S4 outro — nothing is dragged into the next section). The loop this closes is
+the best thing on the stage: **the rush walks it into the very range where its
+plate stops working, so ignoring it is punished AND the punishment is the
+opening.** Measured cost of riding it out vs killing it in-window, over the same
+700 f span: **27.4 / 10.8 = 2.53× the bullets** — rubric S4 MUST's bar for
+"leaving it alive is measurably more dangerous" is 1.60×.
+
+**The rubric's own 1.6× check, run with bots, reads 1.38× and is BELOW BAR — and
+it cannot be read straight here.** `test/bot.mjs` homes to `bigY + closeY` where
+`bigY` is the *lowest* on-screen enemy of type ≥ 4; stage 4's wall pods are type
+15, so a pod scrolling past the bottom pins the bot's target y to the bottom band
+for most of both Warden sections, and the bot always tracks a target's x, so it
+never flanks. **No referee bot executes either counter on any seed: 0 Wardens
+killed in-window across 7 seeds × 5 bot runs; 6 killed late, 7 ridden out.** That
+is a bot ceiling, not a verdict (Jacob's standing note), and it is the same
+caveat r80 recorded for tanks and r82 for leaders — but it is a bigger one here,
+because the niche IS the counter. Pass 3b exists precisely because of it, and the
+stage-4 recert will need this written on it. **Open as Q41.**
+
+### 15.4 The midboss — THE GATEKEEPER (`s4.js:153 gatekeeper`, type 4)
+
+A gate that **closes lanes**. Three **bars** — narrow, slow, near-vertical columns
+of five pink rounds — fall from two arms and from the gate's own centre on a
+120 f rotation. The arms do not swing (that is stage 2's dialect): they **step**,
+at 1.6 px/f, to the two stops of `BAR_STOPS = [56, 104, 152, 200, 248]` that
+BRACKET your column (`s4.js:141 keeperArms`), so the open lane narrows while you
+stand still and re-opens the moment you move. Area denial that MOVES [WS03], and
+the counter is footwork, not damage. Its own gun is one cyan aimed fan every
+100 f (type 4 is in `NEEDLE_TIER`); past 700 f a hose and a fourth bar arrive in
+the lane it had been leaving open (S4 leave-alive). Escort: a crosser pair from
+ONE side every 150 f, alternating (Q21 addendum) — the gate freezes the timeline,
+so without it the fight is a vacuum (r19). Never sealed (`mayFire` exempts type
+4, r19). Timeout: the shared `MIDBOSS_TIMEOUT`, 35 s.
+
+**THE LOCK** (type 16; hp 24, 1,000 / 2,000, window 300 f, r 10 — the part row,
+the anchor's numbers; `s4.js:205`) sits at the gate's centre and **has no gun**.
+What it is, is the keystone. Break it and the Gatekeeper **TRANSFORMS** — Psikyo
+M8's own midboss transformation (`homage/study-s1945ii.md:199–200`): the arms
+retract, the bars stop, and the body comes off its mounting to hunt your column
+at 2.4 px/f (under the ship's 3.7) with aimed fans, rings and sprays on a much
+faster cycle. Silhouette AND behaviour change, no hp change. **That is the
+trade**: the area denial goes away and the pressure goes up — the shape of Q17's
+"parts bite back", applied where it is not an open question but the design.
+The lock is guarded by the CENTRE bar, so the price of reaching it is standing in
+the one lane that is always closed.
+
+Measured: the expert breaks the lock on **5 of 7 seeds** and kills the Gatekeeper
+in **8.3–15.8 s**; the passive-human times it out at 35.6 s with the lock still
+held. Nobody yet chooses to leave the lock alive on purpose — **Q42**.
+
+### 15.5 The boss — THE GATE (`s4.js:257 updateGate`, three forms)
+
+Ritual as stages 1–3's, by construction: the S7 scoreless sweep + cancel, WARNING
+70 f over an emptied field, `bossEntrance` (90 f armored descent, parts on the
+last beat), `bossBurn` at each handoff, `advanceBossPhase` (cancel wall, item
+shower with the late-kill fade, 60 f armor, `BOSS_PHASE_HP` 390 / 402 / 405 — the
+r71 3×), `bossTimeout` (35 s, flee telegraph), the camp governor, the escalation
+clock `k` (§5.2b). Parts are type 6 through `enemyUpdate` (`updateGatePart`,
+`s4.js:311`): ≥ 1 per form, each hosting an emitter, dying with its form.
+
+**Dialect (L6, WS03 #7): THE BOX TRAP.** `boxTrap` (`patterns.js:177`) is six
+emitters — the pen's four corners plus its two side midpoints — each laying a
+wall segment of pink rounds toward the next at a fixed 14–16 px spacing, with
+**one segment omitted: the door**. Every round in the pen carries the same drift
+and the same `accel`, so the cage translates as one rigid body and then whips off
+the field — the walls SWEEP the arena instead of parking in it. The form's own
+aimed fire is what assaults you inside it, which is WS03 #7 verbatim ("then other
+patterns assault the box while it moves"). The door sits on the **trailing** side,
+so leaving the pen means giving up ground against the sweep [WS03 "dodge away =
+safe but no counter"] while the leading walls can be micro-dodged for position —
+two lanes with different risk/reward (S3 MUST). Deterministic: no rng.
+
+**The pen is centred exactly on the ship and is NOT clamped to the field, and
+that is a fix, not an oversight.** The first cut clamped the pen's centre so no
+wall fell off-screen — which puts a wall on top of a ship hugging an edge, one
+frame before it can move: a spawn-on-player death, straight through rubric S7's
+"no unavoidable deaths". Unclamped, the nearest wall is always exactly `hw` / `hh`
+away, and a ship at an edge simply gets a pen whose far wall falls off the field
+and is culled: hugging the wall buys you one open side and the screen edge does
+the penning instead. (The Gate's pens got measurably harder when the clamp came
+out — the expert's boss share moved from 35–51 % to 40–52 %.)
+
+Nothing in any stage section casts a pen (S3b-6), and the only other place in the
+campaign it appears is stage 5's medley, as ONE sized-down quote (§16.2, Q39).
+
+- **P1 — THE GATE** (hp 390). The arena's own gate: near-static, a ±34 px drift at
+  ≤ 1.0 px/f (or the governor's safe spot when latched) at y 88. Casts a **60 × 48
+  pen every 150 f**, sweeping alternate ways, plus a modest aimed fan and a laned
+  wall biased toward its own column. Parts: two **GATE PODS** at ±42 (hp 24)
+  firing static fans **OUTWARD**, so the column under the gate stays open — the
+  point-blank invitation (S3b SHOULD). rep ≥ 3 adds a second, tighter pen: the
+  timeout-rider tax closes the invitation.
+- **P2 — WHAT WAS BEHIND IT** (hp 402). The thing the gate was holding shut:
+  **hard strafing**, rail to rail at 4.4 px/f (faster than the ship's 3.7) on boss
+  1's far-side-of-the-player rule, dwell 140, y 104. `ledFan` every 46 f (aimed AND
+  led — boss-only, S3b-6), and it throws a 56 × 44 pen **from wherever it is**, so
+  the box sweeps the way the strafer is going: the dialect distorted by a moving
+  emitter. A wing-beat on each landing throws two static fans outward, so the
+  column under it is clear — re-earned every step (L7). Part: one node at +40
+  (hp 56), the form's only spray, asymmetric on purpose as on every earlier stage.
+- **P3 — THE CORE** (hp 405). Bare core on the banded sweep (ω 0.005) with the
+  ±22 px bob; the desperation medley recombines only what came before — the
+  bare-core ring beat, P1's pen (52 × 42), P2's led fans and flank sprays; rep ≥ 3
+  adds rings. Parts: two relays at ±38 (hp 24) firing aimed needle pairs.
+
+**ART, DECLARED:** plan §3 calls form 1 "arena-wide", and it is not — ART_BIBLE §6
+caps a boss at 84–110 px of span and the sprite cache is sized from that table
+(`skins/base.js` `span[5] = 100`, shared by all four bosses). The Gate reads
+arena-wide by *composition* instead: a 96 px portcullis with its pods riding at
+±42, standing in front of the S7 landmark's own gate towers. Widening `span[5]`
+for one stage would resize every boss's sprite canvas, and no pixel of stages 1–3
+may move this pass. Whether that composition actually reads as "the whole gate"
+is an eye question — **Q43**.
+
+### 15.6 Numbers as built
+
+| Thing | hp | value | window | r | fires | contact |
+|---|---|---|---|---|---|---|
+| Wall pod (15) | 24 | 500 | 150 f | 12 | pink 3-fan straight across / 92 f (5 / 44 f angry) | **no** (GROUND) |
+| The Warden (14) | 220 | 3,000 | 380 f | 20 | §15.3 (cyan — in the tier) | yes |
+| The Gatekeeper (4) | 400 | 8,000 | 700 f | 26 | §15.4 | yes |
+| The gate lock (16) | 24 | 1,000 | 300 f | 10 | **nothing** | yes |
+| The Gate (5) | 390 / 402 / 405 | 12,000 / form | 600 f | 30 | §15.5 | yes |
+| Gate parts (6) | 24 (P2 node 56) | 1,000 | 300 f | 7 | per form | yes |
+
+Zero new hp tiers (plan §4 rule 3): 14 = the elite row, 15 = the turret row,
+16 = the part row, all copied verbatim from `ENEMY_DEFS`; the midboss and boss
+are the existing type-4 / type-5 rows. Castes: `NEEDLE_TIER` + 14 (the pod stays
+pink — turret class; the lock has no gun at all). Bullet families on screen ≤ 3.
+**Performance (`tools/s4peek.html`, headless Chrome, 60 draws averaged, budget
+16.6 ms): the corridor's densest frame = 36 bullets in 0.24 ms; the run's densest
+frame = 144 bullets in 0.25 ms; and — plan §4 rule 12, the new dialect drawn on
+the stress scene BEFORE it is tuned — three box-trap pens over the S8 stress
+scene's 1,073 bullets and 48 enemies = 1.73 ms.** The pens are legible in that
+frame, which is the readability bar the rule exists to set. Max bullets seen by
+any bot on any seed: 209 (passive-human, at the Gate); max enemies on screen: 24.
+
+### 15.7 The probe (`tools/probes/stage4-probe.mjs`, seed C0FFEE + the six robust seeds)
+
+| bot (C0FFEE) | outcome | clock | to boss | forms | score | kills / speed | deaths by section | max bul | timeouts | keeper | Wardens |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| expert | game over in S5 | 0:50 | — | 0 | 69,410 | 84 / 34 | S3 1 · S4 2 · S5 1 | 144 | 0 | 11.8 s, lock broken | 1 (0 in-window · 1 ridden out) |
+| aggressive-human | game over in S4 | 0:40 | — | 0 | 38,630 | 68 / 28 | S3 2 · S4 2 | 121 | 0 | fled | 1 (0 · late 1) |
+| passive-human | game over in P1 | 1:52 | 1:28 | 1 | 48,640 | 102 / 40 | S4 1 · S8 3 | 135 | 1 (midboss) | 35.6 s TIMEOUT | 2 (0 · 2 ridden out) |
+| blind | game over in S3 | 0:27 | — | 0 | 19,850 | 44 / 19 | S1 1 · S2 1 · S3 2 | 109 | 0 | — | 1 (0 · 1 ridden out) |
+
+**The clock (expert with LIVES PINNED — probe-only, so every form is measured):**
+clear on 7/7 seeds, **1:52–2:10** (target 2:10; envelope 1:30–2:15), boss reached
+at **1:01–1:08** (Psikyo#1: 42–80 s), boss = **40–52 %** of the clock (band
+30–50 %: five of seven seeds inside, 5eed42 at 52 % and c0ffee at 47 % the edges).
+Score **163–200 k** against stage 1's 150–190 k, stage 2's 140–183 k and stage 3's
+156–194 k (plan §5: 1.0–1.3× through targets, never a multiplier). Forms 6–15 s /
+23–36 s / 12–16 s. **No hp was touched to get any of this.**
+
+**Deaths per minute is the campaign's highest, by design.** Pinned expert:
+**10–14 deaths per run, 5.9 / min** against stage 3's ~4 / min on the same
+instrument. Mortal, the expert game-overs at **0:50–1:13 with 3–4 deaths** and
+reaches the boss on 3 of 7 seeds.
+
+**The death clustering** (the S5 MUST "a game-over teaches" check, measured
+rather than asserted — the probe prints the centroid, the mean distance to it and
+the modal 40 px cell per section):
+
+| section | share of pinned deaths | where they land |
+|---|---|---|
+| S3 THE COURT | 1–2 per run, every seed | **x 280–320, y 160–200 on 5 of 7 seeds** — the far side of the corridor at mid height: the opposite wall's pod fan, arriving while a mid holds the column. One cell, one lesson |
+| S4 THE GATEKEEPER | 0–2 | scattered (±83 px): the bars close from two directions and the deaths follow the arms |
+| S5 BACK ATTACK | 0–1 | y 400–440 — the bottom band, which is exactly what a riser is for |
+| S6 WARDEN 2 | 0–1 | y 280–400 near a wall: flanking the Warden into a pod's fire, which is the section's whole point |
+| S8 THE GATE | 7–11 | **y 200–240 on 6 of 7 seeds** — the pen's interior. Deaths cluster in the box, not around it |
+
+Two sections therefore have a single dominant cell across seeds (the court's
+crossfire, the Gate's pen interior), which is the shape S5 MUST wants. S4's
+spread is the one that does not cluster — logged as **Q44**.
+
+**The full campaign** (`startRun(g)` → three seams, expert, C0FFEE): the honest
+r79 expert still game-overs on stage 1's boss — nobody reaches stage 4 at r79
+without the extend. With lives floored at 1 through stages 1–3 (probe-only):
+stage 1 `stageclear 2:21 / 174,230` → stage 2 `stageclear 2:09 / +133,980` →
+stage 3 `stageclear 1:56 / +159,120` (the **400 k extend lands here**) → stage 4
+`gameover 0:32 / +32,140` with one life, run total 7:00 / 499,470. With the ship
+invulnerable from the first seam (`campaign-probe`, flow only): **all four stages
+clear, 8:55 total, 614,400**, zero timeouts — the first four-stage clear the
+campaign has produced.
+
+### 15.8 Open questions (this stage)
+
+Q41 (the referee bot cannot execute the Warden's counter), Q42 (does anyone leave
+the lock alive), Q43 (does the Gate read arena-wide), Q44 (the Gatekeeper's
+deaths do not cluster), Q45 (the corridor's horizontal bands) in §8. Q24 (the
+boss's share of the clock at 3×) and Q17 (parts bite back) apply here unchanged.
+
 ## 16. Stage 5 — THE GREAT ALTAR (r83, final-boss SKELETON)
 
 *(§15 — Stage 4, THE BLOOD GATE — will be inserted BEFORE this section when that
@@ -2268,23 +2673,29 @@ one-line edit — that is the whole reason the skeleton exists before stage 4:
 | `eggFan` | forms 2 + 4 | stage 3's hatching eggs (THE MOTH QUEEN, §14.5) | live |
 | `staticFan(…, 3, …, PI/2)` | forms 3 + 4 | Ship B's three-way spread | live |
 | `ring` | form 4 | the bare-core beat every boss ends on (§5.2, R6.5) | live |
-| **`quoteS4(g, e, k, rep)`** | form 4, `t === 155` | **stage 4's BOX TRAP** (WS03 #7: six emitters pen the player, then the pen moves) | **INERT — `s5.js:110`** |
+| **`quoteS4(g, e, k, rep)`** | form 4, `t === 155` | **stage 4's BOX TRAP** (WS03 #7: six emitters pen the player, then the pen moves) | **FILLED AT r84 — `s5.js:117`** |
 
-`quoteS4` is a real call site on a real beat that does nothing. It has to be
-inert rather than absent for two reasons. Rubric **S3b-5** says the finale
-recombines the earlier forms' dialects *"and only those"* — a live emitter for a
-dialect that does not exist yet would break that rule today. And plan §3 spends
-the box trap on stage 4's boss with the words *"Touhou's favourite, **used once,
-here**"* — so whether a finale quote counts as a second use, against [T1] "never
-repeat the same encounter more than twice", is **Q39**, Jacob's.
+**Filled at r84** (§15.5). `quoteS4` now fires ONE pen: `boxTrap` at 46 × 34
+against THE GATE's own 60 × 48, once per form-4 cycle against the Gate's every
+150 f, cast on the ship's COLUMN at the Idol's own reach (`e.y + 96`) rather than
+built around the ship — *a medley quotes, it does not re-run the set piece*. Pink
+rounds, so form 4's family count is unchanged (pink + cyan + the player's violet,
+≤ 3 on screen). The four contract steps r83 wrote out are all met and are
+restated at the call site.
 
-**The contract for whoever builds stage 4** (also written in the code):
-1. build the box as a `boxTrap(...)` emitter in `patterns.js` while building THE
-   GATE; 2. import it here and fire **one pen**, sized down — a medley quotes, it
-does not re-run the set piece; 3. it stays pink rounds, so form 4's family count
-does not move; 4. it draws **no rng today**, so whatever goes in WILL move the
-rng stream for any run that reaches form 4 — expect a referee recert (Jacob's
-commit, never a builder's).
+**Q39, as the plan already frames it** (§7 item 4): the Gate's fight IS the one
+use, and the finale RECOMBINES earlier dialects as quotes (S3b-5) — a quote is
+not a use. r84 built to that reading. It is still Jacob's to overturn.
+
+**What it did to the Idol's numbers.** Passes 1 and 2 of `idol-probe` are
+**unchanged to the digit** — the expert never reaches form 4 (it times out on the
+mirror, Q34), so the new bullets are never spawned in those runs. Only pass 2b
+(forms 1–3 melted to 1 hp so the medley is reached) moved: form 4 alone measures
+**16.7–26.9 s** against r83's 22.1–23.1 s and its max bullets rise from 83–102 to
+**91–121**. Total boss time is unchanged at 49–52 s against the ≤ 65 s target,
+and the HOMAGE 15–25 s guardrail verdict on form 4 is still "yes". The r83
+warning stands for the referee: any future run that DOES reach form 4 differs
+from r83, so the stage-5 control run is a Jacob-authorized recert.
 
 ### 16.3 The hp budget — Jacob's decision, with the numbers
 
@@ -3829,3 +4240,98 @@ unresolved question upstream of it.
   BUILD r83. `test/sim.mjs`, `test/bot.mjs`, `CRITIC_RUBRIC.md`, `evidence/`,
   `DESIGN_PILLARS.md`, `HANDOFF.md`, `stages/s1.js`, `stages/s2.js`,
   `stages/s3.js` untouched.
+
+- 2026-09-10 — **r84 STAGE 4, THE BLOOD GATE — core pass; `STAGES = [s1, s2, s3,
+  s4]`; `quoteS4` filled.** Built from plan §3's stage-4 entry: place ramp
+  (approach road → corridor → barbican → inner court → portcullis frame → THE
+  GATE), eight sections, the niche in three pieces (wall pods on the flanks,
+  risers as a section theme, the front-armoured Warden), the Gatekeeper with its
+  lock and its transformation, and THE GATE's three forms with the box-trap
+  dialect. Details in **§15**; the campaign status in **§12**; the finale's quote
+  in **§16.2**.
+  **Corpus clearance, including where it pushed back.**
+  **Boghog [WS03]** supplies the two new patterns and their roles: the wall pods
+  are *area denial* (the pattern IS the corridor's geometry) and the box trap is
+  #7 verbatim — "six emitters firing six bullets around the arena centre pen the
+  player, then other patterns assault the box while it moves" — so `boxTrap`
+  lays six wall segments, omits one as a door, and gives every round the same
+  drift and accel so the pen translates and then leaves. WS03's "a range of
+  responses with pros and cons" and **[T3]** "balance = counters, not numbers"
+  are the Warden itself: a damage rule, not hp, with three measured answers
+  (§15.3). **[WS04]** gives the late-kill state its third choice — *rush the
+  player, possibly more dangerous* — and its "approaching safely must not be
+  disproportionately dangerous" is why the pods are GROUND (no contact) and
+  sealed. **[WS05]** is the court: "heavy overlap of high-hp enemies = tense,
+  strict, play by my rules", and its "a game-over teaches" is checked here rather
+  than asserted (the probe prints death CLUSTERING per section, not just counts).
+  **[T2]** gives the risers ("ships from the bottom later") and "no breather
+  after the midboss dies". **[T1]** gives chunk-with-escalation, ≤ 2 reps, and
+  "start hard, scale back". **PUSHBACK, recorded:** WS05's "never two strong
+  enemies at once" (Jacob's standing point) reads against a section whose whole
+  brief is heavy overlap — the resolution taken is that the rule is about
+  simultaneous ARRIVAL of two high-priority bodies ([BH101 §Level design]'s
+  verbatim "spawning them one-by-one with slight delays creates an obvious
+  route"), so the court sequences every mid ≥ 90 f and never puts two elite-tier
+  bodies on the field; that reading is §15.1's and is Jacob's to reject.
+  **[BH101]** also pushes back on the corridor: horizontal pod fire makes the
+  safe places horizontal bands and forces the up-and-down movement players avoid,
+  which is deliberate, but "never block off huge chunks of the screen" is a real
+  counter-argument — logged as **Q45**. **[MSX / Mark MSX]** blesses the stage's
+  identity (the strict, highest-deaths-per-minute stage is expert bias: later
+  stages give the better player more) and forbids the easy fix — the clock was
+  landed by pattern density and cadence, and **no hp was touched anywhere**.
+  **Pillars**: 1 (0.0–1.3 s of dead air per run), 2 (no scoring math moved — the
+  Warden, the pods and the lock pay their existing tiers' binary speed-kill and
+  nothing else), 3 (`?level=3` and eight new PRACTICE rows are the practice
+  tool), 4 (the mortal expert game-overs at 0:50–1:13; that is the contract),
+  5 (the plate makes the shot cap bite: a deflected round is a SPENT round),
+  6 (the pen is legible over the S8 stress scene's 1,073 bullets — the peek),
+  7 (1.73 ms of a 16.6 ms budget in that frame). **HOMAGE**: L1 the place ramp,
+  L2 the release over the gate, L3 the ritual unchanged, L6 the box as this
+  stage's dialect, L7 parts + the point-blank invitation under the gate;
+  Psikyo M7's night-base corridor and M8's midboss transformation are the two
+  direct quotations, DDP#4's walled channels the third. **S3b-5** is why stage
+  5's `quoteS4` could finally be filled, and **plan §7 item 4** is the answer
+  taken to **Q39** (the Gate's fight is the one use; a quote is not a use).
+  **Two things the pass got wrong and fixed, both caught by measurement.** (1)
+  The box trap's centre was clamped to the field so no wall fell off-screen —
+  which lays a wall ON a ship hugging an edge, one frame before it can move: a
+  spawn-on-player death, rubric **S7** "no unavoidable deaths" straight through.
+  Unclamped, the nearest wall is always exactly hw/hh away and an edge simply
+  costs the pen its far wall. (2) The stage-4 palette shipped with `S4_STAR`
+  brighter than `S4_LAND` and the corridor vanished under its own rain; the peek
+  caught it and the swatches were re-cut to ART_BIBLE §3's ladder.
+  **Measured (`tools/probes/stage4-probe.mjs`, seed C0FFEE + the six robust
+  seeds).** Expert with lives pinned: clear 7/7, **1:52–2:10** (target 2:10),
+  boss at **1:01–1:08** (envelope 42–80 s), boss **40–52 %** of the clock (band
+  30–50, five of seven inside), score **163–200 k**, **10–14 deaths, 5.9/min —
+  the campaign's highest, by design.** Death clustering: the court kills at
+  x 280–320 / y 160–200 on 5 of 7 seeds and the Gate kills inside the pen at
+  y 200–240 on 6 of 7 (**Q44** is the one section that does not cluster). The
+  counter, hand-driven: in its column at range **9.8 s** (and only because the
+  rush gives up the plate), flanked **5.7 s**, closed **2.4 s**; the late-kill
+  state costs **2.53×** the bullets against S4 MUST's 1.60× bar. **The bot-driven
+  1.6× check reads 1.38× and is BELOW BAR — and cannot be read straight**,
+  because `test/bot.mjs` treats a type-15 wall pod as a "big target" and pins its
+  own closing distance to the bottom band: **0 Wardens killed in-window across 7
+  seeds × 5 bot runs.** That is a bot ceiling, not a verdict (Jacob's standing
+  note) and the same caveat r80 recorded for tanks — but bigger here, because the
+  niche IS the counter. **Q41**, with three exits, all Jacob's.
+  **Stages 1–3 byte-identical**: `stage2-probe` line for line; `stage3-probe`
+  equal in every number with only the predicted `clear` → `stageclear` word (it
+  is no longer the last stage) and its own campaign pass walking one seam
+  further; `campaign-probe` all asserts passing with its stage-1 identity section
+  unchanged; `node test/sim.mjs` equal to the r83 control with only the known
+  run-to-run S8 wall-clock line moving. `test/shell.mjs` PASS. The only probe
+  edit was `campaign-probe`'s `MAX_FRAMES` (30,000 → 40,000): a four-stage
+  invulnerable walk takes ~32 k frames. That walk now clears **all four stages,
+  8:55, 614,400** — the campaign's first four-stage clear. Peeks
+  `img/r84-s4-sections.png`, `img/r84-s4-boss.png` (the pens drawn on the S8
+  stress scene before tuning, plan §4 rule 12), `img/r84-s4-keeper.png`,
+  `img/r84-s4-warden.png`; other skins fall back to the base painter, verified by
+  headless render. New open questions **Q41–Q45**. Not decided here (Jacob's):
+  Q41–Q45, and Q39's answer stands as the plan's until he says otherwise.
+  BUILD r84. `test/sim.mjs`, `test/bot.mjs`, `CRITIC_RUBRIC.md`, `evidence/`,
+  `DESIGN_PILLARS.md`, `HANDOFF.md`, `stages/s1.js`, `stages/s2.js`,
+  `stages/s3.js` untouched; `stages/s5.js` touched only at the `quoteS4` hook and
+  its import.

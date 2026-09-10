@@ -3,7 +3,8 @@
 // top-lane flow / no simultaneous elites [WS05], bottom no-shoot band [WS04],
 // no breather after midboss (gate resumes immediately) [BOGHOG_CRAFT/T2].
 import { sfx, SFX, spawnEnemy, spawnItem, bulletCancelWall, spawnFx, FX, FAM, addPopup, W, H } from './game.js';
-import { aimedFan, ring, arcWall, spray, bendyStream, twinSpiral, lanceVolley, ledFan } from './patterns.js';
+import { aimedFan, ring, arcWall, spray, bendyStream, twinSpiral, lanceVolley, ledFan, staticFan } from './patterns.js'; // r84: staticFan for the wall pod's across-the-corridor fan (case 15)
+const PI = Math.PI; // r84 (case 15's base angle)
 
 // HP retuned r3 (playtest 2: "easier, not better"). The r2 halving made range
 // play melt everything, so the 2x point-blank pipeline gap was imperceptible.
@@ -54,9 +55,24 @@ export const ENEMY_DEFS = [
   /*11 leader*/ { hp: 24,  value: 500,   window: 150, r: 12 }, // formation LEADER: flies at the head of a file; a SPEED kill scatters the file, a late kill turns it into a streaming one (game.js killEnemy)
   /*12 carrier*/{ hp: 44,  value: 800,   window: 210, r: 14 }, // CARRIER: a mid that releases popcorn on a metronome; its death cancels locally — the just-in-time cancel (WS05 theme)
   /*13 moth  */ { hp: 220, value: 3000,  window: 380, r: 20 }, // one of the TWIN MOTHS: an elite-tier body; the PAIR is the midboss (rubric S5's sanctioned exception), and they hold the gate together
+  // r84 STAGE 4 — THREATS FROM BEHIND AND FROM THE FLANKS (plan §3 stage 4).
+  // Zero new hp tiers again: the Warden is the ELITE row verbatim, the wall pod
+  // the TURRET row, the gate lock the PART row (the anchor's numbers). The
+  // stage's midboss and boss reuse the shared type-4 / type-5 slots through
+  // `enemyUpdate` / the boss hook, exactly as stage 2's Hearse and Bell do, so
+  // killEnemy's midboss release and the boss ritual are inherited, not copied.
+  // The WARDEN's front armour is a DAMAGE rule on the enemy (game.js
+  // FRONT_ARMOR), never a fourth fire gate on the player — the r18 canon is
+  // untouched (plan §4 rule 8).
+  /*14 warden*/ { hp: 220, value: 3000,  window: 380, r: 20 }, // THE WARDEN: a front-armoured elite. No damage from below AT RANGE — flank it or point-blank it [T3 counters, not numbers]; late kill = it RUSHES (stages/s4.js)
+  /*15 pod   */ { hp: 24,  value: 500,   window: 150, r: 12 }, // WALL POD: a turret bolted to the corridor's flank; fires ACROSS the lane (area denial, WS03), sealed by proximity, scrolls with the stage, no contact (GROUND)
+  /*16 lock  */ { hp: 24,  value: 1000,  window: 300, r: 10 }, // THE GATE LOCK: the Gatekeeper's keystone sub-part. No gun — killing it drops the bars and TRANSFORMS the midboss (Psikyo M8); the transformation is the price (stages/s4.js)
 ];
 // r80: the types the ship flies OVER (no contact collision — game.js reads it).
-export const GROUND = { 7: 1, 9: 1 };
+// r84: + the wall pod (15) — it is bolted to the corridor wall the ship flies
+// past, and WS04's "approaching safely must not be disproportionately
+// dangerous" is the whole reason sealing can be taught on it.
+export const GROUND = { 7: 1, 9: 1, 15: 1 };
 
 // Per-boss-phase sub-part geometry: [dx, dy] off the boss center. Offsets sit
 // OUTSIDE the boss's r=30 collision circle horizontally, so parts are hittable
@@ -427,6 +443,35 @@ export function updateEnemy(g, e) {
       let hearse = null;
       for (let i = 0; i < g.enemies.count; i++) { const o = g.enemies.items[i]; if (o.type === 4 && !o.dead) { hearse = o; break; } }
       if (!hearse) e.dead = 1;
+      break;
+    }
+    case 15: { // r84 WALL POD — the turret's sentence turned SIDEWAYS. Bolted to a
+      // corridor flank (x 26 / W−26), it scrolls with the stage like a tank and
+      // fires ACROSS the lane: a static 3-round fan on the horizontal, so what
+      // the pattern is made of is the corridor's geometry, not an aim solution
+      // (WS03's area-denial role; S1945II's "wall turret pods both sides,
+      // tightest lanes of the game", homage/study-s1945ii.md:117). `side` is the
+      // flank it is bolted to (−1 left, +1 right) and therefore the direction it
+      // shoots. Angry at 4 s on-screen like every ground gun (more fire, same
+      // scroll speed — S4 outro holds). Sealed by proximity (r18 canon) and the
+      // ship flies OVER it (GROUND), so going to the wall is how you silence it
+      // and going there is safe: that is the lesson stage 2 taught, restated in
+      // a geometry where the pods own the flanks. No rng.
+      e.fireT++;
+      e.y += 0.5;
+      const angryP = e.vulnAt >= 0 && g.frame - e.vulnAt > 240;
+      const base = e.side < 0 ? 0 : PI;                        // straight across the corridor
+      if (e.vulnAt >= 0 && e.phase === 0) { e.phase = 1; if (!sealed(g, e)) staticFan(g, e.x + e.side * 9, e.y, 3, 0.30, 2.0, base); } // arrival shot: armed when it appears (the r17 turret rule)
+      const everyP = angryP ? 44 : 92;
+      if (e.fireT % everyP === 30 && mayFire(g, e)) staticFan(g, e.x + e.side * 9, e.y, angryP ? 5 : 3, angryP ? 0.85 : 0.30, angryP ? 2.5 : 2.0, base);
+      break;
+    }
+    case 16: { // r84 THE GATE LOCK — the Gatekeeper's keystone. Its position is the
+      // midboss's business (stages/s4.js enemyUpdate[16]); this case exists only
+      // so an orphaned lock despawns scorelessly, exactly as the anchor's does.
+      let keeper = null;
+      for (let i = 0; i < g.enemies.count; i++) { const o = g.enemies.items[i]; if (o.type === 4 && !o.dead) { keeper = o; break; } }
+      if (!keeper) e.dead = 1;
       break;
     }
     case 6: { // r6 boss sub-part: position slaved to the boss every frame; hosts

@@ -253,6 +253,30 @@ template (L4).
 - **Deaths-per-minute** is expected to be the campaign's highest; the
   learnability check (S5 "a game-over teaches") is the gate, not the death
   count.
+- **Stage 4 — built r84 (2026-09-10, core pass; wiki §15).** As specified, with
+  these deviations and findings: (1) the Warden's front armour is a DAMAGE rule
+  in `game.js` (`FRONT_ARMOR`), not anything in the stage module — the
+  player-shot collision lives in the update loop, so a stage cannot own it; the
+  r18 fire gates are untouched; (2) the range band is 120 px, not an arbitrary
+  number — `test/bot.mjs`'s `closeY` is 110, so "closing in" as the referee
+  already defines it clears the plate and range play does not; (3) the box trap's
+  pen is NOT clamped to the field, because clamping its centre lays a wall on a
+  ship hugging an edge (a spawn-on-player death, rubric S7) — an edge now simply
+  costs the pen its far wall; (4) form 1 is not literally "arena-wide": ART_BIBLE
+  §6 caps a boss at 84–110 px on one shared sprite table, so THE GATE reads wide
+  by composition (a 96 px portcullis, pods at ±42, in front of the landmark's own
+  gate towers) — wiki Q43; (5) the clock landed inside the envelope without
+  touching hp — 1:52–2:10 pinned, boss at 1:01–1:08 = 40–52 % — and
+  deaths-per-minute IS the campaign's highest at 5.9/min against stage 3's ~4,
+  with deaths clustering on one cell per section in the court and at the boss
+  (wiki §15.7); (6) **the referee's bots cannot execute the Warden's counter** —
+  `bot.mjs` reads a type-15 wall pod as a "big target" and never flanks, so 0
+  Wardens die in-window across 7 seeds × 5 bots and the rubric's 1.6× check reads
+  1.38×; hand-driven, the counter works (9.8 / 5.7 / 2.4 s) and the late-kill
+  state costs 2.53× the bullets. Logged as wiki Q41 with three exits, all
+  Jacob's. Stage 5's `quoteS4` hook is filled (plan §7 item 4's Q39 answered as
+  this plan frames it). Cute-occult creatures, a stage-4 cue, the referee control
+  run and the Booth debrief are the next passes (§7's cooldown applies).
 
 ### Stage 5 — THE GREAT ALTAR (the finish)
 - **Place ramp:** the altar stair (≤ 25 s; the whole pre-boss run — stair +

@@ -25,7 +25,7 @@ import { STAGES } from '../../src/core/stages/index.js';
 import { makeBot } from '../../test/bot.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const SEED = 0xC0FFEE, MAX_FRAMES = 30000;
+const SEED = 0xC0FFEE, MAX_FRAMES = 40000; // r84: was 30000 — the invulnerable four-stage walk needs ~30 k frames and was being cut off mid-stage-4 (a probe constant only; every single-stage and every seam run below still resolves thousands of frames inside it, so no stage-1-3 number moves)
 
 // The referee's four bot option sets, copied VERBATIM from test/sim.mjs
 // (`runs = [...]`) so this probe plays the same players the certificate does.

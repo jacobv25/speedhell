@@ -1,0 +1,100 @@
+<!doctype html><meta charset="utf-8">
+<!-- STAGE 4 peek (r84): headless sheets of THE BLOOD GATE drawn by the BASE skin (the
+     cute-occult creatures for the new types are a later pass). The referee's expert
+     bot plays seed C0FFEE from startRun(g, 0, 3) with its LIVES PINNED (a probe-only
+     edit so one run reaches every form; the honest bot table is stage4-probe.mjs).
+       node tools/peek.mjs 'tools/s4peek.html?mode=sections' docs/img/r84-s4-sections.png 1940x1340
+       node tools/peek.mjs 'tools/s4peek.html?mode=boss'     docs/img/r84-s4-boss.png     1940x700
+       node tools/peek.mjs 'tools/s4peek.html?mode=keeper'   docs/img/r84-s4-keeper.png   1460x700
+       node tools/peek.mjs 'tools/s4peek.html?mode=warden'   docs/img/r84-s4-warden.png   1460x700
+     mode=sections: each section at its entry frame + 120 f, plus the corridor's densest
+     frame and the run's densest frame, each with the draw time of 60 draws averaged
+     (S8 budget 16.6 ms). mode=boss: the three forms ~150 f in, PLUS the BOX TRAP laid
+     over the S8 stress scene (1,000 bullets / 48 enemies) — plan §4 rule 12, the
+     dialect is drawn on the stress scene before it is tuned. mode=keeper: the
+     Gatekeeper closed (bars down) and transformed (the lock broken). mode=warden: the
+     Warden holding (plate down, the front-armour rule live) and in its late-kill RUSH.
+     ?skin=cute-occult shows the base-skin fallback. -->
+<body style="margin:0;background:#05060a">
+<canvas id="c" width="1940" height="1340"></canvas>
+<script type="module">
+import { makeGame, startRun, update, stressScene, W, H } from '../src/core/game.js';
+import { draw, resetHud, setSkin } from '../src/render/renderer.js';
+import { STAGES } from '../src/core/stages/index.js';
+import { boxTrap } from '../src/core/patterns.js';
+import { makeBot } from '../test/bot.mjs';
+const Q = new URLSearchParams(location.search), MODE = Q.get('mode') || 'sections', SC = 1.5;
+setSkin(Q.get('skin') || 'base');
+const c = document.getElementById('c'), ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = false;
+const label = (t, x, y) => { ctx.fillStyle = '#ffd24a'; ctx.font = 'bold 15px monospace'; ctx.textAlign = 'left'; ctx.fillText(t, x, y); };
+const off = document.createElement('canvas'); off.width = W; off.height = H; const octx = off.getContext('2d');
+const stub = { next: () => 0.5, range: (a, b) => (a + b) / 2 };
+function render(gg, measure) {
+  const real = gg.rng; gg.rng = stub; octx.setTransform(1, 0, 0, 1, 0, 0);
+  for (let i = 0; i < 30; i++) draw(gg, octx, gg.stageT * 1.05);
+  let ms = 0;
+  if (measure) { const t0 = performance.now(); for (let i = 0; i < 60; i++) draw(gg, octx, gg.stageT * 1.05); ms = (performance.now() - t0) / 60; }
+  gg.rng = real; return ms;
+}
+const tiles = [];
+function snap(gg, text, measure) { const ms = render(gg, measure); const im = document.createElement('canvas'); im.width = W; im.height = H; im.getContext('2d').drawImage(off, 0, 0); tiles.push({ im, text: text + (measure ? ` · draw ${ms.toFixed(2)} ms` : '') }); return ms; }
+const SEC = STAGES[3].SECTIONS, CORR = SEC[1].t, CORRE = SEC[2].t;
+const BOT = { aggressive: true, lookahead: 14, reactDelay: 0 };
+const g = makeGame(0xC0FFEE); startRun(g, 0, 3); resetHud();
+const bot = makeBot((MODE === 'keeper' || MODE === 'warden') ? { aggressive: false, lookahead: 10, reactDelay: 7 } : BOT); // keeper/warden: the passive bot leaves them alive long enough to show BOTH states
+const entered = {}; let maxB = -1, maxAt = 0, corrB = -1, corrAt = 0, prevPhase = -1, phaseAt = 0, keeperShots = 0, sawOpen = 0, denseDone = false, corrDone = false;
+const perf = { maxBullets: 0, draw: 0, corrBullets: 0, corrDraw: 0 };
+{ // pass 1: find the densest frame of the run AND of the corridor run (pass 2 captures them exactly)
+  const q = makeGame(0xC0FFEE); startRun(q, 0, 3); const b2 = makeBot(BOT);
+  while (q.state === 'play' && q.frame < 20000) {
+    b2(q); q.player.lives = 9; update(q);
+    if (q.eBullets.count > maxB) { maxB = q.eBullets.count; maxAt = q.frame; }
+    if (q.stageT >= CORR && q.stageT < CORRE && q.eBullets.count > corrB) { corrB = q.eBullets.count; corrAt = q.frame; }
+  }
+}
+for (let f = 0; f < 20000 && g.state === 'play'; f++) {
+  bot(g); g.player.lives = 9; update(g);
+  let boss = null, keeper = null, wdn = null;
+  for (let i = 0; i < g.enemies.count; i++) { const e = g.enemies.items[i]; if (e.type === 5) boss = e; if (e.type === 4) keeper = e; if (e.type === 14) wdn = e; }
+  if (MODE === 'sections') {
+    for (let i = 1; i < SEC.length; i++) if (!(i in entered) && g.stageT >= SEC[i].t) entered[i] = g.frame;
+    for (let i = 1; i < SEC.length; i++) if (entered[i] === g.frame - 120 && !entered['s' + i]) { entered['s' + i] = 1; snap(g, `${SEC[i].label} · stageT ${g.stageT} f${g.frame} · enemies ${g.enemies.count} bullets ${g.eBullets.count}`); }
+    if (g.frame === corrAt && !corrDone) { corrDone = true; perf.corrBullets = g.eBullets.count; perf.corrDraw = snap(g, `CORRIDOR RUN — DENSEST (wall pods firing across) · stageT ${g.stageT} f${g.frame} · bullets ${g.eBullets.count} enemies ${g.enemies.count}`, true); }
+    if (g.frame === maxAt && !denseDone) { denseDone = true; perf.maxBullets = g.eBullets.count; perf.draw = snap(g, `RUN'S DENSEST FRAME · stageT ${g.stageT} f${g.frame} · bullets ${g.eBullets.count} enemies ${g.enemies.count}`, true); }
+  } else if (MODE === 'boss') {
+    if (boss && boss.phase !== prevPhase) { prevPhase = boss.phase; phaseAt = g.frame; }
+    if (boss && g.frame === phaseAt + 150) snap(g, `THE GATE form ${boss.phase + 1} · ${['THE GATE', 'WHAT WAS BEHIND IT', 'THE CORE'][boss.phase]} · +150f · bullets ${g.eBullets.count} · hp ${boss.hp | 0}`);
+  } else if (MODE === 'keeper') {
+    if (keeper && keeper.bloomed === 1 && keeperShots === 0 && keeper.fireT > 200) { keeperShots++; snap(g, `THE GATEKEEPER — CLOSED (the lock holds, three bars falling) · f${g.frame} · bullets ${g.eBullets.count} · hp ${keeper.hp | 0}`); }
+    if (keeper && keeper.bloomed === 2 && !sawOpen && keeper.fireT > 120) { sawOpen = 1; snap(g, `THE GATEKEEPER — TRANSFORMED (the lock is broken, the bars are gone, it hunts) · f${g.frame} · bullets ${g.eBullets.count} · hp ${keeper.hp | 0}`); }
+  }
+  if (MODE === 'warden') {
+    if (wdn && !wdn.bloomed && !keeperShots && wdn.fireT > 150) { keeperShots++; snap(g, `THE WARDEN — HOLDING (the plate is down; at range, in its column, shots bounce) · f${g.frame} · hp ${wdn.hp | 0} · bullets ${g.eBullets.count}`); }
+    if (wdn && wdn.bloomed && !sawOpen && wdn.fireT > 230) { sawOpen = 1; snap(g, `THE WARDEN — THE RUSH (late kill, WS04: it advances and fires wide, and the advance gives up the plate) · f${g.frame} · hp ${wdn.hp | 0} · bullets ${g.eBullets.count}`); }
+  }
+  if (MODE === 'warden' && tiles.length >= 2) break;
+  if (MODE === 'boss' && tiles.length >= 3) break;
+  if (MODE === 'keeper' && tiles.length >= 2) break;
+}
+if (MODE === 'boss') { // plan §4 rule 12: the new dialect drawn on the S8 stress scene BEFORE it is tuned
+  const q = makeGame(0xC0FFEE); startRun(q, 0, 3); stressScene(q);
+  for (let i = 0; i < 6; i++) update(q);
+  // three pens around the ship, the Gate's own size, so the cage has to be found
+  // inside 1,000 bullets: if the box cannot be read here, the dialect is wrong.
+  boxTrap(q, q.player.x, q.player.y, 60, 48, 15, 0.34, 0.12, 5, 0.010);
+  boxTrap(q, 90, 150, 60, 48, 15, -0.34, 0.12, 2, 0.010);
+  boxTrap(q, 230, 260, 46, 38, 14, 0.34, 0.12, 4, 0.010);
+  const ms = snap(q, `THE BOX TRAP on the S8 STRESS SCENE — 3 pens over 1,000 bullets / 48 enemies · bullets ${q.eBullets.count}`, true);
+  perf.stressDraw = ms; perf.stressBullets = q.eBullets.count;
+}
+const cols = MODE === 'sections' ? 4 : tiles.length || 1, tw = W * SC, th = H * SC;
+label(`STAGE 4 — THE BLOOD GATE (r84, base skin${Q.get('skin') ? ' fallback via ?skin=' + Q.get('skin') : ''}) · seed C0FFEE · ${(MODE === 'keeper' || MODE === 'warden') ? 'passive-human bot' : 'expert bot'}, lives pinned · outcome ${g.state} f${g.frame}`
+  + (MODE === 'sections' ? ` · corridor ${perf.corrBullets} bullets in ${perf.corrDraw.toFixed(2)} ms · run peak ${perf.maxBullets} in ${perf.draw.toFixed(2)} ms (budget 16.6)` : '')
+  + (MODE === 'boss' && perf.stressDraw ? ` · stress ${perf.stressBullets} bullets in ${perf.stressDraw.toFixed(2)} ms (budget 16.6)` : ''), 4, 16);
+for (let i = 0; i < tiles.length; i++) {
+  const x = (i % cols) * (tw + 4), y = Math.floor(i / cols) * (th + 30) + 46;
+  ctx.drawImage(tiles[i].im, x, y, tw, th);
+  label(tiles[i].text, x + 4, y - 8);
+}
+window.__perf = perf; window.__tiles = tiles.length; window.__done = true;
+</script></body>

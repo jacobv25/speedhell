@@ -171,6 +171,80 @@ function landmark3(ctx, sec, x, y, w, h, land, slab, K) {
   }
   void W;
 }
+// r84 STAGE 4 — THE BLOOD GATE place ramp (L1, plan §3): the gate's approach road
+// → the corridor (wall pods bolted on both flanks — Psikyo M7's night base, the
+// "metal corridor: wall turret pods both sides, tightest lanes of the game" at
+// homage/study-s1945ii.md:117, and DDP's walled channels) → the inner court →
+// THE GATE itself, the boss's approach landmark (L2). Iron and dried blood: the
+// darkest field in the game after stage 2's, and the washed band is the hard
+// constraint as ever (S2-MUST-1; bible §3 "a landmark may be large, never
+// bright") — no channel exceeds 0x2e. Nine entries, one per SECTIONS index.
+// The ladder is the bible's, in order (§3 "landmark > slabs > stars > field"):
+// r84's first pass had STAR above LAND and the corridor vanished under its own
+// rain — the peek caught it, the swatches were re-cut, and the corridor reads.
+const S4_BG = '#0a0709';
+const S4_STAR = ['#1c1418', '#1e1519', '#20161a', '#22171b', '#24181c', '#22171b', '#20161a', '#241819', '#1c1418'];
+const S4_SLAB = ['#241a1e', '#261c20', '#281d22', '#2a1e24', '#2c2026', '#2a1e24', '#281d22', '#2c1f24', '#241a1e'];
+const S4_LAND = ['#2c2226', '#2e2428', '#2e252a', '#2e262c', '#2e272e', '#2e262c', '#2e252a', '#2e282e', '#2c2226'];
+const S4_LANDGEO = [ // [x, w, h] per SECTIONS index: approach road · corridor ·
+  // the barbican (Warden 1) · the inner court · the portcullis frame (the
+  // Gatekeeper's arena) · the road behind you (back attack) · corridor with pod
+  // mounts (Warden 2) · THE GATE (the release's landmark) · the arena.
+  [40, 240, 70], [16, 288, 120], [70, 180, 90], [24, 272, 110],
+  [60, 200, 96], [16, 288, 110], [16, 288, 120], [56, 208, 170], [90, 140, 36],
+];
+function landmark4(ctx, sec, x, y, w, h, land, slab, K) {
+  const { W } = K;
+  const road = (y0, hh) => { // the approach road: a paved strip with kerbs and a centre line
+    ctx.fillStyle = slab; ctx.fillRect(60, y0, W - 120, hh);
+    ctx.fillStyle = land; ctx.fillRect(58, y0, 5, hh); ctx.fillRect(W - 63, y0, 5, hh);
+    for (let yy = y0 + 6; yy < y0 + hh; yy += 18) ctx.fillRect(W / 2 - 2, yy, 4, 9);
+  };
+  const walls = (y0, hh, inset) => { // the corridor: two walls with buttresses, pod mounts bolted to them
+    ctx.fillStyle = land; ctx.fillRect(0, y0, inset, hh); ctx.fillRect(W - inset, y0, inset, hh);
+    ctx.fillStyle = slab;
+    for (let yy = y0 + 4; yy < y0 + hh - 10; yy += 26) { ctx.fillRect(inset - 8, yy, 8, 16); ctx.fillRect(W - inset, yy + 13, 8, 16); }
+    ctx.fillStyle = land; for (let yy = y0 + 10; yy < y0 + hh; yy += 26) { ctx.fillRect(0, yy, inset + 4, 3); ctx.fillRect(W - inset - 4, yy, inset + 4, 3); }
+  };
+  switch (sec) {
+    case 0: road(y, h); break;
+    case 1: case 5: case 6: // the corridor (S1 · the road behind you · the pod-mounted stretch)
+      walls(y, h, sec === 5 ? 30 : 42);
+      road(y + 6, h - 12);
+      break;
+    case 2: { // the barbican: a squat gatehouse astride the road, arrow slits
+      road(y, h);
+      ctx.fillStyle = land; ctx.fillRect(x, y + 24, w, h - 24);
+      ctx.fillStyle = slab; ctx.fillRect(x + 14, y + 36, w - 28, h - 52);
+      ctx.fillStyle = land; for (let i = 0; i < 5; i++) ctx.fillRect(x + 22 + i * 28, y + 44, 5, 20);
+      ctx.fillStyle = land; for (let i = 0; i < 6; i++) ctx.fillRect(x + i * 30, y + 14, 20, 12); // crenellations
+      break;
+    }
+    case 3: case 4: { // the inner court: a paved square inside a colonnade (S4 adds the portcullis frame)
+      ctx.fillStyle = slab; ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = land;
+      for (let i = 0; i < 5; i++) { ctx.fillRect(x + 6, y + 8 + i * 20, 14, 14); ctx.fillRect(x + w - 20, y + 8 + i * 20, 14, 14); } // pillars down both sides
+      ctx.fillStyle = land; ctx.fillRect(x + 30, y + h - 16, w - 60, 6);                                                            // the dais
+      if (sec === 4) { // the portcullis frame the Gatekeeper hangs in
+        ctx.fillStyle = land; ctx.fillRect(x + 18, y, 12, h); ctx.fillRect(x + w - 30, y, 12, h); ctx.fillRect(x + 18, y, w - 36, 12);
+        ctx.fillStyle = slab; for (let i = 0; i < 7; i++) ctx.fillRect(x + 36 + i * 22, y + 12, 4, 26);                              // the bars, drawn up
+      }
+      break;
+    }
+    case 7: { // THE GATE — the boss's approach landmark: two towers, a great arch, the seam shut
+      ctx.fillStyle = land; ctx.fillRect(x, y + 30, 46, h - 30); ctx.fillRect(x + w - 46, y + 30, 46, h - 30);
+      ctx.fillStyle = slab; for (let i = 0; i < 4; i++) { ctx.fillRect(x + 8, y + 46 + i * 26, 30, 12); ctx.fillRect(x + w - 38, y + 46 + i * 26, 30, 12); }
+      ctx.fillStyle = land; ctx.fillRect(x, y + 12, w, 22);                                    // the lintel
+      ctx.fillStyle = slab; ctx.fillRect(x + 46, y + 34, w - 92, h - 34);                       // the doors
+      ctx.fillStyle = land; ctx.fillRect(x + w / 2 - 3, y + 34, 6, h - 34);                     // the seam
+      for (let i = 0; i < 4; i++) ctx.fillRect(x + 52, y + 52 + i * 30, w - 104, 5);            // the bands
+      ctx.fillStyle = slab; for (let i = 0; i < 5; i++) ctx.fillRect(x + i * 44, y, 26, 14);    // crenellations
+      break;
+    }
+    default: ctx.fillStyle = land; ctx.fillRect(x, y, w, h); ctx.fillStyle = slab; ctx.fillRect(x + 10, y + 8, w - 20, h - 16);
+  }
+  void W;
+}
 // r6 S3b-SHOULD: arena restain per boss phase — deep blue → red-shifted →
 // white-hot dawn (homage BRDA#6), all values inside the washed band.
 const BOSS_BG = ['#0a0e1a', '#130a0e', '#141317', '#160b12'];
@@ -186,20 +260,22 @@ export const TURRET_PLATE = [[-9, -13], [9, -13], [13, -9], [13, 9], [9, 13], [-
 function drawBackground(ctx, g, bgScroll, sec, bossPhase, K, secT = 0) {
   const { W, H } = K;
   const s3 = g.level === 2; // r82: THE CANDLE SEA runs its own warm field palette
-  const i3 = Math.min(sec, S3_SLAB.length - 1);
-  const bgC = bossPhase >= 0 ? BOSS_BG[bossPhase] : s3 ? S3_BG : FIELD_BG;
-  const slabC = bossPhase >= 0 ? BOSS_SLAB[bossPhase] : s3 ? S3_SLAB[i3] : SEC_SLAB[sec];
-  const starC = bossPhase >= 0 ? BOSS_STAR[bossPhase] : s3 ? S3_STAR[i3] : SEC_STAR[sec];
-  const landC = bossPhase >= 0 ? BOSS_LAND[bossPhase] : s3 ? S3_LAND[i3] : SEC_LAND[sec];
+  const s4 = g.level === 3; // r84: THE BLOOD GATE runs its own iron-and-dried-red one
+  const i3 = Math.min(sec, S3_SLAB.length - 1), i4 = Math.min(sec, S4_SLAB.length - 1);
+  const bgC = bossPhase >= 0 ? BOSS_BG[bossPhase] : s4 ? S4_BG : s3 ? S3_BG : FIELD_BG;
+  const slabC = bossPhase >= 0 ? BOSS_SLAB[bossPhase] : s4 ? S4_SLAB[i4] : s3 ? S3_SLAB[i3] : SEC_SLAB[sec];
+  const starC = bossPhase >= 0 ? BOSS_STAR[bossPhase] : s4 ? S4_STAR[i4] : s3 ? S3_STAR[i3] : SEC_STAR[sec];
+  const landC = bossPhase >= 0 ? BOSS_LAND[bossPhase] : s4 ? S4_LAND[i4] : s3 ? S3_LAND[i3] : SEC_LAND[sec];
   ctx.fillStyle = bgC;
   ctx.fillRect(-20, -20, W + 40, H + 40);
   { // landmark slab: enters at the section boundary, scrolls with section progress
-    const geo = g.level === 1 ? S2_LANDGEO : g.level === 2 ? S3_LANDGEO : SEC_LANDGEO; // r80/r82: stages 2 and 3 have their own place ramps
+    const geo = g.level === 1 ? S2_LANDGEO : g.level === 2 ? S3_LANDGEO : g.level === 3 ? S4_LANDGEO : SEC_LANDGEO; // r80/r82/r84: stages 2, 3 and 4 have their own place ramps
     const [lx, lw, lh] = geo[Math.min(sec, geo.length - 1)];
     const ly = Math.round((g.stageT - secT) * 0.55 - lh - 20);
     if (ly < H + 20) {
       if (g.level === 1) landmark2(ctx, sec, lx, ly, lw, lh, landC, slabC, K);
       else if (g.level === 2) landmark3(ctx, sec, lx, ly, lw, lh, landC, slabC, K);
+      else if (g.level === 3) landmark4(ctx, sec, lx, ly, lw, lh, landC, slabC, K);
       else {
         ctx.fillStyle = landC; ctx.fillRect(lx, ly, lw, lh);
         ctx.fillStyle = slabC; ctx.fillRect(lx + 10, ly + 8, lw - 20, lh - 16); // inset gives it structure
@@ -222,7 +298,7 @@ function drawBackground(ctx, g, bgScroll, sec, bossPhase, K, secT = 0) {
 function rimOf(type, phase) {
   if (type === 0) return phase === 1 ? HEAVY.out : phase === 3 ? GROUND.out : AIR.out;
   if (type === 1) return AIR.out;
-  if (type === 2 || type === 7 || type === 8 || type === 9) return GROUND.out; // r80: the ground layer is the GROUND family
+  if (type === 2 || type === 7 || type === 8 || type === 9 || type === 15) return GROUND.out; // r80: the ground layer is the GROUND family. r84: + the wall pod (a bolted-on fixture, GROUND like every other gun that does not fly)
   if (type === 11 || type === 12) return AIR.out;                              // r82: the file leader and the carrier fly with the popcorn (AIR)
   return HEAVY.out;                                                            // r82: a Twin Moth (13) is HEAVY — the moth family (bible §3)
 }
@@ -241,11 +317,11 @@ function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra, K, lv
   const S = (c) => F(flick ? BOSS.armor : c); // surface fill: armor shimmer applies
   if (lvl === 1 && (type === 4 || type === 5)) { paintStage2Boss(ctx, type, phase, side, prop, hit, flick, extra, K, F, S); return; }
   if (lvl === 2 && type === 5) { paintStage3Boss(ctx, phase, prop, flick, extra, K, F); return; }
-  // r83: stage 5's THE IDOL. Today STAGES = [s1, s2, s3], so the module is only
-  // ever at level 3 (the ?boss=idol dev flag / tools/s5peek.html / the probe) —
-  // hence `lvl >= 3`. When stage 4 registers, its painter is added ABOVE this
-  // line at lvl 3 and the Idol slides to lvl 4 with no edit here.
-  if (lvl >= 3 && type === 5) { paintStage5Boss(ctx, phase, side, prop, flick, extra, K, F); return; }
+  if (lvl === 3 && (type === 4 || type === 5)) { paintStage4Boss(ctx, type, phase, side, prop, flick, extra, K, F, S); return; } // r84: THE GATEKEEPER and THE GATE
+  // r83: stage 5's THE IDOL. r84 registered stage 4 at level 3, so the unregistered
+  // stage-5 module now lands at level 4 (the ?boss=idol dev flag / tools/s5peek.html
+  // / the probe) — hence `lvl >= 4`. Stage 4's painter is the line above.
+  if (lvl >= 4 && type === 5) { paintStage5Boss(ctx, phase, side, prop, flick, extra, K, F); return; }
   switch (type) {
     case 11: { // r82 FORMATION LEADER — the head of a file: a zako's silhouette
       // grown one notch (r 12) with a swept delta and a bright CREST, so the
@@ -293,6 +369,59 @@ function paintEnemy(ctx, type, phase, side, step, prop, hit, flick, extra, K, lv
       S(HEAVY.hi); ctx.fillRect(-2, -16, 4, 3);
       S(HEAVY.shade); for (let i = 0; i < 4; i++) { ctx.fillRect(-6 - i * 2, -19 - i * 2, 3, 2); ctx.fillRect(3 + i * 2, -19 - i * 2, 3, 2); } // antennae
       S(rage ? HEAVY.core : AIR.glass); ctx.fillRect(-3, -13, 2, 2); ctx.fillRect(1, -13, 2, 2);
+      break;
+    }
+    case 14: { // r84 THE WARDEN — the front-armoured elite. It does NOT rotate (its
+      // plate has to keep pointing the same way for the damage rule to be legible)
+      // and it is the widest non-boss body in the game: identity from SHAPE and
+      // SIZE, never colour (r20). The reading the whole fight depends on:
+      //   · the PLATE is the broad, bright, bevelled band across the BOTTOM edge
+      //     (sprites are drawn nose-+y, so "the front" is toward the player) —
+      //     the one thing on the body that reads as thick metal;
+      //   · the SHOULDERS carry open gun sockets in HEAVY.shade with a dried-red
+      //     ember, so the places your shots DO bite are the places that look soft.
+      // `extra` 1 = the late-kill RUSH: the plate goes wine, the sockets open,
+      // the thrust lights (S4 feedback — the state change is on the body).
+      const rush = extra === 1;
+      S(HEAVY.shade); poly(ctx, [[-26, -6], [-16, -18], [16, -18], [26, -6], [22, 8], [-22, 8]]);      // the hull
+      S(HEAVY.base); poly(ctx, [[-21, -4], [-13, -14], [13, -14], [21, -4], [18, 5], [-18, 5]]);
+      S(HEAVY.hi); poly(ctx, [[-16, -18], [16, -18], [14, -16], [-14, -16]]);                          // top-left light (bible §4)
+      S(HEAVY.shade); ctx.fillRect(-30, -8, 8, 12); ctx.fillRect(22, -8, 8, 12);                       // the shoulders
+      S(rush ? HEAVY.core : HEAVY.stripe); ctx.fillRect(-29, -5, 6, 3); ctx.fillRect(23, -5, 6, 3);    // the gun sockets: where it is soft
+      S(rush ? HEAVY.stripe : GROUND.hi); poly(ctx, [[-24, 8], [24, 8], [20, 18], [-20, 18]]);         // THE PLATE
+      S(rush ? HEAVY.core : GROUND.base); ctx.fillRect(-20, 10, 40, 4);                                 // its bevel
+      S(GROUND.out); ctx.fillRect(-20, 16, 40, 2);
+      S(HEAVY.hi); for (let i = -1; i <= 1; i++) ctx.fillRect(i * 12 - 2, 9, 4, 8);                      // the plate's ribs
+      S(AIR.glass); ctx.fillRect(-2, -10, 4, 4);
+      if (prop) { S(rush ? HEAVY.core : HEAVY.hi); ctx.fillRect(-12, -20, 8, 2); ctx.fillRect(4, -20, 8, 2); }
+      break;
+    }
+    case 15: { // r84 WALL POD — a gun BOLTED TO A WALL: a bracket plate against the
+      // flank with a stubby barrel out across the corridor. `side` is the wall it
+      // is on and therefore which way it shoots (the sprite is mirrored by the
+      // renderer's side key). GROUND family, squat, no rotation — a fixture, not
+      // a craft. `extra` 1 = angry at 4 s (rust). `tell` = the r81 sealed grammar:
+      // the barrel RETRACTS and its muzzle is capped (the pod is muted this frame).
+      const angryP = extra === 1, d = side; // d = +1 fires right, −1 fires left
+      if (!hit) { ctx.save(); ctx.translate(2, 3); S(GROUND.out); ctx.fillRect(-14, -12, 28, 24); ctx.restore(); }
+      S(GROUND.plate); ctx.fillRect(-d * 14, -12, 10, 24);                                      // the wall bracket
+      S(GROUND.shade); for (let y = -10; y < 11; y += 6) ctx.fillRect(-d * 13, y, 8, 2);          // its bolts
+      S(GROUND.shade); ctx.fillRect(-d * 6, -9, 14, 18);                                          // the housing
+      S(angryP ? HEAVY.stripe : GROUND.base); ctx.fillRect(-d * 4, -7, 10, 14);
+      S(GROUND.hi); ctx.fillRect(-d * 4, -7, 10, 1);
+      if (tell) { S(GROUND.shade); ctx.fillRect(d > 0 ? 6 : -12, -3, 6, 6); S(GROUND.out); ctx.fillRect(d > 0 ? 11 : -12, -3, 1, 6); } // retracted 12 → 6, muzzle capped
+      else { S(GROUND.shade); ctx.fillRect(d > 0 ? 6 : -18, -3, 12, 6); S(GROUND.hi); ctx.fillRect(d > 0 ? 8 : -16, -3, 9, 1); }
+      break;
+    }
+    case 16: { // r84 THE GATE LOCK — a keystone bolt: a trapezoid with a keyhole and
+      // a dried-red core. Small (r 10), HEAVY family, and the only bright note is
+      // the keyhole — so "there is a thing in the middle of the gate" reads at a
+      // glance without competing with the bullet layer (S2).
+      S(HEAVY.shade); poly(ctx, [[-11, 8], [11, 8], [8, -9], [-8, -9]]);
+      S(HEAVY.base); poly(ctx, [[-8, 6], [8, 6], [6, -7], [-6, -7]]);
+      S(HEAVY.hi); ctx.fillRect(-6, -7, 12, 1);
+      S(HEAVY.stripe); ctx.fillRect(-2, -4, 4, 5); ctx.fillRect(-1, 1, 2, 5);                     // the keyhole
+      S(HEAVY.core); ctx.fillRect(-1, -3, 2, 2);
       break;
     }
     case 7: { // r80 RAIL TANK — tracked box, khaki dome, barrel aims at the ship; rust when angry
@@ -514,6 +643,77 @@ function paintStage3Boss(ctx, phase, prop, flick, extra, K, F) {
   }
 }
 
+// r84 STAGE 4's midboss + boss in base geometry (cute-occult creatures are a
+// later pass; every other skin falls back here — renderer drawEnemy).
+// THE GATEKEEPER (type 4): a portcullis head hanging in the court's frame — a
+// wide lintel, a central housing for the LOCK (the lock itself is a separate
+// entity, drawn by its own case), and two bar arms whose CHAINS and heads the
+// renderer draws at bobX / bobX2 (drawGateBars). `phase` 1 = TRANSFORMED (the
+// lock is broken): the lintel has cracked open and the thing inside it is out —
+// a horned head on a bared neck, wine-lit. Silhouette AND behaviour change, which
+// is the Psikyo M8 midboss transformation the plan asks for.
+// THE GATE (type 5): three forms, and each one is a different body —
+//   P0 THE GATE            — the portcullis itself: two piers, a lintel, a grille
+//                            with the core burning behind it. The widest boss
+//                            silhouette allowed by bible §6 (100 px span with the
+//                            pods riding at ±42); it reads arena-wide because the
+//                            LANDMARK behind it is the gate's own towers.
+//   P1 WHAT WAS BEHIND IT  — lean, forward-raked, all teeth and no plating: the
+//                            thing the gate was holding shut.
+//   P2 THE CORE            — the bare core on burnt mounts.
+// Burn-in and the per-form core hues are boss 1's painter's, exactly.
+function paintStage4Boss(ctx, type, phase, side, prop, flick, extra, K, F, S) {
+  const { poly, disc } = K;
+  if (type === 4) {
+    const open = phase === 1;
+    S(GROUND.plate); ctx.fillRect(-34, -20, 68, 14);                                   // the lintel
+    S(GROUND.hi); ctx.fillRect(-34, -20, 68, 1);
+    S(GROUND.shade); ctx.fillRect(-38, -22, 6, 20); ctx.fillRect(32, -22, 6, 20);       // the frame it hangs in
+    if (open) {
+      S(HEAVY.shade); poly(ctx, [[-22, -6], [22, -6], [16, 16], [-16, 16]]);            // the neck, out of the housing
+      S(HEAVY.base); poly(ctx, [[-17, -4], [17, -4], [12, 12], [-12, 12]]);
+      S(HEAVY.stripe); poly(ctx, [[-14, -8], [-24, -26], [-8, -14]]); poly(ctx, [[14, -8], [24, -26], [8, -14]]); // the horns
+      S(HEAVY.core); ctx.fillRect(-9, 0, 6, 4); ctx.fillRect(3, 0, 6, 4);               // the eyes
+      S(HEAVY.hi); ctx.fillRect(-8, 8, 16, 2);
+    } else {
+      S(HEAVY.shade); ctx.fillRect(-20, -8, 40, 22);                                    // the housing (the lock sits in its mouth)
+      S(HEAVY.base); ctx.fillRect(-16, -6, 32, 16);
+      S(HEAVY.hi); ctx.fillRect(-16, -6, 32, 1);
+      S(GROUND.plate); for (let i = -3; i <= 3; i++) ctx.fillRect(i * 9 - 2, 12, 4, 10); // the raised bars
+      S(GROUND.shade); ctx.fillRect(-30, 12, 60, 3);
+      S(prop ? HEAVY.stripe : HEAVY.shade); ctx.fillRect(-6, -4, 12, 3);                 // the housing's slit
+    }
+    return;
+  }
+  const burning = extra > 0;
+  const body = burning ? (extra === 2 ? BOSS.burnA : BOSS.burnB) : (flick ? BOSS.armor : BOSS.hull);
+  const core = burning ? BOSS.ember : (BOSS.cores[phase] || UI.white);
+  if (phase === 0) {            // THE GATE — the portcullis
+    F(flick ? BOSS.hull : BOSS.armor); ctx.fillRect(-48, -26, 16, 54); ctx.fillRect(32, -26, 16, 54);   // the two piers
+    F(BOSS.strut); for (let i = 0; i < 4; i++) { ctx.fillRect(-46, -20 + i * 14, 12, 5); ctx.fillRect(34, -20 + i * 14, 12, 5); }
+    F(body); ctx.fillRect(-48, -34, 96, 12);                                                            // the lintel
+    F(flick ? BOSS.armor : BOSS.hull); ctx.fillRect(-48, -34, 96, 2);
+    F(flick ? BOSS.hull : BOSS.armor); ctx.fillRect(-32, -22, 64, 50);                                   // the doorway, shut
+    F(BOSS.strut); for (let i = 0; i < 5; i++) ctx.fillRect(-28 + i * 13, -22, 5, 50);                    // the grille
+    F(core); poly(ctx, [[0, -14], [16, 2], [0, 18], [-16, 2]]);                                           // the core burning behind it
+    F(BOSS.hot); ctx.fillRect(-3, -1, 6, 6);
+  } else if (phase === 1) {     // WHAT WAS BEHIND IT — lean and forward-raked
+    F(burning ? BOSS.ember : BOSS.strut); poly(ctx, [[-16, -14], [-30, -32], [-8, -20]]); poly(ctx, [[16, -14], [30, -32], [8, -20]]); // swept horns
+    F(body); poly(ctx, [[0, 30], [14, 8], [20, -14], [8, -22], [-8, -22], [-20, -14], [-14, 8]]);         // the prow
+    F(flick ? BOSS.hull : BOSS.armor); poly(ctx, [[-26, -4], [-40, 6], [-22, 12]]); poly(ctx, [[26, -4], [40, 6], [22, 12]]); // the swept-back vanes
+    F(core); ctx.fillRect(-12, -8, 24, 8);                                                                // the burning slot
+    F(BOSS.hot); for (let i = 0; i < 5; i++) ctx.fillRect(-10 + i * 5, 14, 3, 6);                          // the teeth
+    if (prop) { F(BOSS.ember); ctx.fillRect(-16, -26, 8, 3); ctx.fillRect(8, -26, 8, 3); }
+  } else {                      // THE CORE — bare, on burnt mounts
+    F(body); poly(ctx, [[0, -26], [15, -6], [12, 16], [0, 24], [-12, 16], [-15, -6]]);
+    F(burning ? BOSS.ember : BOSS.strut); ctx.fillRect(-28, -4, 11, 7); ctx.fillRect(17, -4, 11, 7);
+    F(flick ? BOSS.hull : BOSS.armor); ctx.fillRect(-10, -20, 20, 3);
+    F(core); disc(ctx, 0, -1, 10);
+    F(BOSS.hot); disc(ctx, 0, -1, 4);
+  }
+  void side;
+}
+
 // r83 STAGE 5's final boss in base geometry (cute-occult creatures are a later
 // pass; every other skin falls back here — renderer drawEnemy). THE IDOL's FOUR
 // FORMS (S3b MUST 2: silhouette, movement and dialect all change per form):
@@ -601,6 +801,6 @@ function paintItem(c, r, K) {
 export default {
   id: 'base', name: 'classic (r58)',
   pal: { AIR, GROUND, HEAVY, SHIP, ITEM, UI, BOSS },
-  span: [32, 48, 40, 66, 72, 100, 32, 40, 40, 176, 34, 30, 40, 52], // r80: + tank, wall, hull (the deck is 164 wide), anchor. r82: + leader, carrier, Moth (bible §6's ladder: 26 / 34 / 44 at r 12 / 14 / 20, plus the rim)
+  span: [32, 48, 40, 66, 72, 100, 32, 40, 40, 176, 34, 30, 40, 52, 56, 36, 26], // r80: + tank, wall, hull (the deck is 164 wide), anchor. r82: + leader, carrier, Moth (bible §6's ladder: 26 / 34 / 44 at r 12 / 14 / 20, plus the rim). r84: + Warden (r 20, a wide-shouldered 52 body + rim), wall pod (r 12, 32 + rim), gate lock (r 10, 22 + rim)
   rimOf, drawBackground, paintEnemy, paintShip, paintItem, post: null,
 };

@@ -153,3 +153,38 @@ export function eggFan(g, x, y, n, spread, speed, base, fuse) {
     fire(g, x, y, base + t * spread, speed, B_ROUND, 0, 0, fuse);
   }
 }
+
+// r84 (STAGE 4's boss-only dialect, WS03 #7 "the box trap": *six emitters
+// firing six bullets around the arena centre pen the player, then other patterns
+// assault the box while it moves* — Touhou's favourite). THE PEN: six sources —
+// the rectangle's four corners plus its two side midpoints — each lay a wall
+// segment of pink rounds toward the next source, at a fixed `step` px spacing,
+// so the cage reads as a dashed box the moment it exists (S2: bullets arrive in
+// groups, never singles). ONE segment is omitted: `door` (0 top · 1 upper-right ·
+// 2 lower-right · 3 bottom · 4 lower-left · 5 upper-left) is the way out, so the
+// pen is a LANE decision with pros and cons (take the door and be led where the
+// door points, or micro-dodge a wall and pay in timing) and never a checkmate
+// on its own [S3 MUST ≥ 2 viable lanes; S7 no unavoidable deaths].
+// AND THEN THE PEN MOVES: every round in it carries the same (vx, vy) and the
+// same `accel`, so the whole cage translates as one rigid body and then whips
+// off the field — the walls sweep the arena instead of parking in it (S4 outro:
+// no bullet source or wall is dragged through the fight). The caller owns the
+// clamp: pass a centre that keeps the cage on the field.
+// Deterministic — no rng, so a stage that never fires it is stream-untouched.
+// Pink rounds only: no new colour family, no new bullet shape, r20 display
+// contract unchanged (the dialect is the GEOMETRY, as stage 2's was motion and
+// stage 3's was the bullet's life cycle).
+export function boxTrap(g, cx, cy, hw, hh, step, vx, vy, door = 0, accel = 0) {
+  const P = [[cx - hw, cy - hh], [cx + hw, cy - hh], [cx + hw, cy], [cx + hw, cy + hh], [cx - hw, cy + hh], [cx - hw, cy]];
+  const ang = Math.atan2(vy, vx), spd = Math.hypot(vx, vy);
+  for (let s = 0; s < 6; s++) {
+    if (s === door) continue;
+    const a = P[s], b = P[(s + 1) % 6];
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const n = Math.max(1, Math.round(len / step));
+    for (let i = 0; i < n; i++) {
+      const f = i / n; // the far endpoint belongs to the NEXT segment: no doubled round at a corner
+      fire(g, a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, ang, spd, B_ROUND, accel, 0);
+    }
+  }
+}

@@ -110,5 +110,20 @@ export function makeKit() {
       if (e) { e.sweepOff = gid; e.bloomed = 0; }
     }
   });
-  return { tl, at, zakoGroup, crossers, risers, risersOneSide, tankFile, boneWall, vFile };
+  // r84 STAGE 4 wall-pod RUN (plan §3 stage 4, the new niche's flank half). n
+  // pods (type 15) bolted to the corridor's flanks, ALTERNATING sides pod by pod
+  // and staggered `every` frames apart, so at any moment the live pods sit at
+  // different heights on opposite walls — never a vertical stack, never both far
+  // edges firing on the same frame [WS05 "no vertical turret/tank stacks", Jacob's
+  // Q21 addendum]. x 26 / W−26 is the WALL, not a lane: the lanes are the bands
+  // BETWEEN the pods' horizontal fire, which is the whole point (WS03 area
+  // denial — the geometry is the pattern). `first` picks which flank starts, so
+  // consecutive runs do not both open on the same side. Deterministic.
+  const podRun = (t, n, first = -1, every = 62) => {
+    for (let i = 0; i < n; i++) at(t + i * every, (g) => {
+      const side = (i % 2) ? -first : first;
+      spawnEnemy(g, 15, side < 0 ? 26 : W - 26, -16, { side });
+    });
+  };
+  return { tl, at, zakoGroup, crossers, risers, risersOneSide, tankFile, boneWall, vFile, podRun };
 }

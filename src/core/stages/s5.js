@@ -38,7 +38,7 @@
 // Music: reuses the boss track for now (a stage-5 cue is a later pass).
 import { sfx, SFX, spawnEnemy, W } from '../game.js';
 import { mayFire, campGovernor, bossEntrance, bossBurn, bandedSweep, bossTimeout, pickSafeX, advanceBossPhase } from '../stage.js';
-import { aimedFan, ring, arcWall, spray, ledFan, staticFan, eggFan, lanceVolley } from '../patterns.js';
+import { aimedFan, ring, arcWall, spray, ledFan, staticFan, eggFan, lanceVolley, boxTrap } from '../patterns.js'; // r84: boxTrap = stage 4's dialect, quoted by form 4 (see quoteS4)
 
 export const id = 5;
 export const name = 'THE GREAT ALTAR';
@@ -96,19 +96,30 @@ function spawnIdolParts(g, boss) {
 // and introduces nothing new, so form 4 must quote the box; the call site
 // therefore exists NOW, on a fixed beat of form 4's cycle, and does nothing.
 //
-// HOW STAGE 4 FILLS IT (the contract, so nobody has to re-derive it):
-//   1. stage 4's boss builds the box with a `boxTrap(...)` emitter in
-//      ../patterns.js (six static sources penning a rectangle, then translated);
-//   2. import it here and make this function fire ONE pen, sized down for a
-//      finale quote (the medley quotes, it does not re-run the whole set piece);
-//   3. keep it inside form 4's ≤ 3 bullet families — the box is pink rounds, so
-//      the medley's count does not change;
-//   4. it draws no rng today. Whatever stage 4 puts here WILL move the rng
-//      stream for any run that reaches form 4, so expect a referee recert
-//      (CLAUDE.md: recerts are Jacob-authorized commits, never a builder's).
-// Until then: legible by absence. Form 4 is a complete fight without it.
+// FILLED AT r84, to the contract this comment set out (wiki §15, §16.2, Q39):
+//   1. THE GATE's dialect is `boxTrap` in ../patterns.js — six sources lay the
+//      six wall segments of a pen, one segment is omitted (the door), and every
+//      round carries the same drift and accel so the pen MOVES. Done.
+//   2. ONE pen, SIZED DOWN — 46 × 34 against the Gate's own 60 × 48, one cast per
+//      form-4 cycle against the Gate's every 150 f, and it is thrown at your
+//      COLUMN in front of the Idol rather than built around you. A medley quotes:
+//      it says the sentence, it does not re-run the set piece (Q39's answer as
+//      the plan frames it — the Gate's fight IS the one use, a quote is not a use).
+//   3. Pink rounds, so form 4's family count is unchanged (still pink + cyan +
+//      the player's violet, ≤ 3 on screen, S2).
+//   4. It draws NO rng — but it does spawn bullets, so any run that reaches form
+//      4 now differs from r83. The Idol probe's numbers moved and were re-measured
+//      this pass; the stage-5 referee control run remains Jacob's commit.
+// Cast on the ship's COLUMN at the Idol's own reach (e.y + 96, span 68), never
+// clamped — the Gate's pens are not clamped either, for the reason written at
+// `pen` in s4.js (clamping the centre puts a wall on a ship at an edge, which is
+// a spawn-on-player death; an unclamped pen simply loses its far wall off-field).
 function quoteS4(g, e, k, rep) {
-  void g; void e; void k; void rep; // r83 placeholder — stage 4's box trap goes here
+  const hw = 46, hh = 34;
+  const cx = g.player.x;
+  const dir = (rep & 1) ? 1 : -1;
+  const door = dir > 0 ? (rep & 2 ? 4 : 5) : (rep & 2 ? 1 : 2); // the door on the trailing side, as the Gate's own pens place it
+  boxTrap(g, cx, e.y + 96, hw, hh, 15, dir * 0.30 * k, 0.34 * k, door, 0.010);
 }
 
 // --- THE IDOL -----------------------------------------------------------------

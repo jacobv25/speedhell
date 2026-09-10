@@ -39,10 +39,11 @@ let bgScroll = 0;
 // r83 DEV FLAG — `index.html?boss=idol` appends the stage-5 module (THE GREAT
 // ALTAR, the four-form finale skeleton) to the campaign table FOR THIS PAGE LOAD
 // ONLY, so the Idol can be played by a human before stage 5 exists. Off by
-// default: without the flag STAGES stays [s1, s2, s3] and this line is the only
-// thing r83 adds to the shell. With it, the module lands at index 3, so the
-// PRACTICE row reads "STAGE 4 — THE GREAT ALTAR" (its real number until stage 4
-// is inserted before it) and `?boss=idol&level=3` starts the fight directly.
+// default: without the flag STAGES stays [s1, s2, s3, s4] and this line is the
+// only thing it adds to the shell. r84: stage 4 (THE BLOOD GATE) is registered,
+// so the flag now appends the Idol at index 4 — the PRACTICE row reads
+// "STAGE 5 — THE GREAT ALTAR" (its real number at last) and
+// `?boss=idol&level=4` starts the fight directly.
 // Wiki §16 documents it; the probe is tools/probes/idol-probe.mjs.
 if (new URLSearchParams(location.search).get('boss') === 'idol') STAGES.push(s5);
 
