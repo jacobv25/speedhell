@@ -181,6 +181,7 @@ export function draw(g, ctx, bgScroll) {
 
   // enemies — desaturated silhouettes, distinct per role (S4)
   if (g.level === 1) drawPendulums(ctx, g); // r80: stage 2's chains, under the sprites
+  if (stageAt(g.level).id === 5) drawIdolCenser(ctx, g); // r83: stage 5's censer, same idea, its own function so stage 2's path is untouched
   for (let i = 0; i < g.enemies.count; i++) drawEnemy(ctx, g, g.enemies.items[i]);
 
   // player
@@ -568,7 +569,7 @@ export function drawEnemy(ctx, g, e) {
   // for 2 frames in 4 (alpha toward the field = a washed value, bible §3; drawn
   // under the bullets as ever, so nothing is masked). Reads core; writes nothing.
   const tell = ((e.type === 2 || e.type === 7 || e.type === 8 || e.type === 9) && e.vulnAt >= 0 && e.y > 20 && e.y <= H - 60 && sealed(g, e)) ? 1 : 0;
-  const key = ((((((((e.type * 4 + phase) * 2 + side) * STEPS + step) * 2 + prop) * 2 + hit) * 2 + flick) * 64 + extra) * 4 + lvl) * 2 + tell;
+  const key = ((((((((e.type * 4 + phase) * 2 + side) * STEPS + step) * 2 + prop) * 2 + hit) * 2 + flick) * 64 + extra) * 8 + lvl) * 2 + tell; // r83: lvl factor 4 → 8 (a four-stage table would have collided at level 4); the cache is runtime-only, so the renumbering changes no pixels
   const s = CACHE.get(key) || sprite(key, sk.span[e.type], hit ? WHITE : sk.rimOf(e.type, phase),
     (c) => sk.paintEnemy(c, e.type, phase, side ? 1 : -1, step, prop, hit, flick, extra, KIT, lvl, tell));
   const dim = tell && !hit && (g.frame & 2); // the hit-flash (S4-MUST) always wins over the tell
@@ -601,6 +602,24 @@ function drawPendulums(ctx, g) {
       ctx.fillStyle = BOSS.cores[boss.phase] || WHITE; disc(ctx, Math.round(bx), Math.round(by), 2);
     }
   }
+}
+
+// r83 STAGE 5's censer — the Idol's forms 2 and 4 swing an emitter on a chain
+// (s5.js writes bobX/bobY every frame; the core never draws). Deliberately a
+// SEPARATE function from drawPendulums so stage 2's drawing path is byte-for-byte
+// untouched: this one only ever runs when the current stage module is s5.
+function drawIdolCenser(ctx, g) {
+  const { GROUND, HEAVY, BOSS } = SKINS.base.pal;
+  let boss = null;
+  for (let i = 0; i < g.enemies.count; i++) { const e = g.enemies.items[i]; if (e.type === 5) { boss = e; break; } }
+  if (!boss || boss.age < 90 || boss.bobY <= 0) return; // forms 1 and 3 hang no censer
+  const x0 = boss.x, y0 = boss.y + 10, x1 = boss.bobX, y1 = boss.bobY;
+  const n = Math.max(2, Math.round(Math.hypot(x1 - x0, y1 - y0) / 6));
+  ctx.fillStyle = GROUND.hi;
+  for (let i = 0; i <= n; i++) { const t = i / n; ctx.fillRect(Math.round(x0 + (x1 - x0) * t) - 1, Math.round(y0 + (y1 - y0) * t) - 1, 2, 2); }
+  ctx.fillStyle = HEAVY.out; disc(ctx, Math.round(x1), Math.round(y1), 7);
+  ctx.fillStyle = BOSS.strut; disc(ctx, Math.round(x1), Math.round(y1), 5);
+  ctx.fillStyle = BOSS.cores[boss.phase] || WHITE; disc(ctx, Math.round(x1), Math.round(y1), 2);
 }
 
 // --- player -------------------------------------------------------------------

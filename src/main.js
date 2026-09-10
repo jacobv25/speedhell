@@ -6,6 +6,7 @@
 // B backs out; title picker on d-pad; death screen A/shot = retry, B = title.
 import { makeGame, startRun, nextStage, update, W, H, SFX } from './core/game.js';
 import { STAGES } from './core/stages/index.js'; // r78: the campaign table (one entry today)
+import s5 from './core/stages/s5.js'; // r83: NOT in STAGES — appended only under the ?boss=idol dev flag below
 import { draw, resetHud, prefs as renderPrefs } from './render/renderer.js';
 import * as audio from './audio.js';
 import { BUILD } from './version.js';
@@ -35,6 +36,16 @@ let bgScroll = 0;
 // every later stage adds a "STAGE N — NAME" entry (its full run, from its own
 // startRun(g, 0, level)) followed by its sections, tagged STn. A run started
 // past stage 1 is practice (g.startLevel > 0): receipt yes, hi-score board no.
+// r83 DEV FLAG — `index.html?boss=idol` appends the stage-5 module (THE GREAT
+// ALTAR, the four-form finale skeleton) to the campaign table FOR THIS PAGE LOAD
+// ONLY, so the Idol can be played by a human before stage 5 exists. Off by
+// default: without the flag STAGES stays [s1, s2, s3] and this line is the only
+// thing r83 adds to the shell. With it, the module lands at index 3, so the
+// PRACTICE row reads "STAGE 4 — THE GREAT ALTAR" (its real number until stage 4
+// is inserted before it) and `?boss=idol&level=3` starts the fight directly.
+// Wiki §16 documents it; the probe is tools/probes/idol-probe.mjs.
+if (new URLSearchParams(location.search).get('boss') === 'idol') STAGES.push(s5);
+
 const PRACTICE = [];
 STAGES.forEach((st, L) => {
   const tag = STAGES.length > 1 ? `ST${L + 1} ` : '';

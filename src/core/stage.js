@@ -839,7 +839,12 @@ export function updateBoss(g, e) {
   bossTimeout(g, e, spawnParts); // r80: moved verbatim (see bossTimeout)
 }
 
-export function advanceBossPhase(g, e, killed, fade = 1, parts = spawnParts) { // r80: `parts` = the stage's part-spawner (default: stage 1's)
+// r83 (stage 5's four-form finale): two more optional arguments so a boss can
+// run a DIFFERENT NUMBER OF FORMS on its own hp table without copying this
+// function. `hp` = the per-form hp table read on each handoff, `last` = the
+// index of the final form (the one whose kill ends the fight). Both default to
+// the three-form contract stages 1-3 use, so their call is byte-identical.
+export function advanceBossPhase(g, e, killed, fade = 1, parts = spawnParts, hp = BOSS_PHASE_HP, last = 2) { // r80: `parts` = the stage's part-spawner (default: stage 1's)
   g.stats.bossPhaseFrames.push(e.fireT);
   if (killed) {
     bulletCancelWall(g, e.x, e.y);
@@ -852,9 +857,9 @@ export function advanceBossPhase(g, e, killed, fade = 1, parts = spawnParts) { /
   }
   // final phase resolved: scoring already granted by scoreBossPhase, so despawn
   // silently (dead=1) either way; gate opens, clear sequence begins.
-  if (e.phase >= 2) { e.dead = 1; g.gate = null; g.bossDown = true; g.bossKilled = killed; return; }
+  if (e.phase >= last) { e.dead = 1; g.gate = null; g.bossDown = true; g.bossKilled = killed; return; } // r83: `last` (default 2 = the three-form contract)
   e.phase++; e.fireT = 0; e.partKills = 0; e.partSeen = 0; // r73: parts are per phase
-  e.hp = g.tune.bossHp ? Math.round(BOSS_PHASE_HP[e.phase] * g.tune.bossHp) : BOSS_PHASE_HP[e.phase]; // r70 Lab experiment: phase hp multiplier (open Q16)
+  e.hp = g.tune.bossHp ? Math.round(hp[e.phase] * g.tune.bossHp) : hp[e.phase]; // r70 Lab experiment: phase hp multiplier (open Q16). r83: `hp` = the boss's own table (default BOSS_PHASE_HP)
   e.prevHp = e.hp; e.campT = 0; e.latchX = -1e9; e.latchX2 = -1e9; e.latchN = 0;
   e.grindHp = 0; e.latchT = 0; // fresh serve ration + grind account + refund price
   // per form (moveT carries across the handoff: a live player stays credited)
