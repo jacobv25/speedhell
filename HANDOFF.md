@@ -8,7 +8,7 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
 
 ## State
 
-- **`main` == `design/needle-tier` at r79** (r79 = extend A1 + one-bomb refill; r78 = campaign INFRASTRUCTURE merged — Jacob chose the stages 2–5 route on 2026-09-09, "getting really tired of playtesting"; r77 = heavy shot shipped), pushed to GitHub
+- **`main` == `design/needle-tier` at r80** (r80 = STAGE 2 THE BONE RAIL core merged, base-skin art; r79 = extend A1 + one-bomb refill; r78 = campaign infrastructure — Jacob chose the stages 2–5 route on 2026-09-09, "getting really tired of playtesting"; r77 = heavy shot shipped), pushed to GitHub
   (`jacobv25/speedhell`). Fast-forward main after every commit on
   design/needle-tier (a clean `play-main` worktree exists for that).
 - **Two Claude sessions share this working tree.** As of this rewrite the
@@ -16,7 +16,7 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
   `docs/plans/boghog-ws-questions.md`, `docs/BOGHOG_WORKSHOP.md` (+ edits to
   `CLAUDE.md`, `README.md`). Don't commit or revert another session's files;
   `git add` by name. Check `BUILD` + the wiki changelog before taking a round
-  number (next free on main: **r80** — r74 is `feat/stem-layers`).
+  number (next free on main: **r81** — r74 is `feat/stem-layers`).
 - **Referee:** last certificate r65 (expert bot fixed to close on big
   targets). Since then r71 (boss hp 3×), r72 (boss phase timeout 35 s) and
   r73's experiment changed outcomes; at 3× the bot clears 1–2 of 7 seeds and
@@ -83,8 +83,18 @@ and `docs/plans/`; this file is the quick resume. Memory for Claude sessions:
    (his words); stock bonus pays per stage (as built). **Still Jacob's before
    stage 2 content:** (nothing blocking) the Pillars
    "V1 = one full stage" amendment (his words), stock bonus per stage vs once,
-   the S5 amendment for stage 3's elite pair. Then stage 2 (THE BONE RAIL,
-   plan §3) as its own pass with a Booth debrief + recert + cooldown.
+   the S5 amendment for stage 3's elite pair. **Stage 2 THE BONE RAIL core =
+   r80 (wiki §13):** `STAGES = [s1, s2]`; types 7 rail tank / 8 bone wall /
+   9 hull / 10 anchor; midboss THE HEARSE (chained anchor pendulum); boss THE
+   BELL (pendulum-arc dialect, 3 forms); base-skin art only; play via
+   `?level=1` or the PRACTICE row's stage entries. Expert bot: to-boss 0:56–1:01,
+   dies in the Bell's P2 (its ceiling at 3× hp, as on stage 1); lives-pinned
+   clock 1:53–2:14 (target 1:40; Q24). **Next passes:** cute-occult art for
+   stage 2 (tank, wall, hull+deck, anchor+chain, Hearse, Bell forms, landmarks);
+   Booth playtest of the teaching; Jacob: Q24 (Bell vs the clock), Q25
+   (deck-turret/hull windows), Q26 (two contact rules), the referee's
+   `'stageclear'` outcome edit in sim.mjs + a stage-2 control run
+   (Jacob-authorized); then stage 3 per plan §7 with cooldown.
 1. **Jacob's TODO — difficulty modes.** Playtest more, then write what
    Normal and Hard each do at every section (S1…S8). Modes are named
    designs, not sliders (Pillar 3 / §11): boss hp stays 3× on both; parts
