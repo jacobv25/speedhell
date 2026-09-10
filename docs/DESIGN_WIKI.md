@@ -1452,7 +1452,7 @@ is unchanged; the campaign grows *Arcade*, it is not a mode.
 Registering a fourth stage needed **no further code** beyond the array and one
 doc-string: a stage-3 clear now ends in `'stageclear'` → receipt → briefing
 `STAGE 4 — THE BLOOD GATE` → `nextStage`, the PRACTICE row grew its
-`STAGE 4 — THE BLOOD GATE` entry plus eight `ST4` sections (34 rows now),
+`STAGE 4 — THE BLOOD GATE` entry plus eight `ST4` sections (33 rows now),
 **`?level=3` plays it**, `speedhell.level` remembers it and the board stamps
 `ST4` — all of it from the generic loops r78 put in `main.js`. The `?boss=idol`
 dev flag still works and now appends the unregistered stage-5 module at index
