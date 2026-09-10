@@ -83,5 +83,32 @@ export function makeKit() {
   const boneWall = (t, lane) => at(t, (g) => {
     for (let i = 0; i < 10; i++) if (lane.indexOf(i) < 0) spawnEnemy(g, 8, 25 + 30 * i, -16);
   });
-  return { tl, at, zakoGroup, crossers, risers, risersOneSide, tankFile, boneWall };
+  // r82 STAGE 3 formation FILE (plan §3 stage 3, the new niche). One LEADER
+  // (type 11) at the head of a V and n popcorn FOLLOWERS on its two arms, all
+  // spawned on the SAME frame — a formation arrives as a formation. The whole
+  // file flies one straight diagonal (no rng, no steering) at `vx, vy`; the
+  // followers sit BACK along the travel vector and OUT along its perpendicular,
+  // so the leader is the first body on the file's path: reaching it means
+  // getting ahead of the file, which is the sweeping goal-driven movement flow
+  // is made of [WS05 "high-priority enemies as goals"]. Entry x is 56 / W−56 —
+  // a lane, never the screen edge [BH101 §Level design, Toaplan pattern].
+  // `gid` groups a file (leader and followers carry it in `sweepOff`) so
+  // game.js killEnemy can tell ONE file's followers what just happened to their
+  // leader; `holdT` 3 = follower, 4 = a follower that shoots (every third —
+  // every SECOND with opts.hot, the swarm rush's escalation twist).
+  // Deterministic; stages/s3.js owns the behaviour through enemyUpdate[0]/[11].
+  const vFile = (t, side, n, gid, opts = {}) => at(t, (g) => {
+    const vx = -side * (opts.vx || 1.05), vy = opts.vy || 1.45;
+    const L = Math.hypot(vx, vy), ux = vx / L, uy = vy / L, px = -uy, py = ux;
+    const x0 = side < 0 ? 56 : W - 56, y0 = -16, back = opts.back || 21, out = opts.out || 16;
+    const lead = spawnEnemy(g, 11, x0, y0, { vx, vy, side });
+    if (lead) lead.sweepOff = gid;
+    for (let i = 1; i <= n; i++) {
+      const arm = (i & 1) ? 1 : -1, k = (i + 1) >> 1;
+      const e = spawnEnemy(g, 0, x0 - ux * k * back + px * arm * out * k, y0 - uy * k * back + py * arm * out * k,
+        { vx, vy, side, holdT: (opts.hot ? i % 2 : i % 3) === 1 ? 4 : 3 });
+      if (e) { e.sweepOff = gid; e.bloomed = 0; }
+    }
+  });
+  return { tl, at, zakoGroup, crossers, risers, risersOneSide, tankFile, boneWall, vFile };
 }

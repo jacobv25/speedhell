@@ -12,10 +12,15 @@ const TAU = Math.PI * 2;
 export const B_ROUND = 0;  // pink round: static / randomized spread
 export const B_NEEDLE = 1; // cyan needle: fast aimed, special tier only (r59)
 
-function fire(g, x, y, angle, speed, kind, accel = 0, curve = 0) {
+function fire(g, x, y, angle, speed, kind, accel = 0, curve = 0, hatch = 0) {
   const b = g.eBullets.spawn();
   if (!b) return;
   b.x = x; b.y = y;
+  // r82 (stage 3's boss dialect): `hatch` = frames until this bullet HATCHES
+  // into a small ring and dies (game.js's bullet loop ticks it). 0 on every
+  // other call site, and the pool's field is reset here every spawn, so a
+  // recycled slot can never carry a stale fuse — stages 1 and 2 are untouched.
+  b.hatch = hatch;
   b.vx = Math.cos(angle) * speed; b.vy = Math.sin(angle) * speed;
   // r59 (Jacob, 2026-09-04): needles are the SPECIAL enemies' aimed fire. If a
   // needle tier is set (g.needleTier[type] truthy), any needle from an emitter
@@ -132,5 +137,19 @@ export function staticFan(g, x, y, n, spread, speed, base) {
   for (let i = 0; i < n; i++) {
     const t = n === 1 ? 0 : i / (n - 1) - 0.5;
     fire(g, x, y, base + t * spread, speed, B_ROUND);
+  }
+}
+
+// r82 (STAGE 3's boss-only dialect, WS03 #5 "projectiles that spawn emitters"):
+// an EGG fan — a static fan of pink rounds, each carrying a `hatch` fuse. The
+// egg drifts as an ordinary round, PULSES over its last 30 f (renderer: the
+// telegraph, S2 warning grammar) and then bursts into a fixed 6-round ring
+// (game.js, deterministic — no rng). Same pink caste, same radius, same display
+// contract (r20): the dialect is the bullet's LIFE CYCLE, not a new colour or
+// shape. No stage section calls it (S3b-6: the dialect is the boss's alone).
+export function eggFan(g, x, y, n, spread, speed, base, fuse) {
+  for (let i = 0; i < n; i++) {
+    const t = n === 1 ? 0 : i / (n - 1) - 0.5;
+    fire(g, x, y, base + t * spread, speed, B_ROUND, 0, 0, fuse);
   }
 }

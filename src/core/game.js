@@ -2,6 +2,7 @@
 // Runs identically in browser and Node (sim harness imports this file).
 import { makeRng } from './rng.js';
 import { makePool } from './pool.js';
+import { ring } from './patterns.js'; // r82: the stage-3 egg's hatch burst (pure emitter; patterns.js imports nothing, so no cycle)
 import { updateEnemy, ENEMY_DEFS, BOSS_PHASE_TIMEOUT, GROUND } from './stage.js'; // r80: GROUND = types the ship flies over (no contact)
 import { STAGES, stageAt } from './stages/index.js'; // r78: the campaign table — g.timeline / the boss hook come from STAGES[g.level]
 
@@ -50,7 +51,7 @@ export function sfx(g, id) {
 // Sim (seed C0FFEE, expert): needles 45% → 22% of all fire; first needle now
 // appears with the s3 mids; s1/s2/s5 are all-pink. Set g.needleTier = null
 // to replay the old rule. Referee recert pending (bullet stream changed).
-export const NEEDLE_TIER = { 1: 1, 3: 1, 4: 1, 5: 1, 6: 1, 9: 1 }; // r80: + the stage-2 hull core (elite class); tanks (7) and bone walls (8) stay pink
+export const NEEDLE_TIER = { 1: 1, 3: 1, 4: 1, 5: 1, 6: 1, 9: 1, 12: 1, 13: 1 }; // r80: + the stage-2 hull core (elite class); tanks (7) and bone walls (8) stay pink. r82: + the stage-3 carrier (12, mid class) and Moth (13, elite class); the formation leader (11) is turret class and fires pink
 
 // r79 (Jacob, 2026-09-09: "let's go with the extend rule A1"): ONE extend per loop at a
 // fixed, announced score — visible, binary, no math (Pillar 2). 400,000 ≈ an expert's
@@ -89,7 +90,7 @@ export function makeGame(seed = 1) {
     // pools — capacities are hard caps (rubric S8)
     pBullets: makePool(64, () => ({ x: 0, y: 0, vy: 0, alive: 0 })),
     needleTier: NEEDLE_TIER, emitter: null, // r59: bullet caste by source (null = every aimed shot is a needle, the r5–r58 rule)
-    eBullets: makePool(1400, () => ({ x: 0, y: 0, vx: 0, vy: 0, kind: 0, r: 3, accel: 0, curve: 0, age: 0 })),
+    eBullets: makePool(1400, () => ({ x: 0, y: 0, vx: 0, vy: 0, kind: 0, r: 3, accel: 0, curve: 0, age: 0, hatch: 0 })), // r82 hatch: frames until an EGG bursts (stage 3's boss dialect); 0 on every other bullet — patterns.js fire() writes it every spawn
     enemies: makePool(64, () => ({
       type: 0, x: 0, y: 0, vx: 0, vy: 0, hp: 0, r: 10, age: 0,
       vulnAt: 0, armorUntil: 0, holdT: 0, phase: 0, fireT: 0, side: 1, value: 0, window: 0, dead: 0,
@@ -325,9 +326,9 @@ function killEnemy(g, e, idx) {
   g.score += v; g.kills++;
   g.stats.killLog.push({ t: e.type, f: aliveFrames, s: speed ? 1 : 0 });
   if (e.type === 6) for (let i = 0; i < g.enemies.count; i++) { const b = g.enemies.items[i]; if (b.type === 5 && b.phase === e.phase) b.partKills++; } // r73: parts bite back (stage.js updateBoss reads partKills)
-  const big = e.type === 3 || e.type === 4 || e.type === 9; // elite/midboss get the shake (S4); r80: + the hull core (elite class)
+  const big = e.type === 3 || e.type === 4 || e.type === 9 || e.type === 13; // elite/midboss get the shake (S4); r80: + the hull core (elite class); r82: + a Twin Moth (elite class)
   // boss sub-parts (type 6) pop like popcorn — shake stays reserved (S4-SHOULD)
-  const med = e.type === 1 || e.type === 2 || e.type === 7 || e.type === 8; // turret / mid: heavier than popcorn, no shake; r80: + tank / wall (turret class)
+  const med = e.type === 1 || e.type === 2 || e.type === 7 || e.type === 8 || e.type === 11 || e.type === 12; // turret / mid: heavier than popcorn, no shake; r80: + tank / wall (turret class); r82: + the formation leader (turret class) and the carrier (mid class)
   let tier = big ? TIER.BIG : med ? TIER.MED : TIER.POP;
   // r53 EXPERIMENT (wiki §10, research/explosion-and-weapon-feel): the reward
   // the natural meta pays is dressed, not the gun — a speed kill explodes one
@@ -361,6 +362,39 @@ function killEnemy(g, e, idx) {
   // as routing signage (100 each, below the S7 release coin — S6 garnish). Fixed
   // offsets, no rng: the referee's stream is untouched by breaching.
   if (e.type === 8) for (let k = -1; k <= 1; k++) spawnItem(g, e.x + k * 9, e.y + 4 + (k & 1) * 6, 100);
+  // r82 STAGE 3 — the FORMATION niche's one rule (plan §3). A leader's death
+  // decides its file's fate, and NOTHING is paid for it: no group payout, no
+  // leader bonus, no multiplier — every popcorn in the file still pays its own
+  // binary speed-kill (CLAUDE.md standing condition; Pillar 2; plan §5 option C
+  // stays unchosen). Killing the leader INSIDE its window (the same binary
+  // SPEED state the player already reads) scatters the file — it breaks up and
+  // leaves, which is safety, the natural meta paying in survival [WS06]; a late
+  // kill (or letting the leader fly off, handled in stages/s3.js) turns the file
+  // and it STREAMS at the player instead [WS05 "popcorn forces streaming"].
+  // `bloomed` is the follower's state field (0 in formation / 1 scattered /
+  // 2 streaming) — free on popcorn, and read by nothing else. No rng.
+  if (e.type === 11) for (let i = 0; i < g.enemies.count; i++) { const o = g.enemies.items[i]; if (o.type === 0 && o.holdT >= 3 && o.sweepOff === e.sweepOff && !o.dead) o.bloomed = speed ? 1 : 2; }
+  // The CARRIER is the stage's just-in-time cancel (WS05 theme): its death
+  // clears the bullets around it at the SAME garnish price every local wall
+  // pays (30/bullet — the elite's rule, r11), and the speed kill buys REACH,
+  // not a better rate: r 130 in-window vs r 70 late. Binary and visible (the
+  // wall's size), no new scoring math (S6 hierarchy, garnish stays garnish).
+  if (e.type === 12) bulletCancelWall(g, e.x, e.y, 30, speed ? 130 : 70);
+  // The TWIN MOTHS hold the midboss gate as a PAIR (rubric S5's sanctioned
+  // exception, Jacob 2026-09-10). Each death pays the elite's local relief;
+  // the LAST death is the midboss release moment — the r9 speed-gated cancel
+  // wall and the 8 × 800 shower, verbatim from the type-4 rule above — and
+  // only then does the gate open ("no breather after it dies" [T2]).
+  if (e.type === 13) {
+    bulletCancelWall(g, e.x, e.y, 30, 90);
+    let twin = 0;
+    for (let i = 0; i < g.enemies.count; i++) { const o = g.enemies.items[i]; if (o !== e && o.type === 13 && !o.dead) twin++; }
+    if (!twin) {
+      bulletCancelWall(g, e.x, e.y, speed ? 100 : 30);
+      for (let i = 0; i < 8; i++) spawnItem(g, e.x + g.rng.range(-27, 27), e.y + g.rng.range(-7, 20), 800);
+      g.gate = null;
+    }
+  }
   g.enemies.killAt(idx);
 }
 
@@ -599,6 +633,12 @@ export function update(g) {
     if (b.curve) { const c = Math.cos(b.curve), s = Math.sin(b.curve); const vx = b.vx * c - b.vy * s; b.vy = b.vx * s + b.vy * c; b.vx = vx; }
     b.x += b.vx; b.y += b.vy;
     if (b.x < -16 || b.x > W + 16 || b.y < -16 || b.y > H + 16) { g.eBullets.killAt(i); continue; }
+    // r82 STAGE 3 boss dialect (WS03 #5): an EGG hatches — the projectile dies
+    // and leaves a fixed 6-round ring where it was. Deterministic (no rng, fixed
+    // phase, fixed speed), so the referee's stream is untouched; every other
+    // bullet has hatch 0 and never enters this branch. The ring's bullets are
+    // appended past the loop's cursor, so they first move next frame.
+    if (b.hatch > 0 && --b.hatch === 0) { ring(g, b.x, b.y, 6, 1.5, 0.26); g.eBullets.killAt(i); continue; }
     if (p.invuln === 0) {
       const dxx = b.x - p.x, dyy = b.y - p.y, rr = b.r + PLAYER.hitR;
       if (dxx * dxx + dyy * dyy < rr * rr) {

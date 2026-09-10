@@ -66,7 +66,7 @@ if (cert) {
 // honest r79 expert game-overs on stage 1's boss (the one-bomb refill), so the
 // seam is reached with the bot's LIVES FLOORED AT 1 through stage 1 — a
 // probe-only edit of the flow under test, printed as such.
-console.log(`campaign-probe — 2. two-stage run (STAGES = [${STAGES.map((s) => s.name).join(', ')}])`);
+console.log(`campaign-probe — 2. the campaign seam (STAGES = [${STAGES.map((s) => s.name).join(', ')}])`);
 const N0 = STAGES.length;
 ok(N0 >= 2 && STAGES[1].name === 'THE BONE RAIL', `stage 2 registered: ${STAGES[1]?.name}`);
 {
@@ -97,19 +97,28 @@ ok(N0 >= 2 && STAGES[1].name === 'THE BONE RAIL', `stage 2 registered: ${STAGES[
   play(g, bot);
   const st2 = { frames: g.frame - carry.frame, score: g.score - carry.score, kills: g.kills - carry.kills };
   console.log(`  stage 2 end → ${sig(g)}  level ${g.level}  stage-2 alone: f=${st2.frames} score=${st2.score} kills=${st2.kills}`);
-  ok(g.state === 'clear' || g.state === 'gameover', `final stage ends the run: '${g.state}' (the expert enters stage 2 with the stock it has left — ${carry.lives} lives — so a game over here is the arcade contract, Pillar 4, not a plumbing fault)`);
-  ok(g.level === 1, 'g.level === 1 at the end');
+  ok(g.state === 'clear' || g.state === 'gameover' || g.state === 'stageclear', `stage 2 resolves: '${g.state}' (the expert enters stage 2 with the stock it has left — ${carry.lives} lives — so a game over here is the arcade contract, Pillar 4, not a plumbing fault; r82: with a stage 3 registered, a CLEARING stage 2 reads 'stageclear')`);
+  ok(g.level === 1, 'g.level === 1 at the end of stage 2');
   // the final-clear path: the same run with the ship INVULNERABLE from the seam
-  // (the camp probes' trick — flow-only). Asserts the LAST stage's clear is
-  // today's 'clear' with today's tally.
+  // (the camp probes' trick — flow-only), walked through EVERY seam to the last
+  // stage. Asserts each non-final clear is 'stageclear' and the LAST stage's is
+  // today's 'clear' with today's tally. (r82: generalised from the two-stage
+  // form — the assert used to read "stage 2 is last", which stopped being true
+  // when THE CANDLE SEA registered. Section 1 above is untouched, so the
+  // stage-1 identity diff against a control checkout still compares line for line.)
   {
     const q = startRun(makeGame(SEED), 0, 0), b2 = makeBot(BOTS.expert);
     while (q.state === 'play' && q.frame < MAX_FRAMES) { b2(q); if (q.player.lives < 1) q.player.lives = 1; update(q); }
-    nextStage(q); q.player.invuln = 1e9;
-    const f1 = q.frame, s1 = q.score; play(q, b2);
-    console.log(`  invulnerable from the seam → ${sig(q)}  level ${q.level}  stage-2 alone: f=${q.frame - f1} score=${q.score - s1} timeouts ${q.stats.timeouts} clearBonus ${q.clearBonus}`);
-    ok(q.state === 'clear' && q.level === 1 && q.bossKilled, "final stage's boss down → g.state === 'clear' (the last stage's clear is today's clear), bossKilled");
-    ok(q.clearBonus === q.player.lives * 1000 + q.player.bombs * 500, `stage 2's tally paid today's stock bonus (${q.clearBonus})`);
+    while (q.state === 'stageclear' && q.level < N0 - 1) {
+      const lv = q.level;
+      ok(q.state === 'stageclear', `stage ${lv + 1} (not last) → 'stageclear'`);
+      nextStage(q); q.player.invuln = 1e9;
+      const f1 = q.frame, s1 = q.score;
+      play(q, b2);
+      console.log(`  invulnerable through stage ${q.level + 1} → ${sig(q)}  level ${q.level}  that stage alone: f=${q.frame - f1} score=${q.score - s1} timeouts ${q.stats.timeouts}`);
+    }
+    ok(q.state === 'clear' && q.level === N0 - 1 && q.bossKilled, `final stage's boss down → g.state === 'clear' at level ${q.level} (the last stage's clear is today's clear), bossKilled`);
+    ok(q.clearBonus === q.player.lives * 1000 + q.player.bombs * 500, `the last stage's tally paid today's stock bonus (${q.clearBonus})`);
   }
   // determinism of the whole two-stage run
   const h = () => { const q = startRun(makeGame(SEED), 0, 0), b2 = makeBot(BOTS.expert); while (q.state === 'play' && q.frame < MAX_FRAMES) { b2(q); if (q.player.lives < 1) q.player.lives = 1; update(q); } if (q.state === 'stageclear') { nextStage(q); play(q, b2); } return sig(q); };

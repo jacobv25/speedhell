@@ -45,6 +45,15 @@ export const ENEMY_DEFS = [
   /*8 wall   */ { hp: 24,  value: 500,   window: 150, r: 14 }, // bone-wall segment: blocks its slot (contact), one hidden prong at y≈140, pays 3 loot on death
   /*9 hull   */ { hp: 220, value: 3000,  window: 380, r: 20 }, // ossuary barge core: armored until every deck turret is dead (DDP#4 chain-link), then a cyan gun opens
   /*10 anchor*/ { hp: 24,  value: 1000,  window: 300, r: 10 }, // the Hearse's chained anchor: a swinging physical hazard + the midboss's speed-kill sub-part (stages/s2.js)
+  // r82 STAGE 3 — FORMATIONS (plan §3 stage 3). Zero new hp tiers again: the
+  // leader is the TURRET row verbatim, the carrier the MID row, a Moth the
+  // ELITE row. All three FLY (no GROUND entry: the ship collides with them),
+  // all three are sealed by proximity like every non-boss enemy (r18 canon),
+  // and every behaviour they own lives in stages/s3.js `enemyUpdate` — this
+  // file gains rows only, no new cases (stage 1 + 2 untouched by construction).
+  /*11 leader*/ { hp: 24,  value: 500,   window: 150, r: 12 }, // formation LEADER: flies at the head of a file; a SPEED kill scatters the file, a late kill turns it into a streaming one (game.js killEnemy)
+  /*12 carrier*/{ hp: 44,  value: 800,   window: 210, r: 14 }, // CARRIER: a mid that releases popcorn on a metronome; its death cancels locally — the just-in-time cancel (WS05 theme)
+  /*13 moth  */ { hp: 220, value: 3000,  window: 380, r: 20 }, // one of the TWIN MOTHS: an elite-tier body; the PAIR is the midboss (rubric S5's sanctioned exception), and they hold the gate together
 ];
 // r80: the types the ship flies OVER (no contact collision — game.js reads it).
 export const GROUND = { 7: 1, 9: 1 };

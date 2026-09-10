@@ -201,7 +201,7 @@ export function draw(g, ctx, bgScroll) {
     for (let i = 0; i < g.eBullets.count; i++) {
       const b = g.eBullets.items[i];
       if (b.kind !== pass) continue;
-      if (pass === 0) drawRoundBullet(ctx, b.x, b.y, g.frame);
+      if (pass === 0) drawRoundBullet(ctx, b.x, b.y, g.frame, b.hatch);
       else drawNeedle(ctx, b.x, b.y, Math.atan2(b.vy, b.vx));
     }
   }
@@ -269,7 +269,22 @@ export function draw(g, ctx, bgScroll) {
 // Round: dark rim → pink ring → WHITE core = the true 3px hit circle. r57: a
 // pixel-disc sprite at the exact r20 radii (5.6 / 4.2 / 3), two frames — the
 // r5 0.35px pulse became a 2-frame ring flash held 4 ticks.
-export function drawRoundBullet(ctx, x, y, frame) {
+export function drawRoundBullet(ctx, x, y, frame, hatch = 0) {
+  // r82 THE EGG'S TELEGRAPH (stage 3's boss dialect). An egg is an ORDINARY
+  // pink round — same body, same 3 px white hit core, same r20 display contract
+  // — until its last 30 f, when six motes appear around it at exactly the
+  // angles the hatch will fire and close in as the fuse burns. The telegraph
+  // shows you the pattern that is coming, half a second ahead (well over the
+  // S7 120 ms reaction floor), and it adds no colour family: pink only (S2).
+  if (hatch > 0 && hatch <= 30) {
+    const step = (hatch - 1) >> 3; // 3 → 0
+    const h = CACHE.get(2010 + step) || sprite(2010 + step, 26, null, (c) => {
+      const r = 4.5 + step * 2.6;
+      c.fillStyle = step ? ROUND.ring : ROUND.ringHi;
+      for (let k = 0; k < 6; k++) { const a = 0.26 + (k / 6) * Math.PI * 2; c.fillRect(Math.round(Math.cos(a) * r) - 1, Math.round(Math.sin(a) * r) - 1, 2, 2); }
+    });
+    ctx.drawImage(h.img, Math.round(x) - h.o, Math.round(y) - h.o);
+  }
   const f = (frame >> 2) & 1;
   const s = CACHE.get(2000 + f) || sprite(2000 + f, 12, null, (c) => {
     c.fillStyle = ROUND.rim; disc(c, 0, 0, 5.6);
@@ -529,6 +544,13 @@ export function drawEnemy(ctx, g, e) {
     case 1: case 3: step = stepOf(heading(e)); break;
     case 2: case 7: extra = stepOf(Math.atan2(g.player.y - e.y, g.player.x - e.x)) + ((e.vulnAt >= 0 && g.frame - e.vulnAt > 240) ? STEPS : 0); break; // barrel step + angry (r80: the tank aims like a turret)
     case 5: extra = (e.vulnAt < 0 && e.phase > 0) ? ((g.frame & 2) ? 2 : 1) : 0; break; // burn-in frames
+    // r82 stage 3: heading for the two flyers, and one state bit each — the
+    // leader's file has TURNED (its window expired), the carrier is past its
+    // polite phase (doors open), a Moth is ENRAGED (its twin is down). All three
+    // read core fields only; the painter draws the state (S4 feedback).
+    case 11: step = stepOf(heading(e)); extra = e.phase === 1 ? 1 : 0; break;
+    case 12: step = stepOf(heading(e)); extra = e.fireT > 380 ? 1 : 0; break;
+    case 13: extra = e.bloomed ? 1 : 0; break;
   }
   if (e.type === 1) dy = Math.round(Math.sin(e.age * 0.09) * 0.8); // parked bob, whole pixels
   // r80: a type the skin does not paint (stage 2's ground layer, types ≥ 7) and the
